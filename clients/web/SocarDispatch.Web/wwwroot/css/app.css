@@ -584,3 +584,147 @@ code {
 .lf-status-forwarded { background: rgba(59,130,246,0.15); color: var(--color-accent); }
 .lf-status-onscene   { background: rgba(245,158,11,0.15); color: var(--color-warning); }
 .lf-status-busy      { background: rgba(239,68,68,0.15);  color: var(--color-danger); }
+
+
+/* =========================================================
+   Incident Sidebar & Dispatch Drawer Styles (SDDC-20)
+   ========================================================= */
+
+/* --- Drawer Backdrop --- */
+.sd-sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(3px);
+    z-index: 1040;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sd-sidebar-backdrop.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* --- Drawer Container --- */
+.sd-sidebar-container {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 440px;
+    max-width: 100vw;
+    height: 100vh;
+    background-color: var(--color-surface);
+    border-left: 1px solid var(--color-border);
+    box-shadow: var(--shadow-lg);
+    z-index: 1050;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform;
+}
+
+.sd-sidebar-open {
+    transform: translateX(0);
+}
+
+/* --- Media Thumbnail & Lightbox Styles --- */
+.sd-media-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 8px;
+}
+
+.sd-media-thumb {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    border-radius: 6px;
+    overflow: hidden;
+    background-color: var(--color-surface-3);
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.sd-media-thumb:hover {
+    transform: scale(1.03);
+    border-color: var(--color-accent);
+}
+
+.sd-lightbox-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.88);
+    backdrop-filter: blur(8px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+/* --- Team Roster Card Accents --- */
+.team-roster-card {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-left: 4px solid var(--color-success);
+    border-radius: 8px;
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.team-roster-card.status-forwarded {
+    border-left-color: var(--color-accent);
+}
+
+.team-roster-card.status-onscene {
+    border-left-color: var(--color-warning);
+}
+
+.team-roster-card.status-busy {
+    border-left-color: var(--color-danger);
+}
+
+.team-roster-card:hover:not(.disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.team-roster-card.selected {
+    border-color: var(--color-accent);
+    background-color: var(--color-accent-muted);
+    box-shadow: 0 0 0 1px var(--color-accent);
+}
+
+/* --- Emergency Code Global Badges --- */
+.badge-emergency-code {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #ffffff;
+}
+
+.badge-code-red,
+.badge-code-1 {
+    background-color: var(--color-danger);
+}
+
+.badge-code-orange,
+.badge-code-2 {
+    background-color: var(--color-warning);
+}
+
+.badge-code-yellow,
+.badge-code-3 {
+    background-color: #eab308;
+    color: #111318;
+}

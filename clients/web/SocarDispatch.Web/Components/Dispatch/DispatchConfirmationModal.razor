@@ -1,0 +1,376 @@
+@* Components/Dispatch/DispatchConfirmationModal.razor *@
+@using SocarDispatch.Web.Models.Dispatch
+@using SocarDispatch.Web.Utils
+
+@if (IsVisible && Incident != null && SelectedTeam != null)
+{
+    <div class="modal-backdrop" @onclick="HandleCancel">
+        <div class="modal-card" @onclick:stopPropagation="true">
+            <!-- Modal Header -->
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <div class="modal-icon">🚨</div>
+                    <div>
+                        <h3 class="modal-title">Confirm Team Dispatch</h3>
+                        <p class="modal-subtitle">Verify assignment details before notifying the response team.</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" @onclick="HandleCancel" title="Cancel">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Content / Summary -->
+            <div class="modal-body">
+                <!-- Summary Card -->
+                <div class="dispatch-summary">
+                    <!-- Incident Box -->
+                    <div class="summary-section">
+                        <span class="section-label">Emergency Incident</span>
+                        <div class="summary-item">
+                            <div class="badge-group">
+                                <span class="badge-code @GetEmergencyCodeBadgeClass(Incident.EmergencyCode)">@Incident.EmergencyCode</span>
+                                <strong class="summary-highlight">@Incident.Category</strong>
+                            </div>
+                            <small class="summary-sub">Reported by @Incident.ReporterFullName (@Incident.TimeAgoFormatted)</small>
+                        </div>
+                    </div>
+
+                    <div class="summary-divider">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <polyline points="19 12 12 19 5 12"/>
+                        </svg>
+                    </div>
+
+                    <!-- Team Box -->
+                    <div class="summary-section">
+                        <span class="section-label">Assigned Response Team</span>
+                        <div class="summary-item">
+                            <div class="team-summary-header">
+                                <strong class="summary-highlight team-highlight">@SelectedTeam.TeamName</strong>
+                                <span class="badge-distance">@GetFormattedDistance()</span>
+                            </div>
+                            <small class="summary-sub">
+                                Leader: @(string.IsNullOrWhiteSpace(SelectedTeam.LeaderFullName) ? "Unassigned" : SelectedTeam.LeaderFullName) | @SelectedTeam.Members.Count members
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Operator Instructions (Optional) -->
+                <div class="form-group">
+                    <label for="operator-notes" class="form-label">
+                        Operational Instructions / Notes <span class="optional-tag">(Optional)</span>
+                    </label>
+                    <textarea id="operator-notes" 
+                              class="form-control text-area" 
+                              rows="3" 
+                              placeholder="Add specific instructions for the team (e.g., enter via Gate 3, hazmat suit required)..."
+                              @bind="_operatorNotes"></textarea>
+                </div>
+            </div>
+
+            <!-- Modal Actions -->
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" @onclick="HandleCancel" disabled="@_isSubmitting">
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-primary btn-dispatch" @onclick="HandleConfirm" disabled="@_isSubmitting">
+                    @if (_isSubmitting)
+                    {
+                        <span class="spinner-sm"></span>
+                        <span>Dispatching...</span>
+                    }
+                    else
+                    {
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 2L11 13"/>
+                            <path d="M22 2l-7 20-4-9-9-4 20-7z"/>
+                        </svg>
+                        <span>Confirm & Dispatch Team</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public IncidentDetailViewModel? Incident { get; set; }
+    [Parameter] public TeamDto? SelectedTeam { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public EventCallback<string?> OnConfirm { get; set; }
+
+    private string? _operatorNotes;
+    private bool _isSubmitting = false;
+
+    private string GetEmergencyCodeBadgeClass(string code)
+    {
+        var c = (code ?? string.Empty).ToLowerInvariant();
+        if (c.Contains("1") || c.Contains("red") || c.Contains("kirmizi")) return "badge-code-1";
+        if (c.Contains("2") || c.Contains("orange") || c.Contains("turuncu")) return "badge-code-2";
+        return "badge-code-3";
+    }
+
+    private string GetFormattedDistance()
+    {
+        if (Incident == null || SelectedTeam == null) return "Unknown distance";
+
+        var dist = GeoUtils.CalculateDistanceInMeters(
+            Incident.Latitude, 
+            Incident.Longitude, 
+            SelectedTeam.CurrentLatitude, 
+            SelectedTeam.CurrentLongitude);
+
+        if (!dist.HasValue) return "GPS unavailable";
+        return dist.Value < 1000 ? $"{Math.Round(dist.Value)} m away" : $"{(dist.Value / 1000.0):F1} km away";
+    }
+
+    private async Task HandleCancel()
+    {
+        if (_isSubmitting) return;
+        _operatorNotes = null;
+        await OnCancel.InvokeAsync();
+    }
+
+    private async Task HandleConfirm()
+    {
+        _isSubmitting = true;
+        try
+        {
+            await OnConfirm.InvokeAsync(_operatorNotes);
+            _operatorNotes = null;
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+}
+
+<style>
+    .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(4px);
+        z-index: 1060;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        animation: fadeIn 0.15s ease-out;
+    }
+
+    .modal-card {
+        background-color: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: 12px;
+        box-shadow: var(--shadow-lg);
+        width: 100%;
+        max-width: 480px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        animation: scaleUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .modal-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--color-border);
+        background: var(--color-surface-2);
+    }
+
+    .modal-title-group {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .modal-icon {
+        font-size: 24px;
+    }
+
+    .modal-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--color-text-primary);
+        margin: 0 0 2px;
+    }
+
+    .modal-subtitle {
+        font-size: 12px;
+        color: var(--color-text-muted);
+        margin: 0;
+    }
+
+    .btn-close {
+        background: transparent;
+        border: none;
+        color: var(--color-text-muted);
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        display: flex;
+    }
+
+    .btn-close:hover {
+        color: var(--color-text-primary);
+        background: var(--color-surface-3);
+    }
+
+    .modal-body {
+        padding: 16px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .dispatch-summary {
+        background-color: var(--color-surface-2);
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .summary-section {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .section-label {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--color-text-muted);
+        letter-spacing: 0.5px;
+    }
+
+    .summary-item {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .badge-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .summary-highlight {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--color-text-primary);
+    }
+
+    .team-highlight {
+        color: var(--color-accent);
+    }
+
+    .team-summary-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .badge-distance {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--color-text-muted);
+        background: var(--color-surface-3);
+        padding: 2px 6px;
+        border-radius: 4px;
+    }
+
+    .summary-sub {
+        font-size: 12px;
+        color: var(--color-text-muted);
+    }
+
+    .summary-divider {
+        display: flex;
+        justify-content: center;
+        color: var(--color-text-subtle);
+        margin: -2px 0;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .form-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--color-text-primary);
+    }
+
+    .optional-tag {
+        font-size: 11px;
+        font-weight: normal;
+        color: var(--color-text-subtle);
+    }
+
+    .text-area {
+        resize: vertical;
+        min-height: 70px;
+        font-family: inherit;
+    }
+
+    .modal-footer {
+        padding: 12px 20px;
+        border-top: 1px solid var(--color-border);
+        background: var(--color-surface-2);
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .btn-dispatch {
+        background-color: var(--color-danger);
+        border-color: var(--color-danger);
+    }
+
+    .btn-dispatch:hover:not(:disabled) {
+        background-color: #dc2626;
+        border-color: #dc2626;
+    }
+
+    /* Emergency Code Badges */
+    .badge-code {
+        font-size: 10px;
+        font-weight: 800;
+        padding: 2px 6px;
+        border-radius: 4px;
+        color: white;
+        text-transform: uppercase;
+    }
+
+    .badge-code-1 { background-color: var(--color-danger); }
+    .badge-code-2 { background-color: var(--color-warning); }
+    .badge-code-3 { background-color: #eab308; }
+
+    @@keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @@keyframes scaleUp {
+        from { transform: scale(0.95); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+</style>

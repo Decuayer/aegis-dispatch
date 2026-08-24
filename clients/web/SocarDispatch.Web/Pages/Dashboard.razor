@@ -3,6 +3,8 @@
 @attribute [Authorize(Roles = "Operator")]
 @using SocarDispatch.Web.Services.SignalR
 @using SocarDispatch.Web.Events
+@using SocarDispatch.Web.Components.Dispatch
+
 @inject IIncidentHubClient IncidentHub
 @inject HttpClient Http
 @implements IDisposable
@@ -16,9 +18,9 @@
     </div>
 </div>
 
-<!-- Dinamik Anahtar Metrikler (Key Metrics) -->
+<!-- Dynamic Key Metrics -->
 <div class="dash-stats">
-    <!-- 1. Aktif Olaylar -->
+    <!-- 1. Active Events -->
     <div class="stat-card">
         <div class="stat-label">Active Incidents</div>
         <div class="stat-value danger">
@@ -34,7 +36,7 @@
         <div class="stat-hint">Requires immediate action</div>
     </div>
 
-    <!-- 2. Göreve Hazır (Müsait) Ekipler -->
+    <!-- 2. Teams Ready for Duty (Available) -->
     <div class="stat-card">
         <div class="stat-label">Available Teams</div>
         <div class="stat-value success">
@@ -50,7 +52,7 @@
         <div class="stat-hint">Ready to dispatch</div>
     </div>
 
-    <!-- 3. Yönlendirilen / Olay Yerindeki Ekipler -->
+    <!-- 3. Dispatched / On-Scene Teams -->
     <div class="stat-card">
         <div class="stat-label">Dispatched Teams</div>
         <div class="stat-value warning">
@@ -66,7 +68,7 @@
         <div class="stat-hint">En route or on-scene</div>
     </div>
 
-    <!-- 4. Ortalama Müdahale Süresi -->
+    <!-- 4. Average Response Time -->
     <div class="stat-card">
         <div class="stat-label">Avg. Response Time</div>
         <div class="stat-value">@_avgResponseTime</div>
@@ -74,7 +76,7 @@
     </div>
 </div>
 
-<!-- ——— Canlı Operasyonel Harita ——— -->
+<!-- ——— Live Operational Map ——— -->
 <div class="dash-map-section">
     <div class="dash-map-header">
         <h2 class="dash-section-title">Live Operational Map</h2>
@@ -86,6 +88,12 @@
         OnAssignTeamRequested="HandleAssignTeam" />
 </div>
 
+<!-- Operational Incident & Dispatch Sidebar Drawer -->
+<IncidentSidebar @bind-IsOpen="_isSidebarOpen"
+                 IncidentId="_selectedIncidentId"
+                 OnIncidentAssigned="HandleIncidentAssigned" />
+
+
 @code {
     private int _activeIncidents = 0;
     private int _availableTeams = 0;
@@ -93,12 +101,15 @@
     private string _avgResponseTime = "4.2 min";
     private bool _isLoading = true;
 
+    private Guid? _selectedIncidentId;
+    private bool _isSidebarOpen = false;
+
     protected override async Task OnInitializedAsync()
     {
-        // 1. REST API üzerinden mevcut istatistikleri çek
+        // 1. Retrieve existing statistics via REST API
         await LoadDashboardStatsAsync();
 
-        // 2. SignalR Canlı Olay Dinleyicilerine Abone Ol
+        // 2. Subscribe to SignalR Live Event Listeners
         IncidentHub.OnNewIncidentReceived += HandleNewIncident;
         IncidentHub.OnIncidentStatusChanged += HandleIncidentStatusChanged;
         IncidentHub.OnTeamDispatched += HandleTeamDispatched;
@@ -109,14 +120,14 @@
         _isLoading = true;
         try
         {
-            // Aktif Olay Sayısını Çek (Status=Open veya InProgress)
+            // Retrieve the number of active incidents (Status=Open or InProgress)
             var incidentsResponse = await Http.GetFromJsonAsync<ApiResponse<List<MapIncidentDto>>>("api/v1/incidents?status=Open");
             if (incidentsResponse?.Data != null)
             {
                 _activeIncidents = incidentsResponse.Data.Count;
             }
 
-            // Ekipleri Çek ve Durumlarına Göre Say
+            // Check the teams and count them according to their status.
             var teamsResponse = await Http.GetFromJsonAsync<ApiResponse<List<MapTeamDto>>>("api/v1/teams");
             if (teamsResponse?.Data != null)
             {
@@ -134,9 +145,7 @@
         }
     }
 
-    // ──────────────────────────────────────────────
-    // SignalR Canlı Sayaç Güncellemeleri
-    // ──────────────────────────────────────────────
+    // SignalR Live Counter Updates
     private void HandleNewIncident(object? sender, NewIncidentReceivedEventArgs e)
     {
         _activeIncidents++;
@@ -145,7 +154,7 @@
 
     private void HandleIncidentStatusChanged(object? sender, IncidentStatusChangedEventArgs e)
     {
-        // Olay çözüldüyse veya iptal edildiyse aktif olay sayacını düşür
+        // Decrement the active event counter if the event is resolved or cancelled
         if (e.Status is "Resolved" or "Canceled" && e.PreviousStatus is not ("Resolved" or "Canceled"))
         {
             _activeIncidents = Math.Max(0, _activeIncidents - 1);
@@ -155,28 +164,33 @@
 
     private void HandleTeamDispatched(object? sender, TeamDispatchedEventArgs e)
     {
-        // Bir ekip görevlendirildiğinde: Müsait ekip sayısı -1, Yönlendirilen ekip sayısı +1
+        // When a team is assigned: Number of available teams -1, Number of dispatched teams +1
         _availableTeams = Math.Max(0, _availableTeams - 1);
         _dispatchedTeams++;
         InvokeAsync(StateHasChanged);
     }
 
-    // ──────────────────────────────────────────────
-    // Harita Geri Çağırmaları (Popup Butonları)
-    // ──────────────────────────────────────────────
+    // Map Callbacks (Popup Buttons)
     private void HandleIncidentDetail(Guid incidentId)
     {
-        Console.WriteLine($"[Dashboard] Incident detail requested for: {incidentId}");
+        _selectedIncidentId = incidentId;
+        _isSidebarOpen = true;
     }
 
     private void HandleAssignTeam(Guid incidentId)
     {
-        Console.WriteLine($"[Dashboard] Assign team requested for: {incidentId}");
+        _selectedIncidentId = incidentId;
+        _isSidebarOpen = true;
     }
 
-    // ──────────────────────────────────────────────
-    // Bellek Temizliği (Unsubscribe)
-    // ──────────────────────────────────────────────
+    private async Task HandleIncidentAssigned(Guid incidentId)
+    {
+        // Refresh KPI stats after successful team assignment
+        await LoadDashboardStatsAsync();
+    }
+
+
+    // Memory Cleanup (Unsubscribe)
     public void Dispose()
     {
         IncidentHub.OnNewIncidentReceived -= HandleNewIncident;

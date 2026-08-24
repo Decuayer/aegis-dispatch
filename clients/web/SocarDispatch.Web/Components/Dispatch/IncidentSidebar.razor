@@ -1,0 +1,404 @@
+@* Components/Dispatch/IncidentSidebar.razor *@
+@using SocarDispatch.Web.Models.Dispatch
+
+<!-- Backdrop Overlay -->
+@if (IsOpen)
+{
+    <div class="sidebar-backdrop @(IsOpen ? "visible" : "")" @onclick="CloseSidebar"></div>
+}
+
+<!-- Drawer Panel Container -->
+<aside class="sidebar-drawer @(IsOpen ? "open" : "")" aria-label="Incident Details and Dispatch Panel">
+    @if (_isLoading)
+    {
+        <div class="sidebar-loading">
+            <div class="spinner-sm"></div>
+            <p>Loading incident details...</p>
+        </div>
+    }
+    else if (_incident == null)
+    {
+        <div class="sidebar-empty">
+            <p>Select an incident from the map to view details.</p>
+            <button type="button" class="btn btn-ghost" @onclick="CloseSidebar">Close</button>
+        </div>
+    }
+    else
+    {
+        <!-- Header -->
+        <div class="sidebar-header">
+            <div class="header-top">
+                <div class="badges-row">
+                    <span class="badge-code @GetEmergencyCodeBadgeClass(_incident.EmergencyCode)">@_incident.EmergencyCode</span>
+                    <span class="badge-status @GetStatusBadgeClass(_incident.Status)">@_incident.Status</span>
+                </div>
+                <button type="button" class="btn-close" @onclick="CloseSidebar" title="Close Panel (ESC)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <h2 class="incident-title">@_incident.Category</h2>
+            <div class="incident-timestamp">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                <span>@_incident.CreatedAt.ToString("MMM dd, yyyy HH:mm") (@_incident.TimeAgoFormatted)</span>
+            </div>
+        </div>
+
+        <!-- Scrollable Content Body -->
+        <div class="sidebar-body">
+            <!-- Reporter Card -->
+            <section class="section-card">
+                <div class="section-title">Reporter Information</div>
+                <div class="reporter-box">
+                    <div class="reporter-avatar">
+                        @GetInitials(_incident.ReporterFullName)
+                    </div>
+                    <div class="reporter-info">
+                        <strong class="reporter-name">@_incident.ReporterFullName</strong>
+                        <span class="reporter-dept">@(string.IsNullOrWhiteSpace(_incident.ReporterDepartment) ? "Field Operations" : _incident.ReporterDepartment)</span>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(_incident.ReporterPhone))
+                    {
+                        <a href="tel:@_incident.ReporterPhone" class="btn-contact" title="Call Reporter">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                            </svg>
+                        </a>
+                    }
+                </div>
+            </section>
+
+            <!-- Collapsible Description -->
+            <section class="section-card">
+                <div class="collapsible-header" @onclick="ToggleDescription">
+                    <div class="section-title">Situational Description</div>
+                    <button type="button" class="btn-toggle">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="@(_isDescExpanded ? "rotated" : "")">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </button>
+                </div>
+                @if (_isDescExpanded)
+                {
+                    <div class="description-content">
+                        <p>@(string.IsNullOrWhiteSpace(_incident.Description) ? "No additional details provided." : _incident.Description)</p>
+                    </div>
+                }
+            </section>
+
+            <!-- Media Attachments -->
+            <section class="section-card">
+                <div class="section-title">Media Attachments (@_incident.MediaAttachments.Count)</div>
+                <MediaGalleryModal MediaItems="_incident.MediaAttachments" />
+            </section>
+
+            <!-- Response Team Section -->
+            <section class="section-card">
+                <div class="section-title">Response Unit Dispatch</div>
+                @if (_incident.IsAssigned)
+                {
+                    <div class="assigned-team-banner">
+                        <div class="assigned-icon">🚒</div>
+                        <div>
+                            <span class="assigned-label">Currently Assigned Team</span>
+                            <strong class="assigned-name">@(_incident.AssignedTeamName ?? "Assigned Team")</strong>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <TeamSelectionList Teams="_teams"
+                                       IncidentLat="_incident.Latitude"
+                                       IncidentLng="_incident.Longitude"
+                                       SelectedTeamId="_selectedTeam?.Id"
+                                       OnTeamSelected="HandleTeamSelected" />
+                }
+            </section>
+        </div>
+
+        <!-- Sticky Footer Action -->
+        @if (!_incident.IsAssigned)
+        {
+            <div class="sidebar-footer">
+                <button type="button" 
+                        class="btn btn-primary btn-dispatch-action" 
+                        disabled="@(_selectedTeam == null || _isDispatching)"
+                        @onclick="OpenDispatchConfirmation">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 2L11 13"/>
+                        <path d="M22 2l-7 20-4-9-9-4 20-7z"/>
+                    </svg>
+                    <span>@(_selectedTeam == null ? "Select a Team Above" : $"Dispatch {_selectedTeam.TeamName}")</span>
+                </button>
+            </div>
+        }
+    }
+</aside>
+
+<!-- Dispatch Confirmation Modal -->
+<DispatchConfirmationModal IsVisible="_isConfirmationModalOpen"
+                           Incident="_incident"
+                           SelectedTeam="_selectedTeam"
+                           OnCancel="CloseDispatchConfirmation"
+                           OnConfirm="ExecuteDispatchAsync" />
+
+<style>
+    /* Drawer Layout & Transitions */
+    .sidebar-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(2px);
+        z-index: 1040;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+
+    .sidebar-backdrop.visible {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .sidebar-drawer {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 440px;
+        max-width: 100vw;
+        background-color: var(--color-surface);
+        border-left: 1px solid var(--color-border);
+        box-shadow: var(--shadow-lg);
+        z-index: 1050;
+        display: flex;
+        flex-direction: column;
+        transform: translateX(100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .sidebar-drawer.open {
+        transform: translateX(0);
+    }
+
+    .sidebar-loading, .sidebar-empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        gap: 12px;
+        color: var(--color-text-muted);
+    }
+
+    /* Header */
+    .sidebar-header {
+        padding: 18px 20px;
+        background-color: var(--color-surface-2);
+        border-bottom: 1px solid var(--color-border);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .header-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .badges-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .incident-title {
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--color-text-primary);
+        margin: 0;
+    }
+
+    .incident-timestamp {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 12px;
+        color: var(--color-text-muted);
+    }
+
+    /* Body */
+    .sidebar-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .section-card {
+        background-color: var(--color-surface-2);
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .section-title {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--color-text-muted);
+    }
+
+    /* Reporter Box */
+    .reporter-box {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .reporter-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background-color: var(--color-accent-muted);
+        color: var(--color-accent);
+        font-weight: 700;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .reporter-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .reporter-name {
+        font-size: 13px;
+        color: var(--color-text-primary);
+    }
+
+    .reporter-dept {
+        font-size: 11px;
+        color: var(--color-text-muted);
+    }
+
+    .btn-contact {
+        padding: 8px;
+        border-radius: 6px;
+        background-color: var(--color-surface-3);
+        color: var(--color-accent);
+        border: 1px solid var(--color-border);
+        display: flex;
+        transition: all 0.15s ease;
+    }
+
+    .btn-contact:hover {
+        background-color: var(--color-accent);
+        color: white;
+    }
+
+    /* Description */
+    .collapsible-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+    }
+
+    .btn-toggle svg {
+        transition: transform 0.2s ease;
+    }
+
+    .btn-toggle svg.rotated {
+        transform: rotate(180deg);
+    }
+
+    .description-content p {
+        margin: 0;
+        font-size: 13px;
+        color: var(--color-text-primary);
+        line-height: 1.5;
+        white-space: pre-wrap;
+    }
+
+    /* Assigned Team Banner */
+    .assigned-team-banner {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background-color: var(--color-accent-muted);
+        border: 1px solid var(--color-accent);
+        border-radius: 6px;
+    }
+
+    .assigned-icon {
+        font-size: 24px;
+    }
+
+    .assigned-label {
+        font-size: 11px;
+        color: var(--color-text-muted);
+        display: block;
+    }
+
+    .assigned-name {
+        font-size: 14px;
+        color: var(--color-accent);
+    }
+
+    /* Footer */
+    .sidebar-footer {
+        padding: 14px 20px;
+        background-color: var(--color-surface-2);
+        border-top: 1px solid var(--color-border);
+    }
+
+    .btn-dispatch-action {
+        width: 100%;
+        padding: 11px;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    /* Badges */
+    .badge-code {
+        font-size: 10px;
+        font-weight: 800;
+        padding: 2px 6px;
+        border-radius: 4px;
+        color: white;
+        text-transform: uppercase;
+    }
+
+    .badge-code-1 { background-color: var(--color-danger); }
+    .badge-code-2 { background-color: var(--color-warning); }
+    .badge-code-3 { background-color: #eab308; }
+
+    .badge-status {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 12px;
+    }
+
+    .badge-status-open { background: rgba(245, 158, 11, 0.15); color: var(--color-warning); }
+    .badge-status-assigned { background: rgba(59, 130, 246, 0.15); color: var(--color-accent); }
+    .badge-status-resolved { background: rgba(34, 197, 94, 0.15); color: var(--color-success); }
+    .badge-status-canceled { background: var(--color-surface-3); color: var(--color-text-muted); }
+</style>
