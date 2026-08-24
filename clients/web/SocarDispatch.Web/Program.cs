@@ -38,4 +38,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 // 5. Blazor Yetkilendirme Çekirdeği (Authorization Core)
 builder.Services.AddAuthorizationCore();
 
+// 6. Harita Servisi (Leaflet)
+builder.Services.AddScoped<SocarDispatch.Web.Services.IMapService, SocarDispatch.Web.Services.MapService>();
+
 await builder.Build().RunAsync();

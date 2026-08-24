@@ -419,3 +419,168 @@ code {
 .divider span {
     padding: 0 12px;
 }
+
+/* =========================================================
+   Leaflet Map — Custom Popup & Tooltip Styles
+   ========================================================= */
+
+/* Harita container */
+.leaflet-map-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 500px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-md);
+}
+
+/* Popup temel */
+.lf-custom-popup .leaflet-popup-content-wrapper {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    box-shadow: var(--shadow-lg);
+    padding: 0;
+    color: var(--color-text-primary);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+}
+
+.lf-custom-popup .leaflet-popup-tip {
+    background: var(--color-surface);
+}
+
+.lf-popup {
+    min-width: 240px;
+}
+
+.lf-popup-header {
+    padding: 12px 14px 10px;
+    border-bottom: 2px solid;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.lf-emergency-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.lf-popup-body {
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.lf-popup-row {
+    display: flex;
+    gap: 6px;
+    font-size: 12px;
+    align-items: center;
+}
+
+.lf-label {
+    color: var(--color-text-muted);
+    font-weight: 500;
+    min-width: 65px;
+}
+
+.lf-value {
+    color: var(--color-text-primary);
+    font-weight: 500;
+}
+
+.lf-unassigned {
+    color: var(--color-text-subtle);
+    font-style: italic;
+}
+
+.lf-status-open      { color: var(--color-warning); }
+.lf-status-assigned  { color: var(--color-accent); }
+.lf-status-resolved  { color: var(--color-success); }
+.lf-status-canceled  { color: var(--color-text-muted); }
+
+.lf-popup-actions {
+    padding: 10px 14px 12px;
+    display: flex;
+    gap: 8px;
+    border-top: 1px solid var(--color-border);
+}
+
+.lf-btn-primary {
+    background: var(--color-accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: background 0.15s;
+}
+
+.lf-btn-primary:hover { background: var(--color-accent-hover); }
+
+.lf-btn-ghost {
+    background: transparent;
+    color: var(--color-text-muted);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.15s;
+}
+
+.lf-btn-ghost:hover {
+    background: var(--color-surface-2);
+    color: var(--color-text-primary);
+}
+
+/* Tooltip */
+.lf-custom-tooltip {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    box-shadow: var(--shadow-md);
+    color: var(--color-text-primary);
+    font-family: 'Inter', sans-serif;
+}
+
+.lf-tooltip {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+}
+
+.lf-status-badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    width: fit-content;
+}
+
+.lf-status-idle      { background: rgba(34,197,94,0.15);  color: var(--color-success); }
+.lf-status-forwarded { background: rgba(59,130,246,0.15); color: var(--color-accent); }
+.lf-status-onscene   { background: rgba(245,158,11,0.15); color: var(--color-warning); }
+.lf-status-busy      { background: rgba(239,68,68,0.15);  color: var(--color-danger); }
