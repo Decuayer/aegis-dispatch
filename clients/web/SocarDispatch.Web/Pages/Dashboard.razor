@@ -1,0 +1,162 @@
+@page "/"
+@page "/dashboard"
+@attribute [Authorize(Roles = "Operator")]
+@inject IAuthService AuthService
+@inject IConfiguration Config
+
+<PageTitle>Dashboard — SOCAR Dispatch</PageTitle>
+
+<div class="dash-header">
+    <div>
+        <h1 class="dash-title">Overview</h1>
+        <p class="dash-sub">Real-time emergency dispatch and field team status</p>
+    </div>
+    <div class="badge-status-active">System Active</div>
+</div>
+
+<!-- Key metrics -->
+<div class="dash-stats">
+    <div class="stat-card">
+        <div class="stat-label">Active Incidents</div>
+        <div class="stat-value danger">3</div>
+        <div class="stat-hint">2 critical, 1 moderate</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Available Teams</div>
+        <div class="stat-value success">8</div>
+        <div class="stat-hint">Ready to dispatch</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Dispatched</div>
+        <div class="stat-value warning">2</div>
+        <div class="stat-hint">En route to site</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Avg. Response Time</div>
+        <div class="stat-value">4.2 min</div>
+        <div class="stat-hint">Last 24 hours</div>
+    </div>
+</div>
+
+<!-- ——— Canlı Operasyonel Harita ——— -->
+<div class="dash-map-section">
+    <div class="dash-map-header">
+        <h2 class="dash-section-title">Live Operational Map</h2>
+        <p class="dash-section-sub">Active incidents and field team positions in real-time</p>
+    </div>
+    <LeafletMap
+        Height="580px"
+        ApiBaseUrl="@_apiBaseUrl"
+        JwtToken="@_jwtToken"
+        OnIncidentDetailRequested="HandleIncidentDetail"
+        OnAssignTeamRequested="HandleAssignTeam" />
+</div>
+
+@code {
+    private string _apiBaseUrl = string.Empty;
+    private string _jwtToken = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _apiBaseUrl = Config["ApiBaseUrl"] ?? "http://localhost:5233";
+        _jwtToken = await AuthService.GetTokenAsync() ?? string.Empty;
+    }
+
+    private void HandleIncidentDetail(Guid incidentId)
+    {
+        Console.WriteLine($"Incident detail requested: {incidentId}");
+    }
+
+    private void HandleAssignTeam(Guid incidentId)
+    {
+        Console.WriteLine($"Assign team requested for: {incidentId}");
+    }
+}
+
+<style>
+    .dash-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 24px;
+    }
+
+    .dash-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--color-text-primary);
+        margin: 0 0 4px;
+    }
+
+    .dash-sub {
+        font-size: 13px;
+        color: var(--color-text-muted);
+        margin: 0;
+    }
+
+    .dash-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        background-color: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        padding: 16px 20px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .stat-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--color-text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        margin-bottom: 8px;
+    }
+
+    .stat-value {
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--color-text-primary);
+        line-height: 1;
+        margin-bottom: 6px;
+    }
+
+    .stat-value.danger  { color: var(--color-danger); }
+    .stat-value.success { color: var(--color-success); }
+    .stat-value.warning { color: var(--color-warning); }
+
+    .stat-hint {
+        font-size: 12px;
+        color: var(--color-text-subtle);
+    }
+
+    .dash-map-section {
+        background-color: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .dash-map-header {
+        margin-bottom: 16px;
+    }
+
+    .dash-section-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--color-text-primary);
+        margin: 0 0 4px;
+    }
+
+    .dash-section-sub {
+        font-size: 12px;
+        color: var(--color-text-muted);
+        margin: 0;
+    }
+</style>

@@ -1,0 +1,210 @@
+@* Components/Map/LeafletMap.razor *@
+@using Microsoft.AspNetCore.SignalR.Client
+@inject IMapService MapService
+@inject HttpClient Http
+@inject IJSRuntime JS
+@inject IAuthService AuthService
+@inject IConfiguration Config
+@implements IAsyncDisposable
+
+<div class="leaflet-map-wrapper" id="@_containerId" style="height: @Height; width: 100%;"></div>
+
+@code {
+    private readonly string _containerId = $"leaflet-map-{Guid.NewGuid():N}";
+    private DotNetObjectReference<LeafletMap>? _dotNetRef;
+    private HubConnection? _incidentsHub;
+    private HubConnection? _locationHub;
+
+    [Parameter] public string Height { get; set; } = "560px";
+    [Parameter] public string ApiBaseUrl { get; set; } = string.Empty;
+    [Parameter] public string JwtToken { get; set; } = string.Empty;
+
+    // Popup butonlarından gelen geri çağırma eventleri
+    [Parameter] public EventCallback<Guid> OnIncidentDetailRequested { get; set; }
+    [Parameter] public EventCallback<Guid> OnAssignTeamRequested { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        // 1. Haritayı başlat
+        await MapService.InitializeMapAsync(_containerId);
+
+        // 2. DotNet referansını JS'e ilet
+        _dotNetRef = DotNetObjectReference.Create(this);
+        await JS.InvokeVoidAsync("leafletMap.setDotNetRef", _dotNetRef);
+
+        // 3. API'den mevcut verileri yükle
+        await LoadIncidentsAsync();
+        await LoadTeamsAsync();
+
+        // 4. SignalR bağlantılarını kur
+        await ConnectSignalRAsync();
+    }
+
+    // ──────────────────────────────────────────────
+    // REST API — İlk Yükleme
+    // ──────────────────────────────────────────────
+    private async Task LoadIncidentsAsync()
+    {
+        try
+        {
+            var response = await Http.GetFromJsonAsync<ApiResponse<List<MapIncidentDto>>>(
+                "api/v1/incidents?status=Open");
+
+            if (response?.Data != null)
+            {
+                foreach (var incident in response.Data)
+                {
+                    await MapService.AddIncidentMarkerAsync(incident);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[LeafletMap] Failed to load incidents: {ex.Message}");
+        }
+    }
+
+    private async Task LoadTeamsAsync()
+    {
+        try
+        {
+            var response = await Http.GetFromJsonAsync<ApiResponse<List<MapTeamDto>>>(
+                "api/v1/teams");
+
+            if (response?.Data != null)
+            {
+                foreach (var team in response.Data)
+                {
+                    await MapService.AddTeamMarkerAsync(team);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[LeafletMap] Failed to load teams: {ex.Message}");
+        }
+    }
+
+    // ──────────────────────────────────────────────
+    // SignalR — Gerçek Zamanlı Güncellemeler
+    // ──────────────────────────────────────────────
+    private async Task ConnectSignalRAsync()
+    {
+        try
+        {
+            var baseUrl = string.IsNullOrWhiteSpace(ApiBaseUrl) 
+                ? (Config["ApiBaseUrl"] ?? "http://localhost:5233") 
+                : ApiBaseUrl;
+            baseUrl = baseUrl.TrimEnd('/');
+
+            var token = string.IsNullOrWhiteSpace(JwtToken) 
+                ? await AuthService.GetTokenAsync() 
+                : JwtToken;
+
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                Console.WriteLine("[LeafletMap] No JWT token available for SignalR connection.");
+                return;
+            }
+
+            // IncidentsHub bağlantısı
+            _incidentsHub = new HubConnectionBuilder()
+                .WithUrl($"{baseUrl}/hubs/incidents?access_token={token}")
+                .WithAutomaticReconnect()
+                .Build();
+
+            _incidentsHub.On<NewIncidentPayload>("NewIncident", async payload =>
+            {
+                var incident = new MapIncidentDto
+                {
+                    Id = payload.Id,
+                    Category = payload.Category,
+                    EmergencyCode = payload.EmergencyCode,
+                    ReporterFullName = payload.ReporterFullName ?? "Unknown",
+                    Status = "Open",
+                    Latitude = (decimal)payload.Latitude,
+                    Longitude = (decimal)payload.Longitude,
+                    CreatedAt = payload.CreatedAt
+                };
+                await MapService.AddIncidentMarkerAsync(incident);
+            });
+
+            _incidentsHub.On<IncidentStatusChangedPayload>("IncidentStatusChanged", async payload =>
+            {
+                if (payload.Status is "Resolved" or "Canceled")
+                {
+                    await MapService.RemoveIncidentMarkerAsync(payload.IncidentId);
+                }
+            });
+
+            await _incidentsHub.StartAsync();
+
+            // LocationHub bağlantısı
+            _locationHub = new HubConnectionBuilder()
+                .WithUrl($"{baseUrl}/hubs/location?access_token={token}")
+                .WithAutomaticReconnect()
+                .Build();
+
+            _locationHub.On<TeamLocationPayload>("TeamLocationUpdated", async payload =>
+            {
+                var team = new MapTeamDto
+                {
+                    Id = payload.TeamId,
+                    TeamName = string.Empty,
+                    Status = "Forwarded",
+                    CurrentLatitude = (decimal)payload.Lat,
+                    CurrentLongitude = (decimal)payload.Lng,
+                    UpdatedAt = payload.Timestamp
+                };
+                await MapService.AddTeamMarkerAsync(team);
+            });
+
+            await _locationHub.StartAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[LeafletMap] SignalR connection error: {ex.Message}");
+        }
+    }
+
+    // ──────────────────────────────────────────────
+    // JS → C# Geri Çağırmalar (popup butonları)
+    // ──────────────────────────────────────────────
+    [JSInvokable]
+    public async Task NotifyIncidentDetail(string incidentIdStr)
+    {
+        if (Guid.TryParse(incidentIdStr, out var id))
+            await OnIncidentDetailRequested.InvokeAsync(id);
+    }
+
+    [JSInvokable]
+    public async Task NotifyAssignTeam(string incidentIdStr)
+    {
+        if (Guid.TryParse(incidentIdStr, out var id))
+            await OnAssignTeamRequested.InvokeAsync(id);
+    }
+
+    // ──────────────────────────────────────────────
+    // Cleanup
+    // ──────────────────────────────────────────────
+    public async ValueTask DisposeAsync()
+    {
+        if (_incidentsHub is not null) await _incidentsHub.DisposeAsync();
+        if (_locationHub is not null)  await _locationHub.DisposeAsync();
+        await MapService.DestroyMapAsync();
+        _dotNetRef?.Dispose();
+    }
+
+    // ──────────────────────────────────────────────
+    // Payload Record'ları (SignalR deserializasyon)
+    // ──────────────────────────────────────────────
+    private record NewIncidentPayload(Guid Id, string? ReporterFullName, string Category,
+        string EmergencyCode, string? Description, double Latitude, double Longitude, DateTime CreatedAt);
+
+    private record IncidentStatusChangedPayload(Guid IncidentId, string PreviousStatus,
+        string Status, Guid ChangedById, DateTime ChangedAt);
+
+    private record TeamLocationPayload(Guid TeamId, double Lat, double Lng, DateTime Timestamp);
+}
