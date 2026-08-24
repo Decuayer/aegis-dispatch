@@ -6,12 +6,13 @@ using Microsoft.EntityFrameworkCore;
 using SocarDispatch.Application.Common.Interfaces;
 using SocarDispatch.Application.Common.Models;
 using SocarDispatch.Application.Features.Auth.DTOs;
+using SocarDispatch.Application.Features.Users.Commands.UpdateDeviceToken;
 using SocarDispatch.Application.Features.Users.Commands.UpdateUserProfile;
+using SocarDispatch.Application.Features.Users.Commands.UpdateUserRole;
 using SocarDispatch.Application.Features.Users.DTOs;
 using SocarDispatch.Application.Features.Users.Queries.GetUsers;
 using SocarDispatch.Domain.Enums;
 using SocarDispatch.Domain.Exceptions;
-using SocarDispatch.Application.Features.Users.Commands.UpdateDeviceToken;
 
 namespace SocarDispatch.API.Controllers;
 
@@ -28,7 +29,6 @@ public class UsersController : ControllerBase
         _sender = sender;
         _context = context;
     }
-
 
     // GET /api/v1/users/me
     // Retrieves the profile information of the logged-in user.
@@ -114,10 +114,37 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<ApiResponse<List<UserDto>>>> GetUsers(
         [FromQuery] string? search,
         [FromQuery] string? department,
-        [FromQuery] RoleType? roleType)
+        [FromQuery(Name = "role")] RoleType? role,
+        [FromQuery(Name = "roleType")] RoleType? roleType)
     {
-        var query = new GetUsersQuery(search, department, roleType);
+        var selectedRole = role ?? roleType;
+        var query = new GetUsersQuery(search, department, selectedRole);
         var result = await _sender.Send(query);
+        return Ok(result);
+    }
+
+    // PATCH /api/v1/users/{id}/role
+    // Updates target user's system role and sub-role (Operator access only).
+    [HttpPatch("{id:guid}/role")]
+    [Authorize(Roles = "Operator")]
+    public async Task<ActionResult<ApiResponse<UserDto>>> UpdateUserRole(
+        [FromRoute] Guid id,
+        [FromBody] UpdateUserRoleRequestDto request)
+    {
+        var operatorIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        if (string.IsNullOrEmpty(operatorIdClaim) || !Guid.TryParse(operatorIdClaim, out var operatorId))
+        {
+            throw new DomainException("Invalid user session.");
+        }
+
+        var command = new UpdateUserRoleCommand(
+            id,
+            request.RoleType,
+            request.SubRole,
+            operatorId
+        );
+
+        var result = await _sender.Send(command);
         return Ok(result);
     }
 
