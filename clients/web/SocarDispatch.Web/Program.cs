@@ -19,7 +19,7 @@ builder.Services.AddBlazoredLocalStorage();
 builder.Services.AddTransient<AuthorizationHeaderHandler>();
 
 // 3. Backend API için HttpClient Yapılandırması (Interceptor ile birlikte)
-var backendApiUrl = builder.Configuration["ApiBaseUrl"] ?? "http://localhost:5000";
+var backendApiUrl = builder.Configuration["ApiBaseUrl"] ?? "http://localhost:5233";
 
 builder.Services.AddHttpClient("SocarDispatchAPI", client =>
 {

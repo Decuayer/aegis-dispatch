@@ -1,0 +1,159 @@
+@page "/"
+@page "/dashboard"
+@attribute [Authorize(Roles = "Operator")]
+
+<PageTitle>Operatör Kontrol Paneli | SOCAR Dispatch</PageTitle>
+
+<div class="dashboard-container">
+    <div class="welcome-card mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="welcome-title mb-1">🚨 Acil Durum & Sevk Kontrol Merkezi</h2>
+                <p class="welcome-sub text-muted">Canlı Olay İzleme ve Saha Ekip Yönetim Paneli</p>
+            </div>
+            <div class="system-status-badge">
+                <span class="pulse-dot"></span> Canlı Sistem Aktif
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-danger-subtle text-danger">🔥</div>
+                <div class="stat-info">
+                    <div class="stat-value">3</div>
+                    <div class="stat-label">Aktif Olay</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-success-subtle text-success">🚒</div>
+                <div class="stat-info">
+                    <div class="stat-value">8</div>
+                    <div class="stat-label">Hazır Ekip</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-warning-subtle text-warning">⚡</div>
+                <div class="stat-info">
+                    <div class="stat-value">2</div>
+                    <div class="stat-label">Sevk Edilen</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-info-subtle text-info">⏱️</div>
+                <div class="stat-info">
+                    <div class="stat-value">4.2 dk</div>
+                    <div class="stat-label">Ort. Yanıt Süresi</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card p-4 verification-card">
+        <h4 class="card-title text-gold mb-3">🛡️ Security Guard Verification Checklist (SDDC-17)</h4>
+        <ul class="list-group list-group-flush bg-transparent text-light">
+            <li class="list-group-item bg-transparent text-light border-secondary">
+                ✅ <strong>Authentication State:</strong> JWT başarıyla okundu ve doğrulanmış oturum oluşturuldu.
+            </li>
+            <li class="list-group-item bg-transparent text-light border-secondary">
+                ✅ <strong>Role Enforcement:</strong> Bu sayfaya yalnızca <code>Operator</code> rolündeki kullanıcılar erişebilir.
+            </li>
+            <li class="list-group-item bg-transparent text-light border-secondary">
+                ✅ <strong>Token Interceptor:</strong> Giden tüm HTTP isteklerine <code>Authorization: Bearer</code> ekleniyor.
+            </li>
+        </ul>
+    </div>
+</div>
+
+<style>
+    .welcome-card {
+        background: rgba(30, 41, 59, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 1.5rem;
+    }
+
+    .welcome-title {
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 1.5rem;
+    }
+
+    .system-status-badge {
+        background: rgba(16, 185, 129, 0.15);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        color: #10b981;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .pulse-dot {
+        width: 8px;
+        height: 8px;
+        background-color: #10b981;
+        border-radius: 50%;
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+        animation: pulse 1.5s infinite;
+    }
+
+    @@keyframes pulse {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    .stat-card {
+        background: rgba(30, 41, 59, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+
+    .stat-value {
+        color: #ffffff;
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .stat-label {
+        color: #94a3b8;
+        font-size: 0.85rem;
+        margin-top: 0.25rem;
+    }
+
+    .verification-card {
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid rgba(255, 184, 0, 0.2);
+        border-radius: 12px;
+    }
+
+    .text-gold {
+        color: #ffb800;
+    }
+</style>

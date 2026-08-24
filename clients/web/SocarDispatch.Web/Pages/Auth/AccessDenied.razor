@@ -1,0 +1,128 @@
+@page "/access-denied"
+@inject IAuthService AuthService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Erişim Engellendi | SOCAR Dispatch Panel</PageTitle>
+
+<div class="access-denied-container">
+    <div class="access-denied-card text-center">
+        <div class="warning-icon-wrapper mb-3">
+            <span class="warning-icon">🛡️</span>
+        </div>
+
+        <h2 class="error-code">403</h2>
+        <h3 class="error-title mb-3">Yetkisiz Rol Erişimi</h3>
+
+        <p class="error-description mb-4">
+            Bu panele erişim yetkiniz bulunmamaktadır. SOCAR Dispatch Operatör Paneli 
+            yalnızca <strong>Operatör (Operator)</strong> rolüne sahip yetkili personeller tarafından kullanılabilir.
+        </p>
+
+        <div class="d-flex flex-column gap-2">
+            <button class="btn btn-primary btn-relogin" @onclick="HandleLogoutAndLogin">
+                🔑 Farklı Bir Hesap İle Giriş Yap
+            </button>
+
+            <button class="btn btn-outline-light btn-back" @onclick="GoToLogin">
+                ← Giriş Sayfasına Dön
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .access-denied-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #7f1d1d 100%);
+        padding: 1.5rem;
+    }
+
+    .access-denied-card {
+        width: 100%;
+        max-width: 460px;
+        background: rgba(30, 41, 59, 0.9);
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        border-radius: 16px;
+        padding: 2.5rem 2rem;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        color: #f8fafc;
+    }
+
+    .warning-icon-wrapper {
+        width: 72px;
+        height: 72px;
+        background: rgba(239, 68, 68, 0.15);
+        border: 2px solid rgba(239, 68, 68, 0.4);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+    }
+
+    .warning-icon {
+        font-size: 2.2rem;
+    }
+
+    .error-code {
+        font-size: 3rem;
+        font-weight: 800;
+        color: #ef4444;
+        margin: 0;
+        line-height: 1;
+    }
+
+    .error-title {
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: #ffffff;
+    }
+
+    .error-description {
+        color: #94a3b8;
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+
+    .btn-relogin {
+        background: linear-gradient(135deg, #00875a 0%, #006644 100%);
+        border: none;
+        padding: 0.75rem;
+        font-weight: 600;
+        border-radius: 8px;
+        color: #ffffff;
+    }
+
+    .btn-relogin:hover {
+        background: linear-gradient(135deg, #009e6a 0%, #007a52 100%);
+    }
+
+    .btn-back {
+        border-color: #334155;
+        color: #cbd5e1;
+        padding: 0.75rem;
+        border-radius: 8px;
+    }
+
+    .btn-back:hover {
+        background: rgba(51, 65, 85, 0.5);
+        color: #ffffff;
+    }
+</style>
+
+@code {
+    private async Task HandleLogoutAndLogin()
+    {
+        await AuthService.LogoutAsync();
+        NavigationManager.NavigateTo("login");
+    }
+
+    private void GoToLogin()
+    {
+        NavigationManager.NavigateTo("login");
+    }
+}
