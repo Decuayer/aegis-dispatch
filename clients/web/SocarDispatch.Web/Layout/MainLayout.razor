@@ -1,4 +1,5 @@
 @inherits LayoutComponentBase
+@using SocarDispatch.Web.Components.Common
 @inject IJSRuntime JS
 
 <div class="page">
@@ -12,6 +13,12 @@
                 <span class="topbar-title">Dispatch Control Panel</span>
             </div>
             <div class="topbar-right">
+                <AuthorizeView Roles="Operator">
+                    <Authorized>
+                        <HubConnectionStatusBadge />
+                    </Authorized>
+                </AuthorizeView>
+
                 <button class="btn-theme-toggle" @onclick="ToggleTheme" title="Toggle theme" aria-label="Toggle light/dark theme">
                     @if (_isDark)
                     {
@@ -43,6 +50,9 @@
         <article class="page-content">
             @Body
         </article>
+            
+        <!-- 🍞 Global Toast Bildirim Konteyneri -->
+        <ToastContainer />
     </main>
 </div>
 

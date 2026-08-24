@@ -56,9 +56,22 @@ public class MapService : IMapService
     public async Task PanToLocationAsync(double lat, double lng, int zoom = 15)
         => await _js.InvokeVoidAsync("leafletMap.panToLocation", lat, lng, zoom);
 
-    public async Task SetDotNetReferenceAsync(DotNetObjectReference<object> dotNetRef)
+    public async Task SetDotNetReferenceAsync<T>(DotNetObjectReference<T> dotNetRef) where T : class
         => await _js.InvokeVoidAsync("leafletMap.setDotNetRef", dotNetRef);
 
     public async Task DestroyMapAsync()
         => await _js.InvokeVoidAsync("leafletMap.destroyMap");
+
+    public async Task UpdateIncidentStatusAsync(Guid incidentId, string newStatus)
+    => await _js.InvokeVoidAsync("leafletMap.updateIncidentStatus", incidentId.ToString(), newStatus);
+
+    public async Task AnimateTeamMarkerAsync(Guid teamId, double lat, double lng)
+        => await _js.InvokeVoidAsync("leafletMap.animateTeamMarker", teamId.ToString(), lat, lng);
+
+    public async Task UpdateTeamStatusAsync(Guid teamId, string newStatus)
+        => await _js.InvokeVoidAsync("leafletMap.updateTeamStatus", teamId.ToString(), newStatus);
+
+    public async Task UpdateIncidentAssignmentAsync(Guid incidentId, Guid teamId, string teamName)
+        => await _js.InvokeVoidAsync("leafletMap.updateIncidentAssignment", incidentId.ToString(), teamId.ToString(), teamName);
+
 }

@@ -1,8 +1,11 @@
 @page "/"
 @page "/dashboard"
 @attribute [Authorize(Roles = "Operator")]
-@inject IAuthService AuthService
-@inject IConfiguration Config
+@using SocarDispatch.Web.Services.SignalR
+@using SocarDispatch.Web.Events
+@inject IIncidentHubClient IncidentHub
+@inject HttpClient Http
+@implements IDisposable
 
 <PageTitle>Dashboard — SOCAR Dispatch</PageTitle>
 
@@ -11,29 +14,62 @@
         <h1 class="dash-title">Overview</h1>
         <p class="dash-sub">Real-time emergency dispatch and field team status</p>
     </div>
-    <div class="badge-status-active">System Active</div>
 </div>
 
-<!-- Key metrics -->
+<!-- Dinamik Anahtar Metrikler (Key Metrics) -->
 <div class="dash-stats">
+    <!-- 1. Aktif Olaylar -->
     <div class="stat-card">
         <div class="stat-label">Active Incidents</div>
-        <div class="stat-value danger">3</div>
-        <div class="stat-hint">2 critical, 1 moderate</div>
+        <div class="stat-value danger">
+            @if (_isLoading)
+            {
+                <span class="stat-loading">...</span>
+            }
+            else
+            {
+                @_activeIncidents
+            }
+        </div>
+        <div class="stat-hint">Requires immediate action</div>
     </div>
+
+    <!-- 2. Göreve Hazır (Müsait) Ekipler -->
     <div class="stat-card">
         <div class="stat-label">Available Teams</div>
-        <div class="stat-value success">8</div>
+        <div class="stat-value success">
+            @if (_isLoading)
+            {
+                <span class="stat-loading">...</span>
+            }
+            else
+            {
+                @_availableTeams
+            }
+        </div>
         <div class="stat-hint">Ready to dispatch</div>
     </div>
+
+    <!-- 3. Yönlendirilen / Olay Yerindeki Ekipler -->
     <div class="stat-card">
-        <div class="stat-label">Dispatched</div>
-        <div class="stat-value warning">2</div>
-        <div class="stat-hint">En route to site</div>
+        <div class="stat-label">Dispatched Teams</div>
+        <div class="stat-value warning">
+            @if (_isLoading)
+            {
+                <span class="stat-loading">...</span>
+            }
+            else
+            {
+                @_dispatchedTeams
+            }
+        </div>
+        <div class="stat-hint">En route or on-scene</div>
     </div>
+
+    <!-- 4. Ortalama Müdahale Süresi -->
     <div class="stat-card">
         <div class="stat-label">Avg. Response Time</div>
-        <div class="stat-value">4.2 min</div>
+        <div class="stat-value">@_avgResponseTime</div>
         <div class="stat-hint">Last 24 hours</div>
     </div>
 </div>
@@ -46,30 +82,106 @@
     </div>
     <LeafletMap
         Height="580px"
-        ApiBaseUrl="@_apiBaseUrl"
-        JwtToken="@_jwtToken"
         OnIncidentDetailRequested="HandleIncidentDetail"
         OnAssignTeamRequested="HandleAssignTeam" />
 </div>
 
 @code {
-    private string _apiBaseUrl = string.Empty;
-    private string _jwtToken = string.Empty;
+    private int _activeIncidents = 0;
+    private int _availableTeams = 0;
+    private int _dispatchedTeams = 0;
+    private string _avgResponseTime = "4.2 min";
+    private bool _isLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
-        _apiBaseUrl = Config["ApiBaseUrl"] ?? "http://localhost:5233";
-        _jwtToken = await AuthService.GetTokenAsync() ?? string.Empty;
+        // 1. REST API üzerinden mevcut istatistikleri çek
+        await LoadDashboardStatsAsync();
+
+        // 2. SignalR Canlı Olay Dinleyicilerine Abone Ol
+        IncidentHub.OnNewIncidentReceived += HandleNewIncident;
+        IncidentHub.OnIncidentStatusChanged += HandleIncidentStatusChanged;
+        IncidentHub.OnTeamDispatched += HandleTeamDispatched;
     }
 
+    private async Task LoadDashboardStatsAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            // Aktif Olay Sayısını Çek (Status=Open veya InProgress)
+            var incidentsResponse = await Http.GetFromJsonAsync<ApiResponse<List<MapIncidentDto>>>("api/v1/incidents?status=Open");
+            if (incidentsResponse?.Data != null)
+            {
+                _activeIncidents = incidentsResponse.Data.Count;
+            }
+
+            // Ekipleri Çek ve Durumlarına Göre Say
+            var teamsResponse = await Http.GetFromJsonAsync<ApiResponse<List<MapTeamDto>>>("api/v1/teams");
+            if (teamsResponse?.Data != null)
+            {
+                _availableTeams = teamsResponse.Data.Count(t => t.Status == "Idle");
+                _dispatchedTeams = teamsResponse.Data.Count(t => t.Status is "Forwarded" or "OnScene" or "Busy");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[Dashboard] Failed to load dashboard stats: {ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    // ──────────────────────────────────────────────
+    // SignalR Canlı Sayaç Güncellemeleri
+    // ──────────────────────────────────────────────
+    private void HandleNewIncident(object? sender, NewIncidentReceivedEventArgs e)
+    {
+        _activeIncidents++;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void HandleIncidentStatusChanged(object? sender, IncidentStatusChangedEventArgs e)
+    {
+        // Olay çözüldüyse veya iptal edildiyse aktif olay sayacını düşür
+        if (e.Status is "Resolved" or "Canceled" && e.PreviousStatus is not ("Resolved" or "Canceled"))
+        {
+            _activeIncidents = Math.Max(0, _activeIncidents - 1);
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void HandleTeamDispatched(object? sender, TeamDispatchedEventArgs e)
+    {
+        // Bir ekip görevlendirildiğinde: Müsait ekip sayısı -1, Yönlendirilen ekip sayısı +1
+        _availableTeams = Math.Max(0, _availableTeams - 1);
+        _dispatchedTeams++;
+        InvokeAsync(StateHasChanged);
+    }
+
+    // ──────────────────────────────────────────────
+    // Harita Geri Çağırmaları (Popup Butonları)
+    // ──────────────────────────────────────────────
     private void HandleIncidentDetail(Guid incidentId)
     {
-        Console.WriteLine($"Incident detail requested: {incidentId}");
+        Console.WriteLine($"[Dashboard] Incident detail requested for: {incidentId}");
     }
 
     private void HandleAssignTeam(Guid incidentId)
     {
-        Console.WriteLine($"Assign team requested for: {incidentId}");
+        Console.WriteLine($"[Dashboard] Assign team requested for: {incidentId}");
+    }
+
+    // ──────────────────────────────────────────────
+    // Bellek Temizliği (Unsubscribe)
+    // ──────────────────────────────────────────────
+    public void Dispose()
+    {
+        IncidentHub.OnNewIncidentReceived -= HandleNewIncident;
+        IncidentHub.OnIncidentStatusChanged -= HandleIncidentStatusChanged;
+        IncidentHub.OnTeamDispatched -= HandleTeamDispatched;
     }
 }
 
@@ -107,6 +219,12 @@
         border-radius: 8px;
         padding: 16px 20px;
         box-shadow: var(--shadow-sm);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
     }
 
     .stat-label {
@@ -129,6 +247,11 @@
     .stat-value.danger  { color: var(--color-danger); }
     .stat-value.success { color: var(--color-success); }
     .stat-value.warning { color: var(--color-warning); }
+
+    .stat-loading {
+        font-size: 20px;
+        opacity: 0.5;
+    }
 
     .stat-hint {
         font-size: 12px;
