@@ -3,6 +3,7 @@ using dotenv.net;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using Microsoft.EntityFrameworkCore;
 using SocarDispatch.API.Middlewares;
 using SocarDispatch.Application;
 using SocarDispatch.Infrastructure;
@@ -131,10 +132,11 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 
-// Seed Default Teams if database has no teams
+// Auto Migrate and Seed Default Teams if database has no teams
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<SocarDispatch.Infrastructure.Persistence.ApplicationDbContext>();
+    context.Database.Migrate();
     if (!context.Teams.Any())
     {
         context.Teams.AddRange(
