@@ -10,7 +10,6 @@ window.leafletMap = (function () {
     // Severity rengine göre EmergencyCode'dan renk al
     // ──────────────────────────────────────────────
     function getIncidentColor(emergencyCode) {
-        // Backend'de EmergencyCode serbest metin. Mantıksal renk eşlemesi:
         const code = (emergencyCode || '').toLowerCase();
         if (code.includes('kirmizi') || code.includes('red') || code.includes('1'))
             return '#ef4444';
@@ -99,7 +98,7 @@ window.leafletMap = (function () {
         });
         map.addLayer(incidentClusterGroup);
 
-        // Normal layer group — team'ler için (cluster'ı uygun olmaz, her zaman görünür olmalı)
+        // Normal layer group — team'ler için
         teamLayerGroup = L.layerGroup().addTo(map);
 
         // Layer Control
@@ -111,33 +110,21 @@ window.leafletMap = (function () {
     }
 
     // ──────────────────────────────────────────────
-    // Incident marker ekle
+    // Yardımcı: Incident Popup HTML Şablonu Üretici
     // ──────────────────────────────────────────────
-    function addIncidentMarker(incident) {
-        if (!map) return;
-
-        const { id, lat, lng, category, emergencyCode, reporterFullName, status, createdAt, assignedTeamName } = incident;
-
-        // Zaten varsa güncelle
-        if (incidentMarkers[id]) {
-            incidentMarkers[id].setLatLng([lat, lng]);
-            return;
-        }
-
-        const marker = L.marker([lat, lng], {
-            icon: createIncidentIcon(emergencyCode),
-            title: `${category} — ${emergencyCode}`
-        });
-
+    function createIncidentPopupHtml(data) {
+        const { id, category, emergencyCode, reporterFullName, status, createdAt, assignedTeamName } = data;
         const formattedDate = new Date(createdAt).toLocaleString('tr-TR');
+        const color = getIncidentColor(emergencyCode);
+
         const teamInfo = assignedTeamName
             ? `<div class="lf-popup-row"><span class="lf-label">Assigned Team:</span> <span class="lf-value">${assignedTeamName}</span></div>`
             : `<div class="lf-popup-row lf-unassigned">No team assigned yet</div>`;
 
-        marker.bindPopup(`
+        return `
           <div class="lf-popup">
-            <div class="lf-popup-header" style="border-color: ${getIncidentColor(emergencyCode)}">
-              <span class="lf-emergency-badge" style="background:${getIncidentColor(emergencyCode)}">${emergencyCode}</span>
+            <div class="lf-popup-header" style="border-color: ${color}">
+              <span class="lf-emergency-badge" style="background:${color}">${emergencyCode}</span>
               <strong>${category}</strong>
             </div>
             <div class="lf-popup-body">
@@ -151,25 +138,48 @@ window.leafletMap = (function () {
               <button class="lf-btn-ghost" onclick="window.leafletMap.onAssignTeamClick('${id}')">Assign Team</button>
             </div>
           </div>
-        `, { maxWidth: 280, className: 'lf-custom-popup' });
+        `;
+    }
+
+    // ──────────────────────────────────────────────
+    // Incident marker ekle
+    // ──────────────────────────────────────────────
+    function addIncidentMarker(incident) {
+        if (!map) return;
+        const { id, lat, lng, category, emergencyCode } = incident;
+
+        if (incidentMarkers[id]) {
+            incidentMarkers[id].setLatLng([lat, lng]);
+            return;
+        }
+
+        const marker = L.marker([lat, lng], {
+            icon: createIncidentIcon(emergencyCode),
+            title: `${category} — ${emergencyCode}`
+        });
+
+        marker._incidentData = { ...incident };
+
+        marker.bindPopup(createIncidentPopupHtml(incident), { 
+            maxWidth: 280, 
+            className: 'lf-custom-popup' 
+        });
 
         incidentClusterGroup.addLayer(marker);
         incidentMarkers[id] = marker;
     }
 
     // ──────────────────────────────────────────────
-    // Team marker ekle / güncelle
+    // Team marker ekle / güncelle (Geri Getirilen Fonksiyon)
     // ──────────────────────────────────────────────
     function addTeamMarker(team) {
         if (!map) return;
         const { id, teamName, status, lat, lng, updatedAt } = team;
 
-        if (!lat || !lng) return; // Koordinat yoksa çizme
+        if (!lat || !lng) return;
 
         if (teamMarkers[id]) {
-            // Smooth pan — setLatLng ile mevcut marker'ı güncelle
             teamMarkers[id].setLatLng([lat, lng]);
-            // İkon rengi de status'e göre güncelle
             teamMarkers[id].setIcon(createTeamIcon(status));
             teamMarkers[id].setTooltipContent(`
                 <div class="lf-tooltip">
@@ -186,6 +196,8 @@ window.leafletMap = (function () {
             title: teamName
         });
 
+        marker._teamData = { ...team };
+
         marker.bindTooltip(`
             <div class="lf-tooltip">
               <strong>${teamName}</strong>
@@ -196,6 +208,42 @@ window.leafletMap = (function () {
 
         teamLayerGroup.addLayer(marker);
         teamMarkers[id] = marker;
+    }
+
+    // ──────────────────────────────────────────────
+    // 6.1 Smooth Team Marker Animasyonu (GPS Geçişi)
+    // ──────────────────────────────────────────────
+    function animateTeamMarker(teamId, targetLat, targetLng) {
+        const marker = teamMarkers[teamId];
+        if (!marker) return;
+
+        if (marker._animFrameId) {
+            cancelAnimationFrame(marker._animFrameId);
+        }
+
+        const start = marker.getLatLng();
+        const duration = 1000; // 1 saniye geçiş süresi
+        const startTime = performance.now();
+
+        function animate(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+
+            const easeOut = 1 - Math.pow(1 - progress, 3);
+
+            const currentLat = start.lat + (targetLat - start.lat) * easeOut;
+            const currentLng = start.lng + (targetLng - start.lng) * easeOut;
+
+            marker.setLatLng([currentLat, currentLng]);
+
+            if (progress < 1) {
+                marker._animFrameId = requestAnimationFrame(animate);
+            } else {
+                marker._animFrameId = null;
+            }
+        }
+
+        marker._animFrameId = requestAnimationFrame(animate);
     }
 
     // ──────────────────────────────────────────────
@@ -212,6 +260,60 @@ window.leafletMap = (function () {
         if (teamMarkers[teamId]) {
             teamLayerGroup.removeLayer(teamMarkers[teamId]);
             delete teamMarkers[teamId];
+        }
+    }
+
+    // ──────────────────────────────────────────────
+    // 6.2 Incident Status Güncelleme
+    // ──────────────────────────────────────────────
+    function updateIncidentStatus(incidentId, newStatus) {
+        const marker = incidentMarkers[incidentId];
+        if (!marker) return;
+
+        if (newStatus === 'Resolved' || newStatus === 'Canceled') {
+            removeIncidentMarker(incidentId);
+            return;
+        }
+
+        if (marker._incidentData) {
+            marker._incidentData.status = newStatus;
+            marker.setPopupContent(createIncidentPopupHtml(marker._incidentData));
+        }
+    }
+
+    // ──────────────────────────────────────────────
+    // 6.3 Team Status Güncelleme
+    // ──────────────────────────────────────────────
+    function updateTeamStatus(teamId, newStatus) {
+        const marker = teamMarkers[teamId];
+        if (!marker) return;
+
+        marker.setIcon(createTeamIcon(newStatus));
+
+        if (marker._teamData) {
+            marker._teamData.status = newStatus;
+            marker._teamData.updatedAt = new Date().toISOString();
+
+            marker.setTooltipContent(`
+                <div class="lf-tooltip">
+                  <strong>${marker._teamData.teamName}</strong>
+                  <span class="lf-status-badge lf-status-${newStatus.toLowerCase()}">${newStatus}</span>
+                  <small>Updated: ${new Date().toLocaleTimeString('tr-TR')}</small>
+                </div>
+            `);
+        }
+    }
+
+    // ──────────────────────────────────────────────
+    // 6.4 Incident Atanmış Ekip Güncelleme
+    // ──────────────────────────────────────────────
+    function updateIncidentAssignment(incidentId, teamId, teamName) {
+        const marker = incidentMarkers[incidentId];
+        if (!marker) return;
+
+        if (marker._incidentData) {
+            marker._incidentData.assignedTeamName = teamName;
+            marker.setPopupContent(createIncidentPopupHtml(marker._incidentData));
         }
     }
 
@@ -264,6 +366,10 @@ window.leafletMap = (function () {
         initMap,
         addIncidentMarker,
         addTeamMarker,
+        animateTeamMarker,
+        updateIncidentStatus,
+        updateTeamStatus,
+        updateIncidentAssignment,
         removeIncidentMarker,
         removeTeamMarker,
         panToIncident,

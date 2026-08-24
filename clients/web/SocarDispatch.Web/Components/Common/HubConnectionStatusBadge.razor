@@ -1,0 +1,155 @@
+@* Components/Common/HubConnectionStatusBadge.razor *@
+@using Microsoft.AspNetCore.SignalR.Client
+@using SocarDispatch.Web.Services.SignalR
+@inject IIncidentHubClient IncidentHub
+@inject ILocationHubClient LocationHub
+@implements IDisposable
+
+<div class="hub-status-badge @_statusCssClass" title="@_tooltipText" role="status" aria-live="polite">
+    <span class="hub-status-dot"></span>
+    <span class="hub-status-text">@_statusText</span>
+</div>
+
+@code {
+    private string _statusText = "Connecting";
+    private string _statusCssClass = "status-connecting";
+    private string _tooltipText = "Dispatch sunucularına bağlanılıyor...";
+
+    private HubConnectionState _incidentState = HubConnectionState.Disconnected;
+    private HubConnectionState _locationState = HubConnectionState.Disconnected;
+
+    protected override void OnInitialized()
+    {
+        // 1. Bileşen ilk yüklendiğinde servislerin o anki mevcut durumunu oku
+        _incidentState = IncidentHub.ConnectionState;
+        _locationState = LocationHub.ConnectionState;
+        UpdateBadge();
+
+        // 2. Durum değişiklik event'lerine abone ol
+        IncidentHub.OnConnectionStateChanged += HandleIncidentStateChanged;
+        LocationHub.OnConnectionStateChanged += HandleLocationStateChanged;
+    }
+
+    private void HandleIncidentStateChanged(object? sender, HubConnectionState state)
+    {
+        _incidentState = state;
+        UpdateBadge();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void HandleLocationStateChanged(object? sender, HubConnectionState state)
+    {
+        _locationState = state;
+        UpdateBadge();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void UpdateBadge()
+    {
+        // İki hub da bağlıysa: LIVE (Yeşil)
+        if (_incidentState == HubConnectionState.Connected && _locationState == HubConnectionState.Connected)
+        {
+            _statusText = "Live";
+            _statusCssClass = "status-connected";
+            _tooltipText = "Gerçek zamanlı olay ve konum bağlantısı aktif.";
+        }
+        // Herhangi bir hub yeniden bağlanmaya çalışıyorsa: RECONNECTING (Sarı)
+        else if (_incidentState == HubConnectionState.Reconnecting || _locationState == HubConnectionState.Reconnecting)
+        {
+            _statusText = "Reconnecting";
+            _statusCssClass = "status-reconnecting";
+            _tooltipText = "Bağlantı kesildi, yeniden bağlanılıyor...";
+        }
+        // Herhangi biri ilk bağlanma aşamasındaysa: CONNECTING
+        else if (_incidentState == HubConnectionState.Connecting || _locationState == HubConnectionState.Connecting)
+        {
+            _statusText = "Connecting";
+            _statusCssClass = "status-connecting";
+            _tooltipText = "Sunucu ile bağlantı kuruluyor...";
+        }
+        // Diğer durumlar: OFFLINE (Kırmızı)
+        else
+        {
+            _statusText = "Offline";
+            _statusCssClass = "status-disconnected";
+            _tooltipText = "Canlı bağlantı koptu. Ağınızı veya sunucu durumunu kontrol edin.";
+        }
+    }
+
+    public void Dispose()
+    {
+        // Event aboneliklerini kaldır
+        IncidentHub.OnConnectionStateChanged -= HandleIncidentStateChanged;
+        LocationHub.OnConnectionStateChanged -= HandleLocationStateChanged;
+    }
+}
+
+<style>
+    .hub-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        border: 1px solid transparent;
+        user-select: none;
+        transition: all 0.25s ease-in-out;
+    }
+
+    .hub-status-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    /* 🟢 Connected / Live Durumu */
+    .status-connected {
+        background: rgba(34, 197, 94, 0.12);
+        color: #22c55e;
+        border-color: rgba(34, 197, 94, 0.25);
+    }
+    .status-connected .hub-status-dot {
+        background-color: #22c55e;
+        box-shadow: 0 0 6px #22c55e;
+        animation: hub-pulse 2s infinite ease-in-out;
+    }
+
+    /* 🟡 Reconnecting / Connecting Durumu */
+    .status-reconnecting, .status-connecting {
+        background: rgba(245, 158, 11, 0.12);
+        color: #f59e0b;
+        border-color: rgba(245, 158, 11, 0.25);
+    }
+    .status-reconnecting .hub-status-dot, .status-connecting .hub-status-dot {
+        background-color: #f59e0b;
+        box-shadow: 0 0 6px #f59e0b;
+        animation: hub-blink 1s infinite ease-in-out;
+    }
+
+    /* 🔴 Disconnected / Offline Durumu */
+    .status-disconnected {
+        background: rgba(239, 68, 68, 0.12);
+        color: #ef4444;
+        border-color: rgba(239, 68, 68, 0.25);
+    }
+    .status-disconnected .hub-status-dot {
+        background-color: #ef4444;
+        box-shadow: 0 0 6px #ef4444;
+    }
+
+    /* Animasyonlar */
+    @@keyframes hub-pulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.3); opacity: 0.6; }
+    }
+
+    @@keyframes hub-blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.2; }
+    }
+</style>

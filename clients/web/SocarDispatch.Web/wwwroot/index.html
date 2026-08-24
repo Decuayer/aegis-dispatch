@@ -36,7 +36,29 @@
     <link rel="icon" type="image/png" href="favicon.png" />
     <link href="SocarDispatch.Web.styles.css" rel="stylesheet" />
 </head>
-
+<script>
+    window.socarAudio = {
+        playEmergencyBeep: function () {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                // Çift tonlu acil durum sinyali (A5 -> D6)
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime); // 880 Hz
+                osc.frequency.setValueAtTime(1174.66, audioCtx.currentTime + 0.12); // 1174 Hz
+                gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.35);
+            } catch (e) {
+                console.warn("[Audio] Sound play blocked or unsupported:", e);
+            }
+        }
+    };
+</script>
 <body>
     <div id="app">
         <svg class="loading-progress">

@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using SocarDispatch.Web;
 using SocarDispatch.Web.Auth;
 using SocarDispatch.Web.Handlers;
+using SocarDispatch.Web.Services;
+using SocarDispatch.Web.Services.SignalR;
+
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
@@ -40,5 +43,13 @@ builder.Services.AddAuthorizationCore();
 
 // 6. Harita Servisi (Leaflet)
 builder.Services.AddScoped<SocarDispatch.Web.Services.IMapService, SocarDispatch.Web.Services.MapService>();
+
+// 7. SignalR Hub Client Servisleri
+builder.Services.AddScoped<IIncidentHubClient, IncidentHubClient>();
+builder.Services.AddScoped<ILocationHubClient, LocationHubClient>();
+
+// Toast Servisi
+builder.Services.AddScoped<IToastService, ToastService>();
+
 
 await builder.Build().RunAsync();
