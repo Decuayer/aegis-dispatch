@@ -1,0 +1,376 @@
+@* Components/Dispatch/TeamSelectionList.razor *@
+@using SocarDispatch.Web.Models.Dispatch
+@using SocarDispatch.Web.Utils
+
+<div class="team-selection-wrapper">
+    <!-- Filter Tabs & Search -->
+    <div class="roster-toolbar">
+        <div class="roster-tabs">
+            <button type="button" class="tab-btn @(_activeFilter == "ALL" ? "active" : "")" @onclick='() => SetFilter("ALL")'>
+                All (@Teams.Count)
+            </button>
+            <button type="button" class="tab-btn tab-idle @(_activeFilter == "IDLE" ? "active" : "")" @onclick='() => SetFilter("IDLE")'>
+                Available (@Teams.Count(t => t.Status.Equals("Idle", StringComparison.OrdinalIgnoreCase)))
+            </button>
+            <button type="button" class="tab-btn tab-dispatched @(_activeFilter == "DISPATCHED" ? "active" : "")" @onclick='() => SetFilter("DISPATCHED")'>
+                Dispatched (@Teams.Count(t => t.Status is "Forwarded" or "OnScene"))
+            </button>
+            <button type="button" class="tab-btn tab-busy @(_activeFilter == "BUSY" ? "active" : "")" @onclick='() => SetFilter("BUSY")'>
+                Busy (@Teams.Count(t => t.Status.Equals("Busy", StringComparison.OrdinalIgnoreCase)))
+            </button>
+        </div>
+
+        <div class="roster-search">
+            <input type="text" 
+                   class="search-input" 
+                   placeholder="Search team or leader..." 
+                   @bind="_searchQuery" 
+                   @bind:event="oninput" />
+        </div>
+    </div>
+
+    <!-- Teams Roster Cards -->
+    <div class="roster-list">
+        @if (!FilteredAndSortedTeams.Any())
+        {
+            <div class="no-teams-box">
+                <p>No response teams match the selected criteria.</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var item in FilteredAndSortedTeams)
+            {
+                var isSelected = SelectedTeamId.HasValue && SelectedTeamId.Value == item.Team.Id;
+                var isIdle = item.Team.Status.Equals("Idle", StringComparison.OrdinalIgnoreCase);
+
+                <div class="team-card @(isSelected ? "selected" : "") @(!isIdle ? "disabled-team" : "")"
+                     @onclick="() => SelectTeam(item.Team)">
+                    
+                    <div class="team-card-header">
+                        <div class="team-title-row">
+                            <span class="team-name">@item.Team.TeamName</span>
+                            <span class="team-status-badge @item.StatusBadgeClass">@item.Team.Status</span>
+                        </div>
+                        <div class="team-meta">
+                            <span class="meta-item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="12" cy="7" r="4"/>
+                                </svg>
+                                @(string.IsNullOrWhiteSpace(item.Team.LeaderFullName) ? "Unassigned Leader" : item.Team.LeaderFullName)
+                            </span>
+                            <span class="meta-item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="9" cy="7" r="4"/>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                                </svg>
+                                @item.Team.Members.Count members
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="team-card-footer">
+                        <div class="proximity-indicator">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                                <circle cx="12" cy="10" r="3"/>
+                            </svg>
+                            <span class="distance-text">@item.DistanceFormatted</span>
+                        </div>
+
+                        <div class="selection-indicator">
+                            @if (isSelected)
+                            {
+                                <span class="selected-badge">✓ Selected</span>
+                            }
+                            else if (!isIdle)
+                            {
+                                <span class="unavailable-hint">Unavailable</span>
+                            }
+                            else
+                            {
+                                <span class="select-hint">Click to select</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public List<TeamDto> Teams { get; set; } = new();
+    [Parameter] public decimal IncidentLat { get; set; }
+    [Parameter] public decimal IncidentLng { get; set; }
+    [Parameter] public Guid? SelectedTeamId { get; set; }
+    [Parameter] public EventCallback<TeamDto> OnTeamSelected { get; set; }
+
+    private string _activeFilter = "IDLE"; // Defaults to available teams
+    private string _searchQuery = string.Empty;
+
+    private record TeamWithDistance(TeamDto Team, double? DistanceInMeters, string DistanceFormatted, string StatusBadgeClass);
+
+    private IEnumerable<TeamWithDistance> FilteredAndSortedTeams
+    {
+        get
+        {
+            var query = Teams.AsEnumerable();
+
+            // Status filter
+            query = _activeFilter switch
+            {
+                "IDLE" => query.Where(t => t.Status.Equals("Idle", StringComparison.OrdinalIgnoreCase)),
+                "DISPATCHED" => query.Where(t => t.Status is "Forwarded" or "OnScene"),
+                "BUSY" => query.Where(t => t.Status.Equals("Busy", StringComparison.OrdinalIgnoreCase)),
+                _ => query
+            };
+
+            // Search query filter
+            if (!string.IsNullOrWhiteSpace(_searchQuery))
+            {
+                var q = _searchQuery.Trim().ToLower();
+                query = query.Where(t =>
+                    t.TeamName.ToLower().Contains(q) ||
+                    (!string.IsNullOrEmpty(t.LeaderFullName) && t.LeaderFullName.ToLower().Contains(q)));
+            }
+
+            // Calculate distance & map
+            var mapped = query.Select(t =>
+            {
+                var dist = GeoUtils.CalculateDistanceInMeters(
+                    IncidentLat, 
+                    IncidentLng, 
+                    t.CurrentLatitude, 
+                    t.CurrentLongitude);
+
+                var formatted = dist.HasValue
+                    ? (dist.Value < 1000 ? $"{Math.Round(dist.Value)} m" : $"{(dist.Value / 1000.0):F1} km")
+                    : "GPS unavailable";
+
+                var badgeClass = t.Status.ToLowerInvariant() switch
+                {
+                    "idle" => "badge-idle",
+                    "forwarded" => "badge-forwarded",
+                    "onscene" => "badge-onscene",
+                    "busy" => "badge-busy",
+                    _ => "badge-default"
+                };
+
+                return new TeamWithDistance(t, dist, formatted, badgeClass);
+            });
+
+            // Sort: Closest distance first, teams with null distance at the end
+            return mapped
+                .OrderBy(x => x.DistanceInMeters.HasValue ? 0 : 1)
+                .ThenBy(x => x.DistanceInMeters ?? double.MaxValue);
+        }
+    }
+
+    private void SetFilter(string filter)
+    {
+        _activeFilter = filter;
+    }
+
+    private async Task SelectTeam(TeamDto team)
+    {
+        if (!team.Status.Equals("Idle", StringComparison.OrdinalIgnoreCase))
+        {
+            return; // Prevent selecting non-idle teams
+        }
+
+        await OnTeamSelected.InvokeAsync(team);
+    }
+}
+
+<style>
+    .team-selection-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .roster-toolbar {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .roster-tabs {
+        display: flex;
+        gap: 4px;
+        background-color: var(--color-surface-2);
+        padding: 3px;
+        border-radius: 8px;
+        border: 1px solid var(--color-border);
+        overflow-x: auto;
+    }
+
+    .tab-btn {
+        flex: 1;
+        background: transparent;
+        border: none;
+        padding: 6px 8px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--color-text-muted);
+        border-radius: 6px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.15s ease;
+    }
+
+    .tab-btn:hover {
+        color: var(--color-text-primary);
+    }
+
+    .tab-btn.active {
+        background-color: var(--color-surface);
+        color: var(--color-text-primary);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .roster-search .search-input {
+        width: 100%;
+        padding: 7px 12px;
+        font-size: 12px;
+        background-color: var(--color-surface-2);
+        border: 1px solid var(--color-border);
+        border-radius: 6px;
+        color: var(--color-text-primary);
+    }
+
+    .roster-search .search-input:focus {
+        outline: none;
+        border-color: var(--color-accent);
+    }
+
+    .roster-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 280px;
+        overflow-y: auto;
+        padding-right: 2px;
+    }
+
+    .team-card {
+        background-color: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        padding: 10px 12px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .team-card:hover:not(.disabled-team) {
+        border-color: var(--color-accent);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .team-card.selected {
+        border-color: var(--color-accent);
+        background-color: var(--color-accent-muted);
+        box-shadow: 0 0 0 1px var(--color-accent);
+    }
+
+    .team-card.disabled-team {
+        opacity: 0.55;
+        cursor: not-allowed;
+        background-color: var(--color-surface-2);
+    }
+
+    .team-card-header {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .team-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .team-name {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--color-text-primary);
+    }
+
+    .team-meta {
+        display: flex;
+        gap: 12px;
+        font-size: 11px;
+        color: var(--color-text-muted);
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .team-card-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 6px;
+        border-top: 1px solid var(--color-border);
+        font-size: 11px;
+    }
+
+    .proximity-indicator {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        color: var(--color-text-muted);
+        font-weight: 600;
+    }
+
+    .selection-indicator .selected-badge {
+        color: var(--color-accent);
+        font-weight: 700;
+    }
+
+    .selection-indicator .select-hint {
+        color: var(--color-text-subtle);
+    }
+
+    .selection-indicator .unavailable-hint {
+        color: var(--color-danger);
+    }
+
+    .no-teams-box {
+        padding: 20px;
+        text-align: center;
+        color: var(--color-text-muted);
+        font-size: 12px;
+        background-color: var(--color-surface-2);
+        border-radius: 6px;
+        border: 1px dashed var(--color-border);
+    }
+
+    /* Status Badges */
+    .team-status-badge {
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: uppercase;
+        padding: 2px 6px;
+        border-radius: 4px;
+        letter-spacing: 0.4px;
+    }
+
+    .badge-idle { background: rgba(34, 197, 94, 0.15); color: var(--color-success); }
+    .badge-forwarded { background: rgba(59, 130, 246, 0.15); color: var(--color-accent); }
+    .badge-onscene { background: rgba(245, 158, 11, 0.15); color: var(--color-warning); }
+    .badge-busy { background: rgba(239, 68, 68, 0.15); color: var(--color-danger); }
+    .badge-default { background: var(--color-surface-3); color: var(--color-text-muted); }
+</style>
