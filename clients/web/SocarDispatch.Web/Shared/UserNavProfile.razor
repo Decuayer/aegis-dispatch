@@ -4,98 +4,90 @@
 
 <AuthorizeView>
     <Authorized Context="authContext">
-        <div class="user-profile-widget d-flex align-items-center gap-3">
-            <div class="user-avatar-circle">
+        <div class="nav-profile">
+            <div class="nav-profile-avatar">
                 @GetUserInitials(authContext.User)
             </div>
-            <div class="user-details text-end d-none d-md-block">
-                <div class="user-name">@GetUserName(authContext.User)</div>
-                <div class="user-role">
-                    <span class="badge bg-gold">OPERATOR</span>
-                </div>
+            <div class="nav-profile-info">
+                <span class="nav-profile-name">@GetUserName(authContext.User)</span>
+                <span class="badge-role">Operator</span>
             </div>
-            <button class="btn btn-logout ms-2" @onclick="HandleLogout" title="Oturumu Kapat">
-                🚪 <span class="d-none d-sm-inline ms-1">Çıkış Yap</span>
+            <button class="btn btn-danger-ghost nav-signout-btn" @onclick="HandleLogout" title="Sign out">
+                <!-- Logout icon -->
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16 17 21 12 16 7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                Sign Out
             </button>
         </div>
     </Authorized>
 </AuthorizeView>
 
 <style>
-    .user-profile-widget {
-        background: rgba(15, 23, 42, 0.6);
-        padding: 0.4rem 0.8rem;
-        border-radius: 30px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
+    .nav-profile {
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }
 
-    .user-avatar-circle {
-        width: 38px;
-        height: 38px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #00875a 0%, #003366 100%);
-        color: #ffb800;
+    .nav-profile-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        background-color: var(--color-accent);
+        color: #ffffff;
+        font-size: 12px;
         font-weight: 700;
-        font-size: 0.9rem;
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 2px 8px rgba(0, 135, 90, 0.4);
+        flex-shrink: 0;
+        letter-spacing: 0.3px;
     }
 
-    .user-name {
-        color: #f8fafc;
+    .nav-profile-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .nav-profile-name {
+        font-size: 13px;
         font-weight: 600;
-        font-size: 0.875rem;
-        line-height: 1.2;
+        color: var(--color-text-primary);
+        line-height: 1;
     }
 
-    .bg-gold {
-        background-color: #ffb800 !important;
-        color: #0f172a !important;
-        font-weight: 700;
-        font-size: 0.7rem;
-        letter-spacing: 0.5px;
-    }
-
-    .btn-logout {
-        background: rgba(239, 68, 68, 0.15);
-        border: 1px solid rgba(239, 68, 68, 0.3);
-        color: #fca5a5;
-        border-radius: 20px;
-        padding: 0.3rem 0.8rem;
-        font-size: 0.8rem;
-        font-weight: 600;
-        transition: all 0.2s ease;
-    }
-
-    .btn-logout:hover {
-        background: #ef4444;
-        color: #ffffff;
+    .nav-signout-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+        gap: 5px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
     }
 </style>
 
 @code {
     private string GetUserName(ClaimsPrincipal user)
     {
-        var name = user.FindFirst(ClaimTypes.Name)?.Value 
-                ?? user.FindFirst("name")?.Value 
+        var name = user.FindFirst(ClaimTypes.Name)?.Value
+                ?? user.FindFirst("name")?.Value
                 ?? user.Identity?.Name;
-
-        return !string.IsNullOrWhiteSpace(name) ? name : "Dispatch Operator";
+        return !string.IsNullOrWhiteSpace(name) ? name : "Operator";
     }
 
     private string GetUserInitials(ClaimsPrincipal user)
     {
         var name = GetUserName(user);
         if (string.IsNullOrWhiteSpace(name)) return "OP";
-
         var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length >= 2)
-        {
-            return $"{parts[0][0]}{parts[1][0]}".ToUpper();
-        }
-        return name.Substring(0, Math.Min(2, name.Length)).ToUpper();
+        return parts.Length >= 2
+            ? $"{parts[0][0]}{parts[1][0]}".ToUpper()
+            : name[..Math.Min(2, name.Length)].ToUpper();
     }
 
     private async Task HandleLogout()

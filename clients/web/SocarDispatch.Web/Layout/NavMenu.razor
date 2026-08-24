@@ -1,40 +1,66 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand text-gold fw-bold" href="">⚡ SOCAR DISPATCH</a>
-        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+<!-- Sidebar brand / logo -->
+<div class="nav-brand">
+    <div class="nav-brand-mark">
+        <!-- Dispatch / lightning bolt icon -->
+        <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+        </svg>
+    </div>
+    <div>
+        <div class="nav-brand-text">SOCAR Dispatch</div>
+        <div class="nav-brand-sub">Operator Panel</div>
     </div>
 </div>
 
-<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="me-2">📊</span> Kontrol Paneli
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="incidents">
-                <span class="me-2">🔥</span> Olaylar & Sevk
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="teams">
-                <span class="me-2">🚒</span> Saha Ekipleri
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="map">
-                <span class="me-2">🗺️</span> Canlı Harita
-            </NavLink>
-        </div>
-    </nav>
+<!-- Navigation links -->
+<div class="nav-items">
+    <div class="nav-group-label">Main</div>
+
+    <NavLink class="nav-item-link" href="" Match="NavLinkMatch.All">
+        <!-- Grid / Dashboard icon -->
+        <svg viewBox="0 0 24 24">
+            <rect x="3" y="3" width="7" height="7" rx="1"/>
+            <rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="3" y="14" width="7" height="7" rx="1"/>
+            <rect x="14" y="14" width="7" height="7" rx="1"/>
+        </svg>
+        Dashboard
+    </NavLink>
+
+    <NavLink class="nav-item-link" href="incidents">
+        <!-- Alert / Incidents icon -->
+        <svg viewBox="0 0 24 24">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        Incidents
+    </NavLink>
+
+    <NavLink class="nav-item-link" href="teams">
+        <!-- Users / Teams icon -->
+        <svg viewBox="0 0 24 24">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        Teams
+    </NavLink>
+
+    <NavLink class="nav-item-link" href="map">
+        <!-- Map icon -->
+        <svg viewBox="0 0 24 24">
+            <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+            <line x1="8" y1="2" x2="8" y2="18"/>
+            <line x1="16" y1="6" x2="16" y2="22"/>
+        </svg>
+        Live Map
+    </NavLink>
 </div>
 
 @code {
     private bool collapseNavMenu = true;
-
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
 
     private void ToggleNavMenu()
