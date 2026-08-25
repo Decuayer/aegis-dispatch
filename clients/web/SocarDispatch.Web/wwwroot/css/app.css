@@ -1901,56 +1901,69 @@ code {
 
 
 /* =========================================================
-   Dark Mode High-Contrast & Text Legibility Fixes
+   Theme-Adaptive Legibility & High-Contrast Rules
    ========================================================= */
-.text-muted,
-p.text-muted,
-small.text-muted {
-    color: #9ca3af !important; /* Açık ve net okunabilir gri */
-    font-size: 12px;
-}
 
-.section-title {
-    color: #cbd5e1 !important; /* Parlak & net bölüm başlığı */
-    font-weight: 700 !important;
-    font-size: 11px;
-    letter-spacing: 0.6px;
+/* Hem Açık hem Koyu Modda çalışacak genel kurallar */
+.meta-value {
+    color: var(--color-text-primary) !important;
 }
 
 .meta-label {
-    color: #9ca3af !important;
+    color: var(--color-text-muted) !important;
 }
 
-.meta-value {
-    color: #f1f5f9 !important;
+.member-count-badge {
+    color: var(--color-text-primary) !important;
+    background-color: var(--color-surface-2);
+    border: 1px solid var(--color-border);
 }
 
-/* Çekmece ve Kart Kutuları */
-.section-card {
-    background-color: var(--color-surface-2) !important;
-    border: 1px solid var(--color-border-light) !important;
+.section-title {
+    color: var(--color-text-muted);
+    font-weight: 700;
 }
 
-/* Çekmece İçi Aksiyon Butonları (Edit Team, Manage Roster) */
-.drawer-actions-grid .btn-outline-primary {
-    background-color: rgba(59, 130, 246, 0.12) !important;
-    border: 1px solid rgba(59, 130, 246, 0.35) !important;
-    color: #60a5fa !important;
+.form-label {
+    color: var(--color-text-primary);
     font-weight: 600;
 }
 
-.drawer-actions-grid .btn-outline-primary:hover {
+/* Sadece Koyu Mod (Dark Mode) Kontrast İyileştirmeleri */
+[data-theme="dark"] .text-muted,
+[data-theme="dark"] p.text-muted,
+[data-theme="dark"] small.text-muted {
+    color: #9ca3af !important;
+}
+
+[data-theme="dark"] .section-title {
+    color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .drawer-actions-grid .btn-outline-primary {
+    background-color: rgba(59, 130, 246, 0.12) !important;
+    border: 1px solid rgba(59, 130, 246, 0.35) !important;
+    color: #60a5fa !important;
+}
+
+[data-theme="dark"] .drawer-actions-grid .btn-outline-primary:hover {
     background-color: var(--color-accent) !important;
     color: #ffffff !important;
 }
 
-/* Form Kontrolleri & Placeholder Okunabilirliği */
-.form-control::placeholder,
-.search-input::placeholder {
-    color: #64748b !important;
+/* Sadece Açık Mod (Light Mode) Kontrast İyileştirmeleri */
+[data-theme="light"] .text-muted,
+[data-theme="light"] p.text-muted,
+[data-theme="light"] small.text-muted {
+    color: #4b5563 !important;
 }
 
-.form-label {
-    color: #e2e8f0 !important;
-    font-weight: 600;
+[data-theme="light"] .section-title {
+    color: #475569 !important;
+}
+
+[data-theme="light"] .drawer-actions-grid .btn-outline-primary {
+    background-color: rgba(37, 99, 235, 0.06);
+    border: 1px solid rgba(37, 99, 235, 0.3);
+    color: var(--color-accent);
 }
