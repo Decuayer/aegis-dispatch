@@ -72,11 +72,14 @@ window.leafletMap = (function () {
         });
     }
 
+    let mainTileLayer = null;
+
     // Initialize the map
-    function initMap(containerId, lat, lng, zoom) {
+    function initMap(containerId, lat, lng, zoom, tileProvider) {
         if (map) {
             map.remove();
             map = null;
+            mainTileLayer = null;
         }
 
         map = L.map(containerId, {
@@ -86,9 +89,10 @@ window.leafletMap = (function () {
             attributionControl: true
         });
 
-        // OpenStreetMap tile layer
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        // Dynamic tile layer provider
+        const tileUrl = getTileUrl(tileProvider);
+        mainTileLayer = L.tileLayer(tileUrl, {
+            attribution: '© OpenStreetMap contributors',
             maxZoom: 19
         }).addTo(map);
 
@@ -109,6 +113,13 @@ window.leafletMap = (function () {
             "🟢 Field Teams": teamLayerGroup
         };
         L.control.layers(null, overlays, { position: 'topright', collapsed: false }).addTo(map);
+    }
+
+    function updateMainTileLayer(tileProvider) {
+        if (!map || !mainTileLayer) return;
+        map.removeLayer(mainTileLayer);
+        mainTileLayer = L.tileLayer(getTileUrl(tileProvider), { maxZoom: 19 }).addTo(map);
+        mainTileLayer.bringToBack();
     }
 
     // Helper: Incident Popup HTML Template Generator
@@ -297,11 +308,14 @@ window.leafletMap = (function () {
     // Incident Assigned Team Update
     function updateIncidentAssignment(incidentId, teamId, teamName) {
         const marker = incidentMarkers[incidentId];
-        if (!marker) return;
-
-        if (marker._incidentData) {
+        if (marker && marker._incidentData) {
             marker._incidentData.assignedTeamName = teamName;
+            marker._incidentData.status = 'Assigned';
             marker.setPopupContent(createIncidentPopupHtml(marker._incidentData));
+        }
+
+        if (teamId) {
+            updateTeamStatus(teamId, 'Forwarded');
         }
     }
 
@@ -483,6 +497,7 @@ window.leafletMap = (function () {
     // Public API
     return {
         initMap,
+        updateMainTileLayer,
         addIncidentMarker,
         addTeamMarker,
         animateTeamMarker,

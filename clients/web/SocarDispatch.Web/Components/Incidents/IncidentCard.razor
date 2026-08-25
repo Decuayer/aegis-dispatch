@@ -30,11 +30,18 @@
     <div class="card-footer">
         <div class="reporter-info">
             <div class="reporter-avatar-mini">
-                @GetInitials(Incident.ReporterFullName)
+                @if (!string.IsNullOrWhiteSpace(Incident.ReporterAvatarUrl))
+                {
+                    <img src="@Incident.ReporterAvatarUrl" alt="@Incident.ReporterFullName" class="reporter-avatar-mini-img" />
+                }
+                else
+                {
+                    @GetInitials(Incident.ReporterFullName)
+                }
             </div>
             <div class="reporter-meta">
                 <span class="reporter-name">@Incident.ReporterFullName</span>
-                <span class="reporter-role">Reporter</span>
+                <span class="reporter-role">@(!string.IsNullOrWhiteSpace(Incident.ReporterSubRole) ? Incident.ReporterSubRole : (!string.IsNullOrWhiteSpace(Incident.ReporterDepartment) ? Incident.ReporterDepartment : "Field Operations"))</span>
             </div>
         </div>
 
@@ -84,32 +91,38 @@
         }
     }
 
-    private string GetCardSeverityClass(string? code) => code switch
+    private string GetCardSeverityClass(string? code)
     {
-        "Code Red" => "severity-red",
-        "Code Orange" => "severity-orange",
-        "Code Yellow" => "severity-yellow",
-        "Code Green" => "severity-green",
-        _ => ""
-    };
+        var c = (code ?? string.Empty).ToLowerInvariant();
+        if (c.Contains("red") || c.Contains("kirmizi") || c.Contains("1")) return "severity-red";
+        if (c.Contains("orange") || c.Contains("turuncu") || c.Contains("2")) return "severity-orange";
+        if (c.Contains("yellow") || c.Contains("sari") || c.Contains("3")) return "severity-yellow";
+        if (c.Contains("green") || c.Contains("yesil") || c.Contains("4")) return "severity-green";
+        return "";
+    }
 
-    private string GetEmergencyCodeBadgeClass(string? code) => code switch
+    private string GetEmergencyCodeBadgeClass(string? code)
     {
-        "Code Red" => "badge-code-red",
-        "Code Orange" => "badge-code-orange",
-        "Code Yellow" => "badge-code-yellow",
-        "Code Green" => "badge-code-green",
-        _ => "badge-code-default"
-    };
+        var c = (code ?? string.Empty).ToLowerInvariant();
+        if (c.Contains("red") || c.Contains("kirmizi") || c.Contains("1")) return "badge-code-red";
+        if (c.Contains("orange") || c.Contains("turuncu") || c.Contains("2")) return "badge-code-orange";
+        if (c.Contains("yellow") || c.Contains("sari") || c.Contains("3")) return "badge-code-yellow";
+        if (c.Contains("green") || c.Contains("yesil") || c.Contains("4")) return "badge-code-green";
+        return "badge-code-default";
+    }
 
-    private string GetStatusBadgeClass(string? status) => status switch
+    private string GetStatusBadgeClass(string? status)
     {
-        "Open" => "badge-status-open",
-        "Assigned" => "badge-status-assigned",
-        "Resolved" => "badge-status-resolved",
-        "Canceled" => "badge-status-canceled",
-        _ => "badge-status-default"
-    };
+        var s = (status ?? string.Empty).ToLowerInvariant();
+        return s switch
+        {
+            "open" => "badge-status-open",
+            "assigned" => "badge-status-assigned",
+            "resolved" => "badge-status-resolved",
+            "canceled" => "badge-status-canceled",
+            _ => "badge-status-default"
+        };
+    }
 
     private string GetInitials(string? fullName)
     {
@@ -119,3 +132,54 @@
         return $"{parts[0][0]}{parts[^1][0]}".ToUpper();
     }
 }
+
+<style>
+    .reporter-info {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .reporter-avatar-mini {
+        width: 28px;
+        height: 28px;
+        min-width: 28px;
+        border-radius: 50%;
+        background-color: var(--color-accent-muted);
+        color: var(--color-accent);
+        font-size: 11px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .reporter-avatar-mini-img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .reporter-meta {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+    }
+
+    .reporter-name {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--color-text-primary);
+        line-height: 1.2;
+    }
+
+    .reporter-role {
+        font-size: 10px;
+        color: var(--color-text-muted);
+        line-height: 1.2;
+    }
+</style>

@@ -240,6 +240,68 @@ public partial class IncidentSidebar : ComponentBase, IDisposable
     }
 
 
+    private bool _isUpdatingStatus = false;
+    private bool _isStatusModalOpen = false;
+    private string _targetStatus = string.Empty;
+    private string _statusModalTitle = string.Empty;
+    private string _statusNotes = string.Empty;
+
+    private void OpenResolveModal()
+    {
+        _targetStatus = "Resolved";
+        _statusModalTitle = "Resolve Emergency Incident";
+        _statusNotes = string.Empty;
+        _isStatusModalOpen = true;
+    }
+
+    private void OpenCancelModal()
+    {
+        _targetStatus = "Canceled";
+        _statusModalTitle = "Cancel Incident";
+        _statusNotes = string.Empty;
+        _isStatusModalOpen = true;
+    }
+
+    private async Task ReopenIncidentAsync()
+    {
+        await ChangeIncidentStatusAsync("Open", "Incident reopened by operator.");
+    }
+
+    private async Task ConfirmStatusChangeAsync()
+    {
+        _isStatusModalOpen = false;
+        await ChangeIncidentStatusAsync(_targetStatus, _statusNotes);
+    }
+
+    private async Task ChangeIncidentStatusAsync(string targetStatus, string? notes)
+    {
+        if (_incident == null) return;
+        _isUpdatingStatus = true;
+        try
+        {
+            var response = await IncidentService.UpdateStatusAsync(_incident.Id, targetStatus, notes);
+            if (response?.Success == true && response.Data != null)
+            {
+                _incident.Status = response.Data.Status;
+                _incident.CompletionNotes = notes;
+                ToastService.Show("Status Updated", $"Incident status updated to {targetStatus}.", ToastLevel.Success);
+                await OnIncidentAssigned.InvokeAsync(_incident.Id);
+            }
+            else
+            {
+                ToastService.Show("Status Update Failed", response?.Message ?? "Could not update status.", ToastLevel.Danger);
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.Show("Error", ex.Message, ToastLevel.Danger);
+        }
+        finally
+        {
+            _isUpdatingStatus = false;
+        }
+    }
+
     private async Task CloseSidebar()
     {
         IsOpen = false;
@@ -261,9 +323,11 @@ public partial class IncidentSidebar : ComponentBase, IDisposable
     private string GetEmergencyCodeBadgeClass(string code)
     {
         var c = (code ?? string.Empty).ToLowerInvariant();
-        if (c.Contains("1") || c.Contains("red") || c.Contains("kirmizi")) return "badge-code-1";
-        if (c.Contains("2") || c.Contains("orange") || c.Contains("turuncu")) return "badge-code-2";
-        return "badge-code-3";
+        if (c.Contains("1") || c.Contains("red") || c.Contains("kirmizi")) return "badge-code-red";
+        if (c.Contains("2") || c.Contains("orange") || c.Contains("turuncu")) return "badge-code-orange";
+        if (c.Contains("3") || c.Contains("yellow") || c.Contains("sari")) return "badge-code-yellow";
+        if (c.Contains("4") || c.Contains("green") || c.Contains("yesil")) return "badge-code-green";
+        return "badge-code-default";
     }
 
     private string GetStatusBadgeClass(string status)
