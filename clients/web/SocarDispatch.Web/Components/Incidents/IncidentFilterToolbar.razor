@@ -1,0 +1,147 @@
+@* clients/web/SocarDispatch.Web/Components/Incidents/IncidentFilterToolbar.razor *@
+
+<div class="filter-toolbar-container">
+    <!-- Status Filter Tabs -->
+    <div class="status-tabs">
+        @foreach (var tab in StatusTabs)
+        {
+            <button type="button" 
+                    class="status-tab @(SelectedStatus == tab.Key ? "active" : "")" 
+                    @onclick="() => SelectStatus(tab.Key)">
+                <span class="tab-label">@tab.Label</span>
+                @if (StatusCounts.TryGetValue(tab.Key, out var count))
+                {
+                    <span class="tab-count">@count</span>
+                }
+            </button>
+        }
+    </div>
+
+    <!-- Secondary Filter & Action Controls -->
+    <div class="controls-row">
+        <!-- Search Input -->
+        <div class="search-box">
+            <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" 
+                   class="form-control search-input" 
+                   placeholder="Search description, reporter..." 
+                   value="@SearchTerm" 
+                   @oninput="OnSearchInput" />
+            @if (!string.IsNullOrEmpty(SearchTerm))
+            {
+                <button type="button" class="btn-clear-search" @onclick="ClearSearch">✕</button>
+            }
+        </div>
+
+        <!-- Category Dropdown -->
+        <div class="control-group">
+            <select class="form-select" value="@SelectedCategory" @onchange="OnCategoryChange">
+                <option value="All">All Categories</option>
+                <option value="Fire">Fire</option>
+                <option value="Gas Leak">Gas Leak</option>
+                <option value="Medical">Medical</option>
+                <option value="Chemical">Chemical</option>
+                <option value="Electrical">Electrical</option>
+                <option value="Structural">Structural</option>
+                <option value="Security">Security</option>
+            </select>
+        </div>
+
+        <!-- Time Range Dropdown -->
+        <div class="control-group">
+            <select class="form-select" value="@SelectedTimeRange" @onchange="OnTimeRangeChange">
+                <option value="All">All Time</option>
+                <option value="1h">Last 1 Hour</option>
+                <option value="24h">Last 24 Hours</option>
+                <option value="7d">Last 7 Days</option>
+                <option value="30d">Last 30 Days</option>
+                <option value="Custom">Custom Range...</option>
+            </select>
+        </div>
+
+        <!-- Custom Date Range Pickers (Visible only when 'Custom' is selected) -->
+        @if (SelectedTimeRange == "Custom")
+        {
+            <div class="custom-date-range">
+                <input type="date" class="form-control form-control-sm" value="@CustomFromDate?.ToString("yyyy-MM-dd")" @onchange="OnFromDateChange" />
+                <span class="range-sep">to</span>
+                <input type="date" class="form-control form-control-sm" value="@CustomToDate?.ToString("yyyy-MM-dd")" @onchange="OnToDateChange" />
+            </div>
+        }
+
+        <!-- Sort By Dropdown -->
+        <div class="control-group">
+            <select class="form-select" value="@SelectedSort" @onchange="OnSortChange">
+                <option value="Newest">Newest First</option>
+                <option value="Oldest">Oldest First</option>
+                <option value="Severity">Severity (Highest)</option>
+            </select>
+        </div>
+
+        <!-- Create Incident Action Button -->
+        <button type="button" class="btn btn-primary btn-create" @onclick="HandleCreateClick">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            <span>Create New Incident</span>
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string SelectedStatus { get; set; } = "All";
+    [Parameter] public string SelectedCategory { get; set; } = "All";
+    [Parameter] public string SearchTerm { get; set; } = string.Empty;
+    [Parameter] public string SelectedTimeRange { get; set; } = "All";
+    [Parameter] public DateTime? CustomFromDate { get; set; }
+    [Parameter] public DateTime? CustomToDate { get; set; }
+    [Parameter] public string SelectedSort { get; set; } = "Newest";
+    [Parameter] public Dictionary<string, int> StatusCounts { get; set; } = new();
+
+    [Parameter] public EventCallback<string> OnStatusChanged { get; set; }
+    [Parameter] public EventCallback<string> OnCategoryChanged { get; set; }
+    [Parameter] public EventCallback<string> OnSearchChanged { get; set; }
+    [Parameter] public EventCallback<string> OnTimeRangeChanged { get; set; }
+    [Parameter] public EventCallback<(DateTime?, DateTime?)> OnCustomDateRangeChanged { get; set; }
+    [Parameter] public EventCallback<string> OnSortChanged { get; set; }
+    [Parameter] public EventCallback OnCreateIncidentRequested { get; set; }
+
+    private readonly List<(string Key, string Label)> StatusTabs = new()
+    {
+        ("All", "All Incidents"),
+        ("Open", "Open"),
+        ("Assigned", "Assigned"),
+        ("Resolved", "Resolved"),
+        ("Canceled", "Canceled")
+    };
+
+    private async Task SelectStatus(string status) => await OnStatusChanged.InvokeAsync(status);
+    private async Task OnCategoryChange(ChangeEventArgs e) => await OnCategoryChanged.InvokeAsync(e.Value?.ToString() ?? "All");
+    private async Task OnSearchInput(ChangeEventArgs e) => await OnSearchChanged.InvokeAsync(e.Value?.ToString() ?? string.Empty);
+    private async Task ClearSearch() => await OnSearchChanged.InvokeAsync(string.Empty);
+    private async Task OnTimeRangeChange(ChangeEventArgs e) => await OnTimeRangeChanged.InvokeAsync(e.Value?.ToString() ?? "All");
+    private async Task OnSortChange(ChangeEventArgs e) => await OnSortChanged.InvokeAsync(e.Value?.ToString() ?? "Newest");
+    private async Task HandleCreateClick() => await OnCreateIncidentRequested.InvokeAsync();
+
+    private async Task OnFromDateChange(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var dt))
+            CustomFromDate = dt;
+        else
+            CustomFromDate = null;
+        await OnCustomDateRangeChanged.InvokeAsync((CustomFromDate, CustomToDate));
+    }
+
+    private async Task OnToDateChange(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var dt))
+            CustomToDate = dt;
+        else
+            CustomToDate = null;
+        await OnCustomDateRangeChanged.InvokeAsync((CustomFromDate, CustomToDate));
+    }
+}

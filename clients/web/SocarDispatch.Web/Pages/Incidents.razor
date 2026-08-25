@@ -1,0 +1,356 @@
+@* clients/web/SocarDispatch.Web/Pages/Incidents.razor *@
+@page "/incidents"
+@attribute [Authorize(Roles = "Operator")]
+
+@using SocarDispatch.Web.Models.Dispatch
+@using SocarDispatch.Web.Services
+@using SocarDispatch.Web.Services.SignalR
+@using SocarDispatch.Web.Components.Incidents
+@using SocarDispatch.Web.Components.Dispatch
+
+@inject IIncidentService IncidentService
+@inject IIncidentHubClient IncidentHub
+@inject IToastService ToastService
+@inject NavigationManager Navigation
+@implements IDisposable
+
+<PageTitle>Incidents Management — SOCAR Dispatch</PageTitle>
+
+<div class="incidents-page">
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Incidents Management</h1>
+            <p class="page-subtitle">Monitor, filter, and inspect emergency incident logs across the facility.</p>
+        </div>
+        <div class="header-stats">
+            <span class="stat-pill">Total: <strong>@_allIncidents.Count</strong></span>
+            <span class="stat-pill open">Open: <strong>@_statusCounts.GetValueOrDefault("Open", 0)</strong></span>
+        </div>
+    </div>
+
+    <!-- Filter & Search Toolbar -->
+    <IncidentFilterToolbar 
+        SelectedStatus="@_selectedStatus"
+        SelectedCategory="@_selectedCategory"
+        SearchTerm="@_searchTerm"
+        SelectedTimeRange="@_selectedTimeRange"
+        CustomFromDate="@_customFromDate"
+        CustomToDate="@_customToDate"
+        SelectedSort="@_selectedSort"
+        StatusCounts="@_statusCounts"
+        OnStatusChanged="HandleStatusChanged"
+        OnCategoryChanged="HandleCategoryChanged"
+        OnSearchChanged="HandleSearchChanged"
+        OnTimeRangeChanged="HandleTimeRangeChanged"
+        OnCustomDateRangeChanged="HandleCustomDateRangeChanged"
+        OnSortChanged="HandleSortChanged"
+        OnCreateIncidentRequested="HandleCreateIncident" />
+
+    <!-- Content Area: Grid / Empty / Loading -->
+    <div class="incidents-content">
+        @if (_isLoading)
+        {
+            <div class="loading-state">
+                <div class="spinner-sm"></div>
+                <p>Loading incidents data...</p>
+            </div>
+        }
+        else if (PagedIncidents.Count == 0)
+        {
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                </div>
+                <h3>No incidents found</h3>
+                <p>No records match your selected filter criteria. Try adjusting the search filters or date range.</p>
+                <button type="button" class="btn btn-ghost" @onclick="ResetFilters">Reset Filters</button>
+            </div>
+        }
+        else
+        {
+            <!-- Cards Grid -->
+            <div class="incident-grid">
+                @foreach (var incident in PagedIncidents)
+                {
+                    <IncidentCard @key="incident.Id" 
+                                  Incident="incident" 
+                                  OnSelect="HandleIncidentSelected" />
+                }
+            </div>
+
+            <!-- Pagination Bar -->
+            <div class="pagination-bar">
+                <div class="pagination-info">
+                    Showing @(StartIndex + 1)–@(Math.Min(StartIndex + PageSize, FilteredIncidents.Count)) of @FilteredIncidents.Count incidents
+                </div>
+                <div class="pagination-controls">
+                    <div class="page-size-selector">
+                        <span>Rows per page:</span>
+                        <select class="form-select form-select-sm" value="@PageSize" @onchange="OnPageSizeChanged">
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                        </select>
+                    </div>
+                    <div class="pagination-buttons">
+                        <button class="btn btn-ghost btn-sm" disabled="@(CurrentPage <= 1)" @onclick="() => ChangePage(CurrentPage - 1)">
+                            Previous
+                        </button>
+                        <span class="current-page-indicator">Page @CurrentPage of @TotalPages</span>
+                        <button class="btn btn-ghost btn-sm" disabled="@(CurrentPage >= TotalPages)" @onclick="() => ChangePage(CurrentPage + 1)">
+                            Next
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Incident Detail & Dispatch Drawer -->
+<IncidentSidebar @bind-IsOpen="_isDrawerOpen" 
+                 IncidentId="_selectedIncidentId" 
+                 OnIncidentAssigned="HandleIncidentAssigned" />
+
+@code {
+    private bool _isLoading = true;
+    private List<IncidentDetailViewModel> _allIncidents = new();
+    private Dictionary<string, int> _statusCounts = new();
+
+    // Filters
+    private string _selectedStatus = "All";
+    private string _selectedCategory = "All";
+    private string _searchTerm = string.Empty;
+    private string _selectedTimeRange = "All";
+    private DateTime? _customFromDate;
+    private DateTime? _customToDate;
+    private string _selectedSort = "Newest";
+
+    // Pagination
+    private int CurrentPage { get; set; } = 1;
+    private int PageSize { get; set; } = 10;
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(FilteredIncidents.Count / (double)PageSize));
+    private int StartIndex => (CurrentPage - 1) * PageSize;
+
+    // Detail Drawer
+    private bool _isDrawerOpen = false;
+    private Guid? _selectedIncidentId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadIncidentsAsync();
+        IncidentHub.OnNewIncidentReceived += HandleNewIncidentReceivedRealtime;
+        IncidentHub.OnIncidentStatusChanged += HandleIncidentStatusChangedRealtime;
+    }
+
+    private async Task LoadIncidentsAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            var response = await IncidentService.GetAllIncidentsAsync();
+            if (response != null && response.Success && response.Data != null)
+            {
+                _allIncidents = response.Data;
+                UpdateStatusCounts();
+            }
+            else
+            {
+                ToastService.Show("Error", response?.Message ?? "Failed to load incidents.", ToastLevel.Danger);
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.Show("Error", $"Error loading incidents: {ex.Message}", ToastLevel.Danger);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void UpdateStatusCounts()
+    {
+        _statusCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["All"] = _allIncidents.Count,
+            ["Open"] = _allIncidents.Count(i => i.Status.Equals("Open", StringComparison.OrdinalIgnoreCase)),
+            ["Assigned"] = _allIncidents.Count(i => i.Status.Equals("Assigned", StringComparison.OrdinalIgnoreCase)),
+            ["Resolved"] = _allIncidents.Count(i => i.Status.Equals("Resolved", StringComparison.OrdinalIgnoreCase)),
+            ["Canceled"] = _allIncidents.Count(i => i.Status.Equals("Canceled", StringComparison.OrdinalIgnoreCase))
+        };
+    }
+
+    private List<IncidentDetailViewModel> FilteredIncidents
+    {
+        get
+        {
+            var query = _allIncidents.AsEnumerable();
+
+            // Status Filter
+            if (_selectedStatus != "All")
+            {
+                query = query.Where(i => i.Status.Equals(_selectedStatus, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // Category Filter
+            if (_selectedCategory != "All")
+            {
+                query = query.Where(i => i.Category.Equals(_selectedCategory, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // Search Term (Description or Reporter name)
+            if (!string.IsNullOrWhiteSpace(_searchTerm))
+            {
+                var term = _searchTerm.Trim();
+                query = query.Where(i => 
+                    (!string.IsNullOrEmpty(i.Description) && i.Description.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrEmpty(i.ReporterFullName) && i.ReporterFullName.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    i.EmergencyCode.Contains(term, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // Time Range Filter
+            var now = DateTime.UtcNow;
+            query = _selectedTimeRange switch
+            {
+                "1h" => query.Where(i => i.CreatedAt >= now.AddHours(-1)),
+                "24h" => query.Where(i => i.CreatedAt >= now.AddHours(-24)),
+                "7d" => query.Where(i => i.CreatedAt >= now.AddDays(-7)),
+                "30d" => query.Where(i => i.CreatedAt >= now.AddDays(-30)),
+                "Custom" => query.Where(i => 
+                    (!_customFromDate.HasValue || i.CreatedAt.Date >= _customFromDate.Value.Date) &&
+                    (!_customToDate.HasValue || i.CreatedAt.Date <= _customToDate.Value.Date)),
+                _ => query
+            };
+
+            // Sorting
+            query = _selectedSort switch
+            {
+                "Oldest" => query.OrderBy(i => i.CreatedAt),
+                "Severity" => query.OrderBy(i => GetSeverityRank(i.EmergencyCode)).ThenByDescending(i => i.CreatedAt),
+                _ => query.OrderByDescending(i => i.CreatedAt) // Default Newest
+            };
+
+            return query.ToList();
+        }
+    }
+
+    private List<IncidentDetailViewModel> PagedIncidents =>
+        FilteredIncidents.Skip(StartIndex).Take(PageSize).ToList();
+
+    private int GetSeverityRank(string? code) => code switch
+    {
+        "Code Red" => 1,
+        "Code Orange" => 2,
+        "Code Yellow" => 3,
+        "Code Green" => 4,
+        _ => 5
+    };
+
+    private void HandleStatusChanged(string status) { _selectedStatus = status; CurrentPage = 1; }
+    private void HandleCategoryChanged(string category) { _selectedCategory = category; CurrentPage = 1; }
+    private void HandleSearchChanged(string search) { _searchTerm = search; CurrentPage = 1; }
+    private void HandleTimeRangeChanged(string range) { _selectedTimeRange = range; CurrentPage = 1; }
+    private void HandleCustomDateRangeChanged((DateTime? from, DateTime? to) dates) 
+    { 
+        _customFromDate = dates.from; 
+        _customToDate = dates.to; 
+        CurrentPage = 1; 
+    }
+    private void HandleSortChanged(string sort) { _selectedSort = sort; }
+    private void OnPageSizeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var size))
+        {
+            PageSize = size;
+            CurrentPage = 1;
+        }
+    }
+
+    private void ChangePage(int page)
+    {
+        if (page >= 1 && page <= TotalPages)
+        {
+            CurrentPage = page;
+        }
+    }
+
+    private void ResetFilters()
+    {
+        _selectedStatus = "All";
+        _selectedCategory = "All";
+        _searchTerm = string.Empty;
+        _selectedTimeRange = "All";
+        _customFromDate = null;
+        _customToDate = null;
+        _selectedSort = "Newest";
+        CurrentPage = 1;
+    }
+
+    private void HandleIncidentSelected(IncidentDetailViewModel incident)
+    {
+        _selectedIncidentId = incident.Id;
+        _isDrawerOpen = true;
+    }
+
+    private async Task HandleIncidentAssigned(Guid incidentId)
+    {
+        await LoadIncidentsAsync();
+    }
+
+    private void HandleCreateIncident()
+    {
+        // SDDC-60 Task Link / Action
+        ToastService.Show("Info", "Incident creation form (SDDC-60) modal opening...", ToastLevel.Info);
+    }
+
+    // Realtime SignalR Event Handlers
+    private async void HandleNewIncidentReceivedRealtime(object? sender, NewIncidentReceivedEventArgs e)
+    {
+        await InvokeAsync(() =>
+        {
+            var newIncident = new IncidentDetailViewModel
+            {
+                Id = e.Id,
+                Category = e.Category,
+                EmergencyCode = e.EmergencyCode,
+                ReporterFullName = e.ReporterFullName ?? string.Empty,
+                Description = e.Description,
+                Latitude = (decimal)e.Latitude,
+                Longitude = (decimal)e.Longitude,
+                CreatedAt = e.CreatedAt,
+                Status = "Open"
+            };
+
+            _allIncidents.Insert(0, newIncident);
+            UpdateStatusCounts();
+            StateHasChanged();
+        });
+    }
+
+    private async void HandleIncidentStatusChangedRealtime(object? sender, IncidentStatusChangedEventArgs e)
+    {
+        await InvokeAsync(() =>
+        {
+            var incident = _allIncidents.FirstOrDefault(x => x.Id == e.IncidentId);
+            if (incident != null)
+            {
+                incident.Status = e.Status;
+                UpdateStatusCounts();
+                StateHasChanged();
+            }
+        });
+    }
+
+    public void Dispose()
+    {
+        IncidentHub.OnNewIncidentReceived -= HandleNewIncidentReceivedRealtime;
+        IncidentHub.OnIncidentStatusChanged -= HandleIncidentStatusChangedRealtime;
+    }
+}
+
