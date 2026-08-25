@@ -117,6 +117,10 @@
                  IncidentId="_selectedIncidentId" 
                  OnIncidentAssigned="HandleIncidentAssigned" />
 
+<!-- Emergency Incident Creation Modal -->
+<CreateIncidentModal @bind-IsVisible="_isCreateIncidentModalOpen" 
+                     OnIncidentCreated="HandleIncidentCreated" />
+
 @code {
     private bool _isLoading = true;
     private List<IncidentDetailViewModel> _allIncidents = new();
@@ -140,6 +144,20 @@
     // Detail Drawer
     private bool _isDrawerOpen = false;
     private Guid? _selectedIncidentId;
+
+    private bool _isCreateIncidentModalOpen = false;
+
+    private void HandleCreateIncident()
+    {
+        _isCreateIncidentModalOpen = true;
+    }
+
+    private async Task HandleIncidentCreated(IncidentDetailViewModel incident)
+    {
+        // Refresh incident list after new report is submitted
+        await LoadIncidentsAsync();
+    }
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -301,12 +319,6 @@
     private async Task HandleIncidentAssigned(Guid incidentId)
     {
         await LoadIncidentsAsync();
-    }
-
-    private void HandleCreateIncident()
-    {
-        // SDDC-60 Task Link / Action
-        ToastService.Show("Info", "Incident creation form (SDDC-60) modal opening...", ToastLevel.Info);
     }
 
     // Realtime SignalR Event Handlers

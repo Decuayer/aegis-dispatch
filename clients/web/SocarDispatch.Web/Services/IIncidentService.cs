@@ -14,6 +14,9 @@ public interface IIncidentService
     /// Fetches incidents filtered by optional status and category from backend.
     Task<ApiResponse<List<IncidentDetailViewModel>>?> GetAllIncidentsAsync(string? status = null, string? category = null, CancellationToken cancellationToken = default);
 
+    /// Creates a new emergency incident report submitted by the operator.
+    Task<ApiResponse<IncidentDetailViewModel>?> CreateIncidentAsync(CreateIncidentRequestDto request, CancellationToken cancellationToken = default);
+
     /// Updates the operational status of an incident.
     Task<ApiResponse<IncidentDetailViewModel>?> UpdateStatusAsync(Guid id, string status, string? completionNotes = null, CancellationToken cancellationToken = default);
 }

@@ -1,0 +1,603 @@
+@* Components/Dispatch/CreateIncidentModal.razor *@
+@using SocarDispatch.Web.Models.Dispatch
+@using SocarDispatch.Web.Models.Common
+@using SocarDispatch.Web.Services
+@inject IIncidentService IncidentService
+@inject ICategoryService CategoryService
+@inject IEmergencyCodeService EmergencyCodeService
+@inject IMapService MapService
+@inject ISettingsService SettingsService
+@inject IToastService ToastService
+@inject HttpClient Http
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+@if (IsVisible)
+{
+    <div class="modal-backdrop" @onclick="HandleCancel">
+        <div class="modal-card modal-lg" @onclick:stopPropagation="true">
+            <!-- Modal Header -->
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <div class="modal-icon-badge danger">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/>
+                            <line x1="12" y1="8" x2="12" y2="12"/>
+                            <line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="modal-title">Create Emergency Incident</h3>
+                        <p class="modal-subtitle">Report a new operational emergency incident into the dispatch queue.</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" @onclick="HandleCancel" title="Close">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Body with EditForm -->
+            <EditForm Model="@_model" OnValidSubmit="HandleValidSubmit">
+                <DataAnnotationsValidator />
+
+                <div class="modal-body">
+                    @if (_isLoadingTaxonomies)
+                    {
+                        <div class="modal-loading-overlay">
+                            <span class="spinner-sm"></span>
+                            <span>Loading categories & emergency codes...</span>
+                        </div>
+                    }
+
+                    <div class="form-grid">
+                        <!-- Left Column: Taxonomies & Description -->
+                        <div class="form-column">
+                            <!-- Category Selection -->
+                            <div class="form-group">
+                                <label class="form-label required">Incident Category</label>
+                                <InputSelect class="form-select" @bind-Value="_model.Category">
+                                    <option value="">-- Select Incident Category --</option>
+                                    @foreach (var cat in _categories)
+                                    {
+                                        <option value="@cat.Code">@cat.Name (@cat.Code)</option>
+                                    }
+                                </InputSelect>
+                                <ValidationMessage For="@(() => _model.Category)" class="validation-error" />
+                            </div>
+
+                            <!-- Emergency Code Selection -->
+                            <div class="form-group">
+                                <label class="form-label required">Emergency Code & Severity</label>
+                                <div class="emergency-code-selector">
+                                    <InputSelect class="form-select" @bind-Value="_model.EmergencyCode" @bind-Value:after="OnEmergencyCodeChanged">
+                                        <option value="">-- Select Emergency Code --</option>
+                                        @foreach (var ec in _emergencyCodes)
+                                        {
+                                            <option value="@ec.Code">@ec.Code (Level @ec.SeverityLevel)</option>
+                                        }
+                                    </InputSelect>
+                                    @if (_selectedCodeObj != null)
+                                    {
+                                        <div class="code-preview-badge" style="background-color: @(_selectedCodeObj.ColorHex)20; border-color: @_selectedCodeObj.ColorHex; color: @_selectedCodeObj.ColorHex;">
+                                            <span class="badge-dot" style="background-color: @_selectedCodeObj.ColorHex;"></span>
+                                            <span>@_selectedCodeObj.Code</span>
+                                            <span class="severity-tag">Sev: @_selectedCodeObj.SeverityLevel</span>
+                                        </div>
+                                    }
+                                </div>
+                                <ValidationMessage For="@(() => _model.EmergencyCode)" class="validation-error" />
+                            </div>
+
+                            <!-- Description -->
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Incident Description
+                                    <span class="char-count">@(_model.Description?.Length ?? 0)/1000</span>
+                                </label>
+                                <InputTextArea class="form-control text-area" 
+                                               rows="3" 
+                                               placeholder="Provide situational details, exact location cues, casualties, hazmat hazards..."
+                                               @bind-Value="_model.Description" />
+                                <ValidationMessage For="@(() => _model.Description)" class="validation-error" />
+                            </div>
+
+                            <!-- Media Attachments Upload -->
+                            <div class="form-group">
+                                <label class="form-label">Media Attachments (Photos/Videos)</label>
+                                <div class="upload-area">
+                                    <InputFile OnChange="HandleFileUpload" class="file-input-hidden" id="incident-media-upload" accept="image/*,video/*" multiple />
+                                    <label for="incident-media-upload" class="upload-dropzone @(_isUploadingMedia ? "disabled" : "")">
+                                        @if (_isUploadingMedia)
+                                        {
+                                            <span class="spinner-sm"></span>
+                                            <span>Uploading media to storage...</span>
+                                        }
+                                        else
+                                        {
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                                <polyline points="17 8 12 3 7 8"/>
+                                                <line x1="12" y1="3" x2="12" y2="15"/>
+                                            </svg>
+                                            <span class="upload-text">Click to upload photo or video</span>
+                                            <span class="upload-hint">PNG, JPG, MP4 up to 50MB</span>
+                                        }
+                                    </label>
+                                </div>
+
+                                <!-- Uploaded Media List Preview -->
+                                @if (_model.MediaAttachments.Count > 0)
+                                {
+                                    <div class="media-preview-list">
+                                        @foreach (var media in _model.MediaAttachments)
+                                        {
+                                            <div class="media-item-chip">
+                                                <span class="media-icon">
+                                                    @(media.MediaType == IncidentMediaType.Photo ? "📷" : "🎥")
+                                                </span>
+                                                <span class="media-filename" title="@media.MediaUrl">
+                                                    @(string.IsNullOrEmpty(media.FileName) ? "Attachment" : media.FileName)
+                                                </span>
+                                                <button type="button" class="btn-remove-media" @onclick="() => RemoveMedia(media)">✕</button>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Interactive Map Picker & Coordinates -->
+                        <div class="form-column">
+                            <div class="form-group">
+                                <div class="map-picker-header">
+                                    <label class="form-label required mb-0">Incident Geospatial Location</label>
+                                    <button type="button" class="btn-gps-locate" @onclick="LocateUserGPS" title="Use My Current GPS Position" disabled="@_isLocating">
+                                        @if (_isLocating)
+                                        {
+                                            <span class="spinner-xs"></span>
+                                        }
+                                        else
+                                        {
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+                                            </svg>
+                                        }
+                                        <span>Current GPS</span>
+                                    </button>
+                                </div>
+
+                                <!-- Interactive Leaflet Mini Map -->
+                                <div class="picker-map-wrapper">
+                                    <div id="@_pickerContainerId" class="picker-map-canvas"></div>
+                                    <div class="picker-map-hint">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"/>
+                                            <line x1="12" y1="16" x2="12" y2="12"/>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"/>
+                                        </svg>
+                                        <span>Click map or drag pin to position incident coordinates.</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Manual Coordinate Inputs (Two-Way Synced) -->
+                            <div class="coordinates-row">
+                                <div class="form-group flex-1">
+                                    <label class="form-label required">Latitude</label>
+                                    <input type="number" 
+                                           step="0.000001" 
+                                           class="form-control" 
+                                           value="@_model.Latitude" 
+                                           @onchange="OnLatitudeInputChanged" />
+                                    <ValidationMessage For="@(() => _model.Latitude)" class="validation-error" />
+                                </div>
+
+                                <div class="form-group flex-1">
+                                    <label class="form-label required">Longitude</label>
+                                    <input type="number" 
+                                           step="0.000001" 
+                                           class="form-control" 
+                                           value="@_model.Longitude" 
+                                           @onchange="OnLongitudeInputChanged" />
+                                    <ValidationMessage For="@(() => _model.Longitude)" class="validation-error" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-ghost" @onclick="HandleCancel" disabled="@_isSubmitting">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary btn-submit-incident" disabled="@(_isSubmitting || _isUploadingMedia)">
+                        @if (_isSubmitting)
+                        {
+                            <span class="spinner-sm"></span>
+                            <span>Reporting Incident...</span>
+                        }
+                        else
+                        {
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                            </svg>
+                            <span>Report & Broadcast Incident</span>
+                        }
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+<style>
+    .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1050;
+        padding: 20px;
+        animation: fadeIn 0.2s ease-out;
+    }
+
+    .modal-card.modal-lg {
+        background: var(--color-surface, #1e293b);
+        border: 1px solid var(--color-border, #334155);
+        border-radius: 12px;
+        width: 100%;
+        max-width: 920px;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        overflow: hidden;
+        animation: scaleUp 0.2s ease-out;
+    }
+
+    .modal-header {
+        padding: 16px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--color-border, #334155);
+        background: var(--color-surface-raised, #0f172a);
+    }
+
+    .modal-title-group {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .modal-icon-badge.danger {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-title {
+        font-size: 17px;
+        font-weight: 700;
+        color: var(--color-text-primary, #f8fafc);
+        margin: 0;
+    }
+
+    .modal-subtitle {
+        font-size: 12px;
+        color: var(--color-text-muted, #94a3b8);
+        margin: 2px 0 0;
+    }
+
+    .btn-close {
+        background: transparent;
+        border: none;
+        color: var(--color-text-muted, #94a3b8);
+        cursor: pointer;
+        padding: 6px;
+        border-radius: 6px;
+        display: flex;
+        transition: all 0.2s;
+    }
+    .btn-close:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+    }
+
+    .modal-body {
+        padding: 20px 24px;
+        overflow-y: auto;
+        position: relative;
+        flex: 1;
+    }
+
+    .modal-loading-overlay {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: rgba(59, 130, 246, 0.1);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        border-radius: 6px;
+        color: #60a5fa;
+        font-size: 12px;
+        margin-bottom: 14px;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1.1fr;
+        gap: 20px;
+    }
+
+    @@media (max-width: 768px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .form-column {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .form-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--color-text-secondary, #cbd5e1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .form-label.required::after {
+        content: " *";
+        color: var(--color-danger, #ef4444);
+    }
+
+    .char-count {
+        font-size: 11px;
+        color: var(--color-text-muted, #64748b);
+        font-weight: normal;
+    }
+
+    .form-control, .form-select {
+        background: var(--color-bg-subtle, #0f172a);
+        border: 1px solid var(--color-border, #334155);
+        color: var(--color-text-primary, #f8fafc);
+        border-radius: 6px;
+        padding: 8px 12px;
+        font-size: 13px;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: var(--color-primary, #3b82f6);
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+
+    .emergency-code-selector {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .code-preview-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 6px;
+        border: 1px solid;
+        font-size: 12px;
+        font-weight: 600;
+        width: fit-content;
+    }
+
+    .badge-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+    }
+
+    .severity-tag {
+        font-size: 10px;
+        opacity: 0.85;
+        margin-left: 4px;
+    }
+
+    .map-picker-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 4px;
+    }
+
+    .btn-gps-locate {
+        background: rgba(59, 130, 246, 0.15);
+        border: 1px solid rgba(59, 130, 246, 0.4);
+        color: #60a5fa;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        transition: all 0.2s;
+    }
+    .btn-gps-locate:hover:not(:disabled) {
+        background: rgba(59, 130, 246, 0.25);
+    }
+
+    .picker-map-wrapper {
+        border: 1px solid var(--color-border, #334155);
+        border-radius: 8px;
+        overflow: hidden;
+        background: #111;
+    }
+
+    .picker-map-canvas {
+        height: 230px;
+        width: 100%;
+    }
+
+    .picker-map-hint {
+        padding: 6px 10px;
+        background: var(--color-surface-raised, #0f172a);
+        font-size: 11px;
+        color: var(--color-text-muted, #94a3b8);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        border-top: 1px solid var(--color-border, #334155);
+    }
+
+    .coordinates-row {
+        display: flex;
+        gap: 12px;
+    }
+
+    .flex-1 { flex: 1; }
+
+    .upload-dropzone {
+        border: 1px dashed var(--color-border, #475569);
+        border-radius: 8px;
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        cursor: pointer;
+        background: rgba(255, 255, 255, 0.02);
+        color: var(--color-text-muted, #94a3b8);
+        transition: all 0.2s;
+    }
+    .upload-dropzone:hover {
+        border-color: var(--color-primary, #3b82f6);
+        background: rgba(59, 130, 246, 0.05);
+        color: #93c5fd;
+    }
+    .file-input-hidden { display: none; }
+    .upload-text { font-size: 12px; font-weight: 500; }
+    .upload-hint { font-size: 10px; color: var(--color-text-subtle, #64748b); }
+
+    .media-preview-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+    }
+
+    .media-item-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--color-surface-raised, #0f172a);
+        border: 1px solid var(--color-border, #334155);
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        color: var(--color-text-primary, #f8fafc);
+        max-width: 100%;
+    }
+
+    .media-filename {
+        max-width: 140px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .btn-remove-media {
+        background: transparent;
+        border: none;
+        color: #ef4444;
+        cursor: pointer;
+        font-size: 12px;
+        padding: 0 2px;
+    }
+
+    .validation-error {
+        font-size: 11px;
+        color: var(--color-danger, #ef4444);
+        margin-top: 2px;
+    }
+
+    .modal-footer {
+        padding: 14px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 12px;
+        border-top: 1px solid var(--color-border, #334155);
+        background: var(--color-surface-raised, #0f172a);
+    }
+
+    .btn {
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+        border: 1px solid transparent;
+    }
+
+    .btn-ghost {
+        background: transparent;
+        color: var(--color-text-secondary, #cbd5e1);
+        border-color: var(--color-border, #475569);
+    }
+    .btn-ghost:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: #fff;
+    }
+
+    .btn-primary.btn-submit-incident {
+        background: #ef4444;
+        color: #fff;
+    }
+    .btn-primary.btn-submit-incident:hover:not(:disabled) {
+        background: #dc2626;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+
+    .spinner-sm, .spinner-xs {
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: #fff;
+        animation: spin 0.8s linear infinite;
+    }
+    .spinner-sm { width: 14px; height: 14px; }
+    .spinner-xs { width: 10px; height: 10px; }
+
+    @@keyframes spin { to { transform: rotate(360deg); } }
+    @@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @@keyframes scaleUp { from { transform: scale(0.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+</style>

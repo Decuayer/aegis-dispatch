@@ -63,6 +63,27 @@ public class IncidentService : IIncidentService
         }
     }
 
+    public async Task<ApiResponse<IncidentDetailViewModel>?> CreateIncidentAsync(
+        CreateIncidentRequestDto request, 
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await _http.PostAsJsonAsync("api/v1/incidents", request, cancellationToken);
+            var result = await response.Content.ReadFromJsonAsync<ApiResponse<IncidentDetailViewModel>>(cancellationToken: cancellationToken);
+            
+            if (response.IsSuccessStatusCode && result != null)
+            {
+                return result;
+            }
+
+            return result ?? ApiResponse<IncidentDetailViewModel>.FailureResult("Failed to create incident: Unknown server error.");
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<IncidentDetailViewModel>.FailureResult($"Failed to submit incident: {ex.Message}");
+        }
+    }
 
     public async Task<ApiResponse<IncidentDetailViewModel>?> UpdateStatusAsync(Guid id, string status, string? completionNotes = null, CancellationToken cancellationToken = default)
     {

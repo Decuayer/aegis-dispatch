@@ -192,6 +192,10 @@ public partial class IncidentSidebar : ComponentBase, IDisposable
     {
         if (_incident == null || _selectedTeam == null) return;
 
+        // Cache references to prevent race condition with incoming SignalR TeamDispatched events
+        var teamToDispatch = _selectedTeam;
+        var incidentToDispatch = _incident;
+
         _isDispatching = true;
         _isConfirmationModalOpen = false;
 
@@ -199,8 +203,8 @@ public partial class IncidentSidebar : ComponentBase, IDisposable
         {
             var request = new DispatchRequestDto
             {
-                IncidentId = _incident.Id,
-                TeamId = _selectedTeam.Id,
+                IncidentId = incidentToDispatch.Id,
+                TeamId = teamToDispatch.Id,
                 Notes = notes
             };
 
@@ -210,14 +214,15 @@ public partial class IncidentSidebar : ComponentBase, IDisposable
             {
                 ToastService.Show(
                     "Team Dispatched", 
-                    $"{_selectedTeam.TeamName} has been assigned to {_incident.Category}.", 
+                    $"{teamToDispatch.TeamName} has been assigned to {incidentToDispatch.Category}.", 
                     ToastLevel.Success);
 
-                _incident.Status = "Assigned";
-                _incident.AssignedTeamId = _selectedTeam.Id;
-                _incident.AssignedTeamName = _selectedTeam.TeamName;
+                incidentToDispatch.Status = "Assigned";
+                incidentToDispatch.AssignedTeamId = teamToDispatch.Id;
+                incidentToDispatch.AssignedTeamName = teamToDispatch.TeamName;
+                _selectedTeam = null;
 
-                await OnIncidentAssigned.InvokeAsync(_incident.Id);
+                await OnIncidentAssigned.InvokeAsync(incidentToDispatch.Id);
             }
             else
             {
@@ -233,6 +238,7 @@ public partial class IncidentSidebar : ComponentBase, IDisposable
             _isDispatching = false;
         }
     }
+
 
     private async Task CloseSidebar()
     {

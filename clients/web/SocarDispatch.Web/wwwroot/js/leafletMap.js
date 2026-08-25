@@ -472,10 +472,11 @@ window.leafletMap = (function () {
                     }
                     reject(new Error(message));
                 },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                { enableHighAccuracy: false, timeout: 6000, maximumAge: 60000 }
             );
         });
     }
+
 
 
 
