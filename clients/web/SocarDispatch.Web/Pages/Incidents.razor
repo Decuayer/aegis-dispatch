@@ -115,7 +115,8 @@
 <!-- Incident Detail & Dispatch Drawer -->
 <IncidentSidebar @bind-IsOpen="_isDrawerOpen" 
                  IncidentId="_selectedIncidentId" 
-                 OnIncidentAssigned="HandleIncidentAssigned" />
+                 OnIncidentAssigned="HandleIncidentAssigned"
+                 OnIncidentUpdated="HandleIncidentUpdated" />
 
 <!-- Emergency Incident Creation Modal -->
 <CreateIncidentModal @bind-IsVisible="_isCreateIncidentModalOpen" 
@@ -141,29 +142,17 @@
     private int TotalPages => Math.Max(1, (int)Math.Ceiling(FilteredIncidents.Count / (double)PageSize));
     private int StartIndex => (CurrentPage - 1) * PageSize;
 
-    // Detail Drawer
+    // Modals and Drawer
     private bool _isDrawerOpen = false;
     private Guid? _selectedIncidentId;
-
     private bool _isCreateIncidentModalOpen = false;
-
-    private void HandleCreateIncident()
-    {
-        _isCreateIncidentModalOpen = true;
-    }
-
-    private async Task HandleIncidentCreated(IncidentDetailViewModel incident)
-    {
-        // Refresh incident list after new report is submitted
-        await LoadIncidentsAsync();
-    }
-
 
     protected override async Task OnInitializedAsync()
     {
         await LoadIncidentsAsync();
         IncidentHub.OnNewIncidentReceived += HandleNewIncidentReceivedRealtime;
         IncidentHub.OnIncidentStatusChanged += HandleIncidentStatusChangedRealtime;
+        IncidentHub.OnIncidentUpdated += HandleIncidentUpdatedRealtime;
     }
 
     private async Task LoadIncidentsAsync()
@@ -210,19 +199,16 @@
         {
             var query = _allIncidents.AsEnumerable();
 
-            // Status Filter
             if (_selectedStatus != "All")
             {
                 query = query.Where(i => i.Status.Equals(_selectedStatus, StringComparison.OrdinalIgnoreCase));
             }
 
-            // Category Filter
             if (_selectedCategory != "All")
             {
                 query = query.Where(i => i.Category.Equals(_selectedCategory, StringComparison.OrdinalIgnoreCase));
             }
 
-            // Search Term (Description or Reporter name)
             if (!string.IsNullOrWhiteSpace(_searchTerm))
             {
                 var term = _searchTerm.Trim();
@@ -232,7 +218,6 @@
                     i.EmergencyCode.Contains(term, StringComparison.OrdinalIgnoreCase));
             }
 
-            // Time Range Filter
             var now = DateTime.UtcNow;
             query = _selectedTimeRange switch
             {
@@ -246,12 +231,11 @@
                 _ => query
             };
 
-            // Sorting
             query = _selectedSort switch
             {
                 "Oldest" => query.OrderBy(i => i.CreatedAt),
                 "Severity" => query.OrderBy(i => GetSeverityRank(i.EmergencyCode)).ThenByDescending(i => i.CreatedAt),
-                _ => query.OrderByDescending(i => i.CreatedAt) // Default Newest
+                _ => query.OrderByDescending(i => i.CreatedAt)
             };
 
             return query.ToList();
@@ -310,6 +294,16 @@
         CurrentPage = 1;
     }
 
+    private void HandleCreateIncident()
+    {
+        _isCreateIncidentModalOpen = true;
+    }
+
+    private async Task HandleIncidentCreated(IncidentDetailViewModel incident)
+    {
+        await LoadIncidentsAsync();
+    }
+
     private void HandleIncidentSelected(IncidentDetailViewModel incident)
     {
         _selectedIncidentId = incident.Id;
@@ -321,7 +315,23 @@
         await LoadIncidentsAsync();
     }
 
-    // Realtime SignalR Event Handlers
+    private async Task HandleIncidentUpdated(IncidentDetailViewModel updatedIncident)
+    {
+        var existing = _allIncidents.FirstOrDefault(x => x.Id == updatedIncident.Id);
+        if (existing != null)
+        {
+            var index = _allIncidents.IndexOf(existing);
+            _allIncidents[index] = updatedIncident;
+            UpdateStatusCounts();
+            StateHasChanged();
+        }
+        else
+        {
+            await LoadIncidentsAsync();
+        }
+    }
+
+    // Real-time SignalR Event Handlers
     private async void HandleNewIncidentReceivedRealtime(object? sender, NewIncidentReceivedEventArgs e)
     {
         await InvokeAsync(() =>
@@ -359,10 +369,30 @@
         });
     }
 
+    private async void HandleIncidentUpdatedRealtime(object? sender, IncidentUpdatedEventArgs e)
+    {
+        await InvokeAsync(() =>
+        {
+            var incident = _allIncidents.FirstOrDefault(x => x.Id == e.IncidentId);
+            if (incident != null)
+            {
+                incident.Category = e.Category;
+                incident.EmergencyCode = e.EmergencyCode;
+                incident.Description = e.Description;
+                incident.Latitude = (decimal)e.Latitude;
+                incident.Longitude = (decimal)e.Longitude;
+                UpdateStatusCounts();
+                StateHasChanged();
+            }
+        });
+    }
+
     public void Dispose()
     {
         IncidentHub.OnNewIncidentReceived -= HandleNewIncidentReceivedRealtime;
         IncidentHub.OnIncidentStatusChanged -= HandleIncidentStatusChangedRealtime;
+        IncidentHub.OnIncidentUpdated -= HandleIncidentUpdatedRealtime;
     }
 }
+
 

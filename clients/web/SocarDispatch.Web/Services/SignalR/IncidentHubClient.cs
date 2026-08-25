@@ -14,6 +14,7 @@ public class IncidentHubClient : IIncidentHubClient
 
     public event EventHandler<NewIncidentReceivedEventArgs>? OnNewIncidentReceived;
     public event EventHandler<IncidentStatusChangedEventArgs>? OnIncidentStatusChanged;
+    public event EventHandler<IncidentUpdatedEventArgs>? OnIncidentUpdated;
     public event EventHandler<TeamDispatchedEventArgs>? OnTeamDispatched;
     public event EventHandler<HubConnectionState>? OnConnectionStateChanged;
 
@@ -54,7 +55,7 @@ public class IncidentHubClient : IIncidentHubClient
             })
             .Build();
 
-        // 1. Yeni Olay Event'i
+        // 1. New Incident Event
         _hubConnection.On<NewIncidentPayload>("NewIncident", payload =>
         {
             _logger.LogInformation("[IncidentHub] New incident received: {IncidentId}", payload.Id);
@@ -71,7 +72,7 @@ public class IncidentHubClient : IIncidentHubClient
             });
         });
 
-        // 2. Olay Durum Değişikliği Event'i
+        // 2. Incident Status Change Event
         _hubConnection.On<IncidentStatusChangedPayload>("IncidentStatusChanged", payload =>
         {
             _logger.LogInformation("[IncidentHub] Status changed for {IncidentId}: {Status}", payload.IncidentId, payload.Status);
@@ -85,7 +86,24 @@ public class IncidentHubClient : IIncidentHubClient
             });
         });
 
-        // 3. Ekip Görevlendirme Event'i
+        // 3. Incident Core Update Event
+        _hubConnection.On<IncidentUpdatedPayload>("IncidentUpdated", payload =>
+        {
+            _logger.LogInformation("[IncidentHub] Incident updated: {IncidentId}", payload.IncidentId);
+            OnIncidentUpdated?.Invoke(this, new IncidentUpdatedEventArgs
+            {
+                IncidentId = payload.IncidentId,
+                Category = payload.Category,
+                EmergencyCode = payload.EmergencyCode,
+                Description = payload.Description,
+                Latitude = payload.Latitude,
+                Longitude = payload.Longitude,
+                UpdatedById = payload.UpdatedById,
+                UpdatedAt = payload.UpdatedAt
+            });
+        });
+
+        // 4. Team Dispatched Event
         _hubConnection.On<TeamDispatchedPayload>("TeamDispatched", payload =>
         {
             _logger.LogInformation("[IncidentHub] Team dispatched: {TeamId} to {IncidentId}", payload.TeamId, payload.IncidentId);
@@ -99,7 +117,7 @@ public class IncidentHubClient : IIncidentHubClient
             });
         });
 
-        // Reconnect ve Yaşam Döngüsü
+        // Reconnect & Lifecycle
         _hubConnection.Reconnecting += ex =>
         {
             _logger.LogWarning("[IncidentHub] Connection lost. Reconnecting... Reason: {Message}", ex?.Message);
@@ -153,7 +171,7 @@ public class IncidentHubClient : IIncidentHubClient
         GC.SuppressFinalize(this);
     }
 
-    // JSON Deserialization DTO'ları
+    // JSON Deserialization DTOs
     private record NewIncidentPayload(
         [property: JsonPropertyName("id")] Guid Id,
         [property: JsonPropertyName("category")] string Category,
@@ -171,6 +189,17 @@ public class IncidentHubClient : IIncidentHubClient
         [property: JsonPropertyName("status")] string Status,
         [property: JsonPropertyName("changedById")] Guid ChangedById,
         [property: JsonPropertyName("changedAt")] DateTime ChangedAt
+    );
+
+    private record IncidentUpdatedPayload(
+        [property: JsonPropertyName("incidentId")] Guid IncidentId,
+        [property: JsonPropertyName("category")] string Category,
+        [property: JsonPropertyName("emergencyCode")] string EmergencyCode,
+        [property: JsonPropertyName("description")] string? Description,
+        [property: JsonPropertyName("latitude")] double Latitude,
+        [property: JsonPropertyName("longitude")] double Longitude,
+        [property: JsonPropertyName("updatedById")] Guid UpdatedById,
+        [property: JsonPropertyName("updatedAt")] DateTime UpdatedAt
     );
 
     private record TeamDispatchedPayload(

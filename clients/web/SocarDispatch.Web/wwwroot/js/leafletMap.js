@@ -152,13 +152,18 @@ window.leafletMap = (function () {
         `;
     }
 
-    // Add incident marker
+    // Add or update incident marker
     function addIncidentMarker(incident) {
         if (!map) return;
         const { id, lat, lng, category, emergencyCode } = incident;
 
+        // If marker already exists, update position, icon and popup
         if (incidentMarkers[id]) {
-            incidentMarkers[id].setLatLng([lat, lng]);
+            const existingMarker = incidentMarkers[id];
+            existingMarker.setLatLng([lat, lng]);
+            existingMarker.setIcon(createIncidentIcon(emergencyCode));
+            existingMarker._incidentData = { ...existingMarker._incidentData, ...incident };
+            existingMarker.setPopupContent(createIncidentPopupHtml(existingMarker._incidentData));
             return;
         }
 
@@ -177,6 +182,7 @@ window.leafletMap = (function () {
         incidentClusterGroup.addLayer(marker);
         incidentMarkers[id] = marker;
     }
+
 
     // Add / update team marker (Restored Function)
     function addTeamMarker(team) {

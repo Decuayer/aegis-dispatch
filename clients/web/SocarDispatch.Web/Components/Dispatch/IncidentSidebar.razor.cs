@@ -20,6 +20,7 @@ public partial class IncidentSidebar : ComponentBase, IDisposable
     [Parameter] public bool IsOpen { get; set; }
     [Parameter] public EventCallback<bool> IsOpenChanged { get; set; }
     [Parameter] public EventCallback<Guid> OnIncidentAssigned { get; set; }
+    [Parameter] public EventCallback<IncidentDetailViewModel> OnIncidentUpdated { get; set; }
 
     private IncidentDetailViewModel? _incident;
     private List<TeamDto> _teams = new();
@@ -29,6 +30,7 @@ public partial class IncidentSidebar : ComponentBase, IDisposable
     private bool _isDescExpanded = true;
     private bool _isConfirmationModalOpen = false;
     private bool _isDispatching = false;
+    private bool _isEditMode = false;
     private Guid? _lastLoadedIncidentId;
 
     protected override async Task OnParametersSetAsync()
@@ -36,16 +38,18 @@ public partial class IncidentSidebar : ComponentBase, IDisposable
         if (IsOpen && IncidentId.HasValue && IncidentId.Value != _lastLoadedIncidentId)
         {
             _lastLoadedIncidentId = IncidentId.Value;
+            _isEditMode = false;
             await LoadIncidentAndTeamsAsync(IncidentId.Value);
         }
     }
 
     protected override void OnInitialized()
     {
-        // 1. Subscribe to real-time SignalR hub events
+        // Subscribe to real-time SignalR hub events
         LocationHub.OnTeamLocationUpdated += HandleTeamLocationUpdated;
         IncidentHub.OnTeamDispatched += HandleTeamDispatched;
         IncidentHub.OnIncidentStatusChanged += HandleIncidentStatusChanged;
+        IncidentHub.OnIncidentUpdated += HandleIncidentUpdated;
     }
 
     private async Task LoadIncidentAndTeamsAsync(Guid incidentId)
@@ -86,9 +90,6 @@ public partial class IncidentSidebar : ComponentBase, IDisposable
     // SignalR Real-Time Event Handlers
     // ──────────────────────────────────────────────
 
-    /// <summary>
-    /// Updates team GPS coordinates dynamically without clearing operator selection.
-    /// </summary>
     private void HandleTeamLocationUpdated(object? sender, TeamLocationUpdatedEventArgs e)
     {
         var team = _teams.FirstOrDefault(t => t.Id == e.TeamId);
@@ -98,7 +99,6 @@ public partial class IncidentSidebar : ComponentBase, IDisposable
             team.CurrentLongitude = (decimal)e.Longitude;
             team.UpdatedAt = e.UpdatedAt;
 
-            // Preserve active selection state with updated coordinates
             if (_selectedTeam != null && _selectedTeam.Id == e.TeamId)
             {
                 _selectedTeam.CurrentLatitude = (decimal)e.Latitude;
@@ -110,9 +110,6 @@ public partial class IncidentSidebar : ComponentBase, IDisposable
         }
     }
 
-    /// <summary>
-    /// Handles response unit status updates when a team is dispatched.
-    /// </summary>
     private void HandleTeamDispatched(object? sender, TeamDispatchedEventArgs e)
     {
         var team = _teams.FirstOrDefault(t => t.Id == e.TeamId);
@@ -121,7 +118,6 @@ public partial class IncidentSidebar : ComponentBase, IDisposable
             team.Status = "Forwarded";
         }
 
-        // If the currently inspected incident is assigned
         if (_incident != null && _incident.Id == e.IncidentId)
         {
             _incident.Status = "Assigned";
@@ -130,7 +126,6 @@ public partial class IncidentSidebar : ComponentBase, IDisposable
             _selectedTeam = null;
             _isConfirmationModalOpen = false;
         }
-        // If the selected team was assigned to another incident elsewhere
         else if (_selectedTeam != null && _selectedTeam.Id == e.TeamId)
         {
             _selectedTeam = null;
@@ -143,9 +138,6 @@ public partial class IncidentSidebar : ComponentBase, IDisposable
         InvokeAsync(StateHasChanged);
     }
 
-    /// <summary>
-    /// Handles incident status transitions (Assigned, Resolved, Canceled).
-    /// </summary>
     private void HandleIncidentStatusChanged(object? sender, IncidentStatusChangedEventArgs e)
     {
         if (_incident != null && _incident.Id == e.IncidentId)
@@ -164,9 +156,30 @@ public partial class IncidentSidebar : ComponentBase, IDisposable
         }
     }
 
+    private void HandleIncidentUpdated(object? sender, IncidentUpdatedEventArgs e)
+    {
+        if (_incident != null && _incident.Id == e.IncidentId && !_isEditMode)
+        {
+            _incident.Category = e.Category;
+            _incident.EmergencyCode = e.EmergencyCode;
+            _incident.Description = e.Description;
+            _incident.Latitude = (decimal)e.Latitude;
+            _incident.Longitude = (decimal)e.Longitude;
+
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
     // ──────────────────────────────────────────────
     // User Actions
     // ──────────────────────────────────────────────
+    private async Task HandleIncidentSaved(IncidentDetailViewModel updatedIncident)
+    {
+        _incident = updatedIncident;
+        _isEditMode = false;
+        await OnIncidentUpdated.InvokeAsync(updatedIncident);
+    }
+
     private void HandleTeamSelected(TeamDto team)
     {
         _selectedTeam = team;
@@ -192,7 +205,6 @@ public partial class IncidentSidebar : ComponentBase, IDisposable
     {
         if (_incident == null || _selectedTeam == null) return;
 
-        // Cache references to prevent race condition with incoming SignalR TeamDispatched events
         var teamToDispatch = _selectedTeam;
         var incidentToDispatch = _incident;
 
@@ -223,6 +235,7 @@ public partial class IncidentSidebar : ComponentBase, IDisposable
                 _selectedTeam = null;
 
                 await OnIncidentAssigned.InvokeAsync(incidentToDispatch.Id);
+                await OnIncidentUpdated.InvokeAsync(incidentToDispatch);
             }
             else
             {
@@ -238,7 +251,6 @@ public partial class IncidentSidebar : ComponentBase, IDisposable
             _isDispatching = false;
         }
     }
-
 
     private bool _isUpdatingStatus = false;
     private bool _isStatusModalOpen = false;
@@ -276,24 +288,44 @@ public partial class IncidentSidebar : ComponentBase, IDisposable
     private async Task ChangeIncidentStatusAsync(string targetStatus, string? notes)
     {
         if (_incident == null) return;
+
+        var previousStatus = _incident.Status;
+        var previousNotes = _incident.CompletionNotes;
+
+        // Optimistic UI state update
+        _incident.Status = targetStatus;
+        _incident.CompletionNotes = notes;
         _isUpdatingStatus = true;
+
         try
         {
-            var response = await IncidentService.UpdateStatusAsync(_incident.Id, targetStatus, notes);
+            var response = await IncidentService.ChangeIncidentStatusAsync(_incident.Id, new ChangeIncidentStatusRequestDto
+            {
+                Status = targetStatus,
+                CompletionNotes = notes
+            });
+
             if (response?.Success == true && response.Data != null)
             {
                 _incident.Status = response.Data.Status;
-                _incident.CompletionNotes = notes;
+                _incident.CompletionNotes = response.Data.CompletionNotes ?? notes;
                 ToastService.Show("Status Updated", $"Incident status updated to {targetStatus}.", ToastLevel.Success);
                 await OnIncidentAssigned.InvokeAsync(_incident.Id);
+                await OnIncidentUpdated.InvokeAsync(_incident);
             }
             else
             {
+                // Rollback on failure
+                _incident.Status = previousStatus;
+                _incident.CompletionNotes = previousNotes;
                 ToastService.Show("Status Update Failed", response?.Message ?? "Could not update status.", ToastLevel.Danger);
             }
         }
         catch (Exception ex)
         {
+            // Rollback on exception
+            _incident.Status = previousStatus;
+            _incident.CompletionNotes = previousNotes;
             ToastService.Show("Error", ex.Message, ToastLevel.Danger);
         }
         finally
@@ -304,6 +336,7 @@ public partial class IncidentSidebar : ComponentBase, IDisposable
 
     private async Task CloseSidebar()
     {
+        _isEditMode = false;
         IsOpen = false;
         await IsOpenChanged.InvokeAsync(false);
     }
@@ -347,5 +380,6 @@ public partial class IncidentSidebar : ComponentBase, IDisposable
         LocationHub.OnTeamLocationUpdated -= HandleTeamLocationUpdated;
         IncidentHub.OnTeamDispatched -= HandleTeamDispatched;
         IncidentHub.OnIncidentStatusChanged -= HandleIncidentStatusChanged;
+        IncidentHub.OnIncidentUpdated -= HandleIncidentUpdated;
     }
 }

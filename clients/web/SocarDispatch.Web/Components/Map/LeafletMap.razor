@@ -96,6 +96,7 @@
     {
         IncidentHub.OnNewIncidentReceived += HandleNewIncident;
         IncidentHub.OnIncidentStatusChanged += HandleIncidentStatusChanged;
+        IncidentHub.OnIncidentUpdated += HandleIncidentUpdatedRealtime;
         IncidentHub.OnTeamDispatched += HandleTeamDispatched;
         LocationHub.OnTeamLocationUpdated += HandleTeamLocationUpdated;
     }
@@ -104,8 +105,28 @@
     {
         IncidentHub.OnNewIncidentReceived -= HandleNewIncident;
         IncidentHub.OnIncidentStatusChanged -= HandleIncidentStatusChanged;
+        IncidentHub.OnIncidentUpdated -= HandleIncidentUpdatedRealtime;
         IncidentHub.OnTeamDispatched -= HandleTeamDispatched;
         LocationHub.OnTeamLocationUpdated -= HandleTeamLocationUpdated;
+    }
+
+    private async void HandleIncidentUpdatedRealtime(object? sender, IncidentUpdatedEventArgs e)
+    {
+        var incident = new MapIncidentDto
+        {
+            Id = e.IncidentId,
+            Category = e.Category,
+            EmergencyCode = e.EmergencyCode,
+            ReporterFullName = "Incident Report",
+            Status = "Open",
+            Latitude = (decimal)e.Latitude,
+            Longitude = (decimal)e.Longitude,
+            CreatedAt = e.UpdatedAt
+        };
+        await InvokeAsync(async () =>
+        {
+            await MapService.AddIncidentMarkerAsync(incident);
+        });
     }
 
     private async void HandleNewIncident(object? sender, NewIncidentReceivedEventArgs e)

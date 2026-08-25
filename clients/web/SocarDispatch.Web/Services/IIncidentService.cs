@@ -17,6 +17,12 @@ public interface IIncidentService
     /// Creates a new emergency incident report submitted by the operator.
     Task<ApiResponse<IncidentDetailViewModel>?> CreateIncidentAsync(CreateIncidentRequestDto request, CancellationToken cancellationToken = default);
 
-    /// Updates the operational status of an incident.
+    /// Updates core details (category, emergency code, description, location) of an existing incident.
+    Task<ApiResponse<IncidentDetailViewModel>?> UpdateIncidentAsync(Guid id, UpdateIncidentRequestDto request, CancellationToken cancellationToken = default);
+
+    /// Transitions incident operational lifecycle status with optional completion notes.
+    Task<ApiResponse<IncidentDetailViewModel>?> ChangeIncidentStatusAsync(Guid id, ChangeIncidentStatusRequestDto request, CancellationToken cancellationToken = default);
+
+    /// Legacy status update method forwarding to ChangeIncidentStatusAsync.
     Task<ApiResponse<IncidentDetailViewModel>?> UpdateStatusAsync(Guid id, string status, string? completionNotes = null, CancellationToken cancellationToken = default);
 }

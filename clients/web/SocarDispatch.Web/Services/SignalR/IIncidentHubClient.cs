@@ -9,6 +9,7 @@ public interface IIncidentHubClient : IAsyncDisposable
 
     event EventHandler<NewIncidentReceivedEventArgs>? OnNewIncidentReceived;
     event EventHandler<IncidentStatusChangedEventArgs>? OnIncidentStatusChanged;
+    event EventHandler<IncidentUpdatedEventArgs>? OnIncidentUpdated;
     event EventHandler<TeamDispatchedEventArgs>? OnTeamDispatched;
     event EventHandler<HubConnectionState>? OnConnectionStateChanged;
 

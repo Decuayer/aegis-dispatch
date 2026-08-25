@@ -1,7 +1,5 @@
-// Events/IncidentRealTimeEventArgs.cs
 namespace SocarDispatch.Web.Events;
 
-// Yeni incident geldiğinde
 public class NewIncidentReceivedEventArgs : EventArgs
 {
     public Guid Id { get; init; }
@@ -14,7 +12,6 @@ public class NewIncidentReceivedEventArgs : EventArgs
     public DateTime CreatedAt { get; init; }
 }
 
-// Incident durumu değiştiğinde
 public class IncidentStatusChangedEventArgs : EventArgs
 {
     public Guid IncidentId { get; init; }
@@ -24,7 +21,6 @@ public class IncidentStatusChangedEventArgs : EventArgs
     public DateTime ChangedAt { get; init; }
 }
 
-// Takım atandığında
 public class TeamDispatchedEventArgs : EventArgs
 {
     public Guid AssignmentId { get; init; }
@@ -32,4 +28,16 @@ public class TeamDispatchedEventArgs : EventArgs
     public Guid TeamId { get; init; }
     public Guid OperatorId { get; init; }
     public DateTime AssignedAt { get; init; }
+}
+
+public class IncidentUpdatedEventArgs : EventArgs
+{
+    public Guid IncidentId { get; init; }
+    public string Category { get; init; } = string.Empty;
+    public string EmergencyCode { get; init; } = string.Empty;
+    public string? Description { get; init; }
+    public double Latitude { get; init; }
+    public double Longitude { get; init; }
+    public Guid UpdatedById { get; init; }
+    public DateTime UpdatedAt { get; init; }
 }

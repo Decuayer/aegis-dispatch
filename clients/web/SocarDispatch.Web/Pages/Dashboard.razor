@@ -100,7 +100,8 @@
 <!-- Operational Incident & Dispatch Sidebar Drawer -->
 <IncidentSidebar @bind-IsOpen="_isSidebarOpen"
                  IncidentId="_selectedIncidentId"
-                 OnIncidentAssigned="HandleIncidentAssigned" />
+                 OnIncidentAssigned="HandleIncidentAssigned"
+                 OnIncidentUpdated="HandleIncidentUpdated" />
 
 <!-- Emergency Incident Creation Modal -->
 <CreateIncidentModal @bind-IsVisible="_isCreateModalOpen"
@@ -110,45 +111,35 @@
     private int _activeIncidents = 0;
     private int _availableTeams = 0;
     private int _dispatchedTeams = 0;
-    private string _avgResponseTime = "4.2 min";
     private bool _isLoading = true;
-
+    private string _avgResponseTime = "4.2m";
     private Guid? _selectedIncidentId;
     private bool _isSidebarOpen = false;
-
     private bool _isCreateModalOpen = false;
-    private async Task HandleIncidentCreated(IncidentDetailViewModel incident)
-    {
-        // Refresh KPI metrics after creating a new incident
-        await LoadDashboardStatsAsync();
-    }
+    private LeafletMap? _leafletMapRef;
 
     protected override async Task OnInitializedAsync()
     {
-        // 1. Retrieve existing statistics via REST API
         await LoadDashboardStatsAsync();
 
-        // 2. Subscribe to SignalR Live Event Listeners
+        // Subscribe to SignalR hub events
         IncidentHub.OnNewIncidentReceived += HandleNewIncident;
         IncidentHub.OnIncidentStatusChanged += HandleIncidentStatusChanged;
+        IncidentHub.OnIncidentUpdated += HandleIncidentUpdatedRealtime;
         IncidentHub.OnTeamDispatched += HandleTeamDispatched;
     }
-
-    private LeafletMap? _leafletMapRef;
 
     private async Task LoadDashboardStatsAsync()
     {
         _isLoading = true;
         try
         {
-            // Retrieve active incidents (Status=Open or Assigned)
             var incidentsResponse = await Http.GetFromJsonAsync<ApiResponse<List<MapIncidentDto>>>("api/v1/incidents");
             if (incidentsResponse?.Data != null)
             {
                 _activeIncidents = incidentsResponse.Data.Count(i => i.Status is "Open" or "Assigned" or "InProgress");
             }
 
-            // Check the teams and count them according to their status.
             var teamsResponse = await Http.GetFromJsonAsync<ApiResponse<List<MapTeamDto>>>("api/v1/teams");
             if (teamsResponse?.Data != null)
             {
@@ -166,7 +157,7 @@
         }
     }
 
-    // SignalR Live Counter Updates
+    // SignalR Live Handlers
     private void HandleNewIncident(object? sender, NewIncidentReceivedEventArgs e)
     {
         _activeIncidents++;
@@ -175,7 +166,6 @@
 
     private void HandleIncidentStatusChanged(object? sender, IncidentStatusChangedEventArgs e)
     {
-        // Decrement the active event counter if the event is resolved or cancelled
         if (e.Status is "Resolved" or "Canceled" && e.PreviousStatus is not ("Resolved" or "Canceled"))
         {
             _activeIncidents = Math.Max(0, _activeIncidents - 1);
@@ -183,15 +173,20 @@
         }
     }
 
+    private async void HandleIncidentUpdatedRealtime(object? sender, IncidentUpdatedEventArgs e)
+    {
+        await LoadDashboardStatsAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
     private void HandleTeamDispatched(object? sender, TeamDispatchedEventArgs e)
     {
-        // When a team is assigned: Number of available teams -1, Number of dispatched teams +1
         _availableTeams = Math.Max(0, _availableTeams - 1);
         _dispatchedTeams++;
         InvokeAsync(StateHasChanged);
     }
 
-    // Map Callbacks (Popup Buttons)
+    // Map & Modal Callbacks
     private void HandleIncidentDetail(Guid incidentId)
     {
         _selectedIncidentId = incidentId;
@@ -204,9 +199,13 @@
         _isSidebarOpen = true;
     }
 
+    private async Task HandleIncidentCreated(IncidentDetailViewModel incident)
+    {
+        await LoadDashboardStatsAsync();
+    }
+
     private async Task HandleIncidentAssigned(Guid incidentId)
     {
-        // Refresh KPI stats after successful team assignment
         await LoadDashboardStatsAsync();
         if (_leafletMapRef != null)
         {
@@ -215,15 +214,25 @@
         }
     }
 
+    private async Task HandleIncidentUpdated(IncidentDetailViewModel incident)
+    {
+        await LoadDashboardStatsAsync();
+        if (_leafletMapRef != null)
+        {
+            await _leafletMapRef.LoadIncidentsAsync();
+        }
+    }
 
-    // Memory Cleanup (Unsubscribe)
+    // Memory Cleanup
     public void Dispose()
     {
         IncidentHub.OnNewIncidentReceived -= HandleNewIncident;
         IncidentHub.OnIncidentStatusChanged -= HandleIncidentStatusChanged;
+        IncidentHub.OnIncidentUpdated -= HandleIncidentUpdatedRealtime;
         IncidentHub.OnTeamDispatched -= HandleTeamDispatched;
     }
 }
+
 
 <style>
     .dash-header {
