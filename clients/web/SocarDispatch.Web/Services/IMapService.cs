@@ -27,4 +27,11 @@ public interface IMapService
     // Incident'a atanmış takım label'ını güncelle
     Task UpdateIncidentAssignmentAsync(Guid incidentId, Guid teamId, string teamName);
 
+    // Interactive Coordinate Picker Map
+    Task InitializePickerMapAsync<T>(string containerId, double lat, double lng, int zoom, DotNetObjectReference<T> dotNetRef, string tileProvider = "OpenStreetMap") where T : class;
+    Task SetPickerLocationAsync(double lat, double lng, int? zoom = null);
+    Task UpdatePickerTileLayerAsync(string tileProvider);
+    Task DestroyPickerMapAsync();
+
+
 }

@@ -6,9 +6,13 @@ window.leafletMap = (function () {
     let incidentMarkers = {}; // { [incidentId]: marker }
     let teamMarkers = {};     // { [teamId]: marker }
 
-    // ──────────────────────────────────────────────
-    // Severity rengine göre EmergencyCode'dan renk al
-    // ──────────────────────────────────────────────
+    // Picker Mini-Map instances
+    let pickerMap = null;
+    let pickerMarker = null;
+    let _pickerDotNetRef = null;
+    let pickerTileLayer = null;
+
+    // Get the color from EmergencyCode according to the Severity color
     function getIncidentColor(emergencyCode) {
         const code = (emergencyCode || '').toLowerCase();
         if (code.includes('kirmizi') || code.includes('red') || code.includes('1'))
@@ -20,7 +24,7 @@ window.leafletMap = (function () {
         return '#3b82f6'; // varsayılan: mavi
     }
 
-    // Team status'e göre renk
+    // Color according to team status
     function getTeamColor(status) {
         switch (status) {
             case 'Idle':      return '#22c55e';   // yeşil
@@ -31,7 +35,7 @@ window.leafletMap = (function () {
         }
     }
 
-    // SVG tabanlı özel incident marker ikonu
+    // Custom SVG-based incident marker icon
     function createIncidentIcon(emergencyCode) {
         const color = getIncidentColor(emergencyCode);
         const svg = `
@@ -50,7 +54,7 @@ window.leafletMap = (function () {
         });
     }
 
-    // SVG tabanlı özel team marker ikonu
+    // SVG-based custom team marker icon
     function createTeamIcon(status) {
         const color = getTeamColor(status);
         const svg = `
@@ -68,9 +72,7 @@ window.leafletMap = (function () {
         });
     }
 
-    // ──────────────────────────────────────────────
-    // Haritayı başlat
-    // ──────────────────────────────────────────────
+    // Initialize the map
     function initMap(containerId, lat, lng, zoom) {
         if (map) {
             map.remove();
@@ -90,7 +92,7 @@ window.leafletMap = (function () {
             maxZoom: 19
         }).addTo(map);
 
-        // Cluster grubu — incident'lar için
+        // Cluster group — for incidents
         incidentClusterGroup = L.markerClusterGroup({
             maxClusterRadius: 60,
             spiderfyOnMaxZoom: true,
@@ -98,7 +100,7 @@ window.leafletMap = (function () {
         });
         map.addLayer(incidentClusterGroup);
 
-        // Normal layer group — team'ler için
+        // Normal layer group — for teams
         teamLayerGroup = L.layerGroup().addTo(map);
 
         // Layer Control
@@ -109,9 +111,7 @@ window.leafletMap = (function () {
         L.control.layers(null, overlays, { position: 'topright', collapsed: false }).addTo(map);
     }
 
-    // ──────────────────────────────────────────────
-    // Yardımcı: Incident Popup HTML Şablonu Üretici
-    // ──────────────────────────────────────────────
+    // Helper: Incident Popup HTML Template Generator
     function createIncidentPopupHtml(data) {
         const { id, category, emergencyCode, reporterFullName, status, createdAt, assignedTeamName } = data;
         const formattedDate = new Date(createdAt).toLocaleString('tr-TR');
@@ -141,9 +141,7 @@ window.leafletMap = (function () {
         `;
     }
 
-    // ──────────────────────────────────────────────
-    // Incident marker ekle
-    // ──────────────────────────────────────────────
+    // Add incident marker
     function addIncidentMarker(incident) {
         if (!map) return;
         const { id, lat, lng, category, emergencyCode } = incident;
@@ -169,9 +167,7 @@ window.leafletMap = (function () {
         incidentMarkers[id] = marker;
     }
 
-    // ──────────────────────────────────────────────
-    // Team marker ekle / güncelle (Geri Getirilen Fonksiyon)
-    // ──────────────────────────────────────────────
+    // Add / update team marker (Restored Function)
     function addTeamMarker(team) {
         if (!map) return;
         const { id, teamName, status, lat, lng, updatedAt } = team;
@@ -211,7 +207,7 @@ window.leafletMap = (function () {
     }
 
     // ──────────────────────────────────────────────
-    // 6.1 Smooth Team Marker Animasyonu (GPS Geçişi)
+    // Smooth Team Marker Animation (GPS Transition)
     // ──────────────────────────────────────────────
     function animateTeamMarker(teamId, targetLat, targetLng) {
         const marker = teamMarkers[teamId];
@@ -222,7 +218,7 @@ window.leafletMap = (function () {
         }
 
         const start = marker.getLatLng();
-        const duration = 1000; // 1 saniye geçiş süresi
+        const duration = 1000;
         const startTime = performance.now();
 
         function animate(currentTime) {
@@ -246,9 +242,7 @@ window.leafletMap = (function () {
         marker._animFrameId = requestAnimationFrame(animate);
     }
 
-    // ──────────────────────────────────────────────
-    // Marker kaldır
-    // ──────────────────────────────────────────────
+    // Remove marker
     function removeIncidentMarker(incidentId) {
         if (incidentMarkers[incidentId]) {
             incidentClusterGroup.removeLayer(incidentMarkers[incidentId]);
@@ -263,9 +257,7 @@ window.leafletMap = (function () {
         }
     }
 
-    // ──────────────────────────────────────────────
-    // 6.2 Incident Status Güncelleme
-    // ──────────────────────────────────────────────
+    // Incident Status Update
     function updateIncidentStatus(incidentId, newStatus) {
         const marker = incidentMarkers[incidentId];
         if (!marker) return;
@@ -281,9 +273,7 @@ window.leafletMap = (function () {
         }
     }
 
-    // ──────────────────────────────────────────────
-    // 6.3 Team Status Güncelleme
-    // ──────────────────────────────────────────────
+    // Team Status Update
     function updateTeamStatus(teamId, newStatus) {
         const marker = teamMarkers[teamId];
         if (!marker) return;
@@ -304,9 +294,7 @@ window.leafletMap = (function () {
         }
     }
 
-    // ──────────────────────────────────────────────
-    // 6.4 Incident Atanmış Ekip Güncelleme
-    // ──────────────────────────────────────────────
+    // Incident Assigned Team Update
     function updateIncidentAssignment(incidentId, teamId, teamName) {
         const marker = incidentMarkers[incidentId];
         if (!marker) return;
@@ -317,9 +305,7 @@ window.leafletMap = (function () {
         }
     }
 
-    // ──────────────────────────────────────────────
     // Pan & Zoom
-    // ──────────────────────────────────────────────
     function panToIncident(incidentId) {
         if (incidentMarkers[incidentId]) {
             const latlng = incidentMarkers[incidentId].getLatLng();
@@ -332,9 +318,7 @@ window.leafletMap = (function () {
         if (map) map.flyTo([lat, lng], zoom || 15, { animate: true });
     }
 
-    // ──────────────────────────────────────────────
-    // Blazor'a geri çağırma hook'ları (DotNet referansı)
-    // ──────────────────────────────────────────────
+    // Callback hooks for Blazor (DotNet reference)
     let _dotNetRef = null;
 
     function setDotNetRef(dotNetRef) {
@@ -349,9 +333,7 @@ window.leafletMap = (function () {
         if (_dotNetRef) _dotNetRef.invokeMethodAsync('NotifyAssignTeam', incidentId);
     }
 
-    // ──────────────────────────────────────────────
-    // Haritayı temizle / yok et
-    // ──────────────────────────────────────────────
+    // Clear/destroy map
     function destroyMap() {
         if (map) {
             map.remove();
@@ -360,6 +342,142 @@ window.leafletMap = (function () {
             teamMarkers = {};
         }
     }
+
+    // Interactive Mini-Map Coordinate Picker
+    function initPickerMap(containerId, initialLat, initialLng, initialZoom, dotNetRef, tileProvider) {
+        if (pickerMap) {
+            pickerMap.remove();
+            pickerMap = null;
+        }
+
+        _pickerDotNetRef = dotNetRef;
+        const lat = initialLat || 40.409264;
+        const lng = initialLng || 49.867092;
+        const zoom = initialZoom || 14;
+
+        pickerMap = L.map(containerId, {
+            center: [lat, lng],
+            zoom: zoom,
+            zoomControl: true,
+            attributionControl: true
+        });
+
+        // Tile layer provider selection
+        const tileUrl = getTileUrl(tileProvider);
+        pickerTileLayer = L.tileLayer(tileUrl, {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(pickerMap);
+
+        // Draggable location pin
+        const pickerIcon = L.divIcon({
+            html: `
+              <svg xmlns="http://www.w3.org/2000/svg" width="34" height="42" viewBox="0 0 34 42">
+                <path d="M17 0C7.6 0 0 7.6 0 17c0 12.8 17 25 17 25S34 29.8 34 17C34 7.6 26.4 0 17 0z" fill="#3b82f6" stroke="#ffffff" stroke-width="2"/>
+                <circle cx="17" cy="17" r="6" fill="#ffffff"/>
+              </svg>`,
+            className: '',
+            iconSize: [34, 42],
+            iconAnchor: [17, 42]
+        });
+
+        pickerMarker = L.marker([lat, lng], {
+            draggable: true,
+            icon: pickerIcon
+        }).addTo(pickerMap);
+
+        // Click event on map to reposition marker
+        pickerMap.on('click', function (e) {
+            const clickedLat = e.latlng.lat;
+            const clickedLng = e.latlng.lng;
+            pickerMarker.setLatLng([clickedLat, clickedLng]);
+            notifyPickerLocation(clickedLat, clickedLng);
+        });
+
+        // Dragend event on marker
+        pickerMarker.on('dragend', function () {
+            const position = pickerMarker.getLatLng();
+            notifyPickerLocation(position.lat, position.lng);
+        });
+
+        // Force map resize recalculation after modal/tab transition
+        setTimeout(() => {
+            if (pickerMap) pickerMap.invalidateSize();
+        }, 200);
+    }
+
+    function notifyPickerLocation(lat, lng) {
+        if (_pickerDotNetRef) {
+            _pickerDotNetRef.invokeMethodAsync('NotifyLocationPicked', lat, lng);
+        }
+    }
+
+    function setPickerLocation(lat, lng, zoom) {
+        if (!pickerMap || !pickerMarker) return;
+        pickerMarker.setLatLng([lat, lng]);
+        pickerMap.setView([lat, lng], zoom || pickerMap.getZoom());
+    }
+
+    function updatePickerTileLayer(tileProvider) {
+        if (!pickerMap || !pickerTileLayer) return;
+        pickerMap.removeLayer(pickerTileLayer);
+        pickerTileLayer = L.tileLayer(getTileUrl(tileProvider), { maxZoom: 19 }).addTo(pickerMap);
+    }
+
+    function getTileUrl(provider) {
+        switch (provider) {
+            case 'CartoDark':
+                return 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+            case 'CartoPositron':
+                return 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+            default:
+                return 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+        }
+    }
+
+    function destroyPickerMap() {
+        if (pickerMap) {
+            pickerMap.remove();
+            pickerMap = null;
+            pickerMarker = null;
+            _pickerDotNetRef = null;
+            pickerTileLayer = null;
+        }
+    }
+
+    // Browser Geolocation API Bridge
+    function getCurrentBrowserLocation() {
+        return new Promise((resolve, reject) => {
+            if (!navigator.geolocation) {
+                reject(new Error("Geolocation is not supported by this browser."));
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    resolve({
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        accuracy: position.coords.accuracy
+                    });
+                },
+                (error) => {
+                    let message = "Unable to retrieve your location.";
+                    if (error.code === error.PERMISSION_DENIED) {
+                        message = "Location permission denied by user.";
+                    } else if (error.code === error.POSITION_UNAVAILABLE) {
+                        message = "Location information is unavailable.";
+                    } else if (error.code === error.TIMEOUT) {
+                        message = "The request to get user location timed out.";
+                    }
+                    reject(new Error(message));
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        });
+    }
+
+
 
     // Public API
     return {
@@ -377,6 +495,11 @@ window.leafletMap = (function () {
         setDotNetRef,
         onIncidentDetailClick,
         onAssignTeamClick,
-        destroyMap
+        destroyMap,
+        initPickerMap,
+        setPickerLocation,
+        updatePickerTileLayer,
+        destroyPickerMap,
+        getCurrentBrowserLocation
     };
 })();

@@ -7,6 +7,7 @@
 @inject HttpClient Http
 @inject IJSRuntime JS
 @inject IToastService ToastService
+@inject ISettingsService SettingsService
 @implements IAsyncDisposable
 
 <div class="leaflet-map-wrapper" id="@_containerId" style="height: @Height; width: 100%;"></div>
@@ -21,25 +22,24 @@
     [Parameter] public EventCallback<Guid> OnIncidentDetailRequested { get; set; }
     [Parameter] public EventCallback<Guid> OnAssignTeamRequested { get; set; }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+        protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
 
-        // 1. Haritayı Leaflet üzerinden başlat
-        await MapService.InitializeMapAsync(_containerId);
+        // 1. Initialize the map with the coordinates and zoom level read from the settings.
+        var prefs = await SettingsService.GetPreferencesAsync();
+        await MapService.InitializeMapAsync(_containerId, prefs.DefaultLatitude, prefs.DefaultLongitude, prefs.DefaultZoom);
 
-        // 2. DotNet referansını JS'e bağla (Popup buton tıklamaları için)
+        // 2. Connect the DotNet reference
         _dotNetRef = DotNetObjectReference.Create(this);
         await MapService.SetDotNetReferenceAsync(_dotNetRef);
 
-        // 3. REST API üzerinden mevcut aktif olay ve ekipleri haritaya ilk yükle
+        // 3. Upload incident and teams
         await LoadIncidentsAsync();
         await LoadTeamsAsync();
 
-        // 4. SignalR Event Dinleyicilerine Abone Ol
+        // 4. SignalR subscriptions and initialization
         SubscribeToHubEvents();
-
-        // 5. Hub Bağlantılarını Başlat
         await IncidentHub.StartAsync();
         await LocationHub.StartAsync();
     }

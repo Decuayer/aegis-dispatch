@@ -1,0 +1,123 @@
+@using SocarDispatch.Web.Models.Settings
+@using SocarDispatch.Web.Services
+@inject ISettingsService SettingsService
+@inject IToastService ToastService
+@inject IJSRuntime JS
+
+<div class="settings-card">
+    <div class="settings-card-header">
+        <div>
+            <h3 class="settings-card-title">Audio & Notification Preferences</h3>
+            <p class="settings-card-subtitle">Configure audio warning signals and toast banner visibility durations.</p>
+        </div>
+    </div>
+
+    <div class="settings-card-body">
+        <div class="settings-control-list">
+            <!-- Audio Alert Switch Row -->
+            <div class="settings-control-row">
+                <div class="control-info">
+                    <div class="control-title">Emergency Audio Signal</div>
+                    <div class="control-desc">Play a two-tone audible siren when a new high-severity incident is dispatched.</div>
+                </div>
+                <div class="control-actions">
+                    <button type="button" class="btn btn-ghost btn-sm" @onclick="TestSoundAsync">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                        </svg>
+                        <span>Test Sound</span>
+                    </button>
+                    <label class="sd-switch">
+                        <input type="checkbox" @bind="_preferences.EmergencyAudioAlertEnabled" />
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="divider-line"></div>
+
+            <!-- Toast Duration Slider Row -->
+            <div class="settings-control-row">
+                <div class="control-info">
+                    <div class="control-title">Toast Banner Duration</div>
+                    <div class="control-desc">Time in seconds before on-screen alert notifications automatically dismiss.</div>
+                </div>
+                <div class="control-actions slider-action-group">
+                    <button type="button" class="btn btn-ghost btn-sm" @onclick="PreviewToast">
+                        Preview Toast
+                    </button>
+                    <div class="toast-slider-wrapper">
+                        <span class="slider-value">@_preferences.ToastDurationSeconds s</span>
+                        <input type="range" min="3" max="10" class="form-range custom-slider" @bind="_preferences.ToastDurationSeconds" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="settings-card-footer">
+        <button type="button" class="btn btn-primary" @onclick="SaveNotificationSettingsAsync" disabled="@_isSaving">
+            @if (_isSaving)
+            {
+                <span class="spinner-sm"></span>
+                <span>Saving...</span>
+            }
+            else
+            {
+                <span>Save Notification Settings</span>
+            }
+        </button>
+    </div>
+</div>
+
+@code {
+    private UserPreferencesDto _preferences = new();
+    private bool _isSaving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _preferences = await SettingsService.GetPreferencesAsync();
+    }
+
+    private async Task TestSoundAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("socarAudio.playEmergencyBeep");
+            ToastService.ShowInfo("Emergency signal sound played.", "Audio Test");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Audio playback error: {ex.Message}");
+        }
+    }
+
+    private void PreviewToast()
+    {
+        ToastService.Show(
+            title: "Notification Preview",
+            message: $"This toast will remain visible for {_preferences.ToastDurationSeconds} seconds.",
+            level: ToastLevel.Info,
+            durationMs: _preferences.ToastDurationSeconds * 1000
+        );
+    }
+
+    private async Task SaveNotificationSettingsAsync()
+    {
+        _isSaving = true;
+        try
+        {
+            await SettingsService.SavePreferencesAsync(_preferences);
+            ToastService.ShowSuccess("Notification preferences saved successfully.", "Preferences Saved");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Failed to save preferences: {ex.Message}");
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+}

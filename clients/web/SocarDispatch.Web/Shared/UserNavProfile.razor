@@ -1,19 +1,40 @@
 @using System.Security.Claims
+@using SocarDispatch.Web.Models.Auth
+@using SocarDispatch.Web.Services
 @inject IAuthService AuthService
+@inject IUserService UserService
 @inject NavigationManager NavigationManager
+@implements IDisposable
 
 <AuthorizeView>
     <Authorized Context="authContext">
         <div class="nav-profile">
+            <!-- User Avatar or Initials -->
             <div class="nav-profile-avatar">
-                @GetUserInitials(authContext.User)
+                @if (!string.IsNullOrWhiteSpace(_currentUser?.AvatarUrl))
+                {
+                    <img src="@_currentUser.AvatarUrl" alt="Avatar" class="nav-profile-avatar-img" onerror="this.style.display='none'" />
+                }
+                else
+                {
+                    @GetUserInitials(_currentUser, authContext.User)
+                }
             </div>
+
+            <!-- User Info & Badges -->
             <div class="nav-profile-info">
-                <span class="nav-profile-name">@GetUserName(authContext.User)</span>
-                <span class="badge-role">Operator</span>
+                <span class="nav-profile-name">@GetDisplayName(_currentUser, authContext.User)</span>
+                <div class="nav-profile-role-row">
+                    <span class="badge-role">@(_currentUser?.RoleType.ToString() ?? "Operator")</span>
+                    @if (!string.IsNullOrWhiteSpace(_currentUser?.SubRole))
+                    {
+                        <span class="badge-subrole">@_currentUser.SubRole</span>
+                    }
+                </div>
             </div>
+
+            <!-- Sign Out Button -->
             <button class="btn btn-danger-ghost nav-signout-btn" @onclick="HandleLogout" title="Sign out">
-                <!-- Logout icon -->
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                     <polyline points="16 17 21 12 16 7"/>
@@ -33,9 +54,9 @@
     }
 
     .nav-profile-avatar {
-        width: 32px;
-        height: 32px;
-        border-radius: 6px;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
         background-color: var(--color-accent);
         color: #ffffff;
         font-size: 12px;
@@ -45,6 +66,15 @@
         justify-content: center;
         flex-shrink: 0;
         letter-spacing: 0.3px;
+        overflow: hidden;
+        border: 1px solid var(--color-border);
+    }
+
+    .nav-profile-avatar-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
     }
 
     .nav-profile-info {
@@ -57,7 +87,27 @@
         font-size: 13px;
         font-weight: 600;
         color: var(--color-text-primary);
-        line-height: 1;
+        line-height: 1.2;
+    }
+
+    .nav-profile-role-row {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .nav-profile-role-row .badge-role {
+        font-size: 9px;
+        padding: 1px 5px;
+    }
+
+    .nav-profile-role-row .badge-subrole {
+        font-size: 9px;
+        font-weight: 600;
+        padding: 1px 5px;
+        border-radius: 4px;
+        background: var(--color-surface-3);
+        color: var(--color-text-muted);
     }
 
     .nav-signout-btn {
@@ -72,17 +122,64 @@
 </style>
 
 @code {
-    private string GetUserName(ClaimsPrincipal user)
+    private UserDto? _currentUser;
+
+    protected override async Task OnInitializedAsync()
     {
-        var name = user.FindFirst(ClaimTypes.Name)?.Value
-                ?? user.FindFirst("name")?.Value
-                ?? user.Identity?.Name;
+        UserService.OnUserProfileUpdated += HandleProfileUpdated;
+        await LoadUserProfileAsync();
+    }
+
+    private async Task LoadUserProfileAsync()
+    {
+        try
+        {
+            var response = await UserService.GetCurrentUserAsync();
+            if (response != null && response.Success && response.Data != null)
+            {
+                _currentUser = response.Data;
+                StateHasChanged();
+            }
+        }
+        catch
+        {
+            // Ignore if anonymous or offline
+        }
+    }
+
+    private void HandleProfileUpdated(UserDto updatedUser)
+    {
+        InvokeAsync(() =>
+        {
+            _currentUser = updatedUser;
+            StateHasChanged();
+        });
+    }
+
+    private string GetDisplayName(UserDto? user, ClaimsPrincipal claimsPrincipal)
+    {
+        if (user != null && (!string.IsNullOrWhiteSpace(user.FirstName) || !string.IsNullOrWhiteSpace(user.LastName)))
+        {
+            return $"{user.FirstName} {user.LastName}".Trim();
+        }
+
+        var name = claimsPrincipal.FindFirst(ClaimTypes.Name)?.Value
+                ?? claimsPrincipal.FindFirst("name")?.Value
+                ?? claimsPrincipal.Identity?.Name;
+
         return !string.IsNullOrWhiteSpace(name) ? name : "Operator";
     }
 
-    private string GetUserInitials(ClaimsPrincipal user)
+    private string GetUserInitials(UserDto? user, ClaimsPrincipal claimsPrincipal)
     {
-        var name = GetUserName(user);
+        if (user != null && (!string.IsNullOrWhiteSpace(user.FirstName) || !string.IsNullOrWhiteSpace(user.LastName)))
+        {
+            var f = !string.IsNullOrWhiteSpace(user.FirstName) ? user.FirstName[0].ToString().ToUpper() : "";
+            var l = !string.IsNullOrWhiteSpace(user.LastName) ? user.LastName[0].ToString().ToUpper() : "";
+            return $"{f}{l}";
+        }
+
+        var name = GetDisplayName(user, claimsPrincipal);
         if (string.IsNullOrWhiteSpace(name)) return "OP";
         var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         return parts.Length >= 2
@@ -94,5 +191,10 @@
     {
         await AuthService.LogoutAsync();
         NavigationManager.NavigateTo("login");
+    }
+
+    public void Dispose()
+    {
+        UserService.OnUserProfileUpdated -= HandleProfileUpdated;
     }
 }

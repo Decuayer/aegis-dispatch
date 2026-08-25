@@ -1,0 +1,194 @@
+@using SocarDispatch.Web.Models.Settings
+@using SocarDispatch.Web.Services
+@inject ISettingsService SettingsService
+@inject IMapService MapService
+@inject IToastService ToastService
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<div class="settings-card">
+    <div class="settings-card-header">
+        <div>
+            <h3 class="settings-card-title">Geospatial & Map Configuration</h3>
+            <p class="settings-card-subtitle">Set default facility coordinates and zoom level for operator map dashboards.</p>
+        </div>
+        <button type="button" class="btn btn-ghost btn-sm" @onclick="UseCurrentLocationAsync" disabled="@_isLocating">
+            @if (_isLocating)
+            {
+                <span class="spinner-sm"></span>
+                <span>Detecting location...</span>
+            }
+            else
+            {
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M12 2v3m0 14v3M2 12h3m14 0h3"/>
+                </svg>
+                <span>Use Current Location</span>
+            }
+        </button>
+    </div>
+
+    <div class="settings-card-body">
+        <!-- Interactive Mini-Map Picker -->
+        <div class="picker-map-container">
+            <div id="@_pickerContainerId" class="picker-map"></div>
+            <div class="map-overlay-hint">
+                <span>💡 Click on map or drag pin to adjust coordinates</span>
+            </div>
+        </div>
+
+        <div class="settings-grid">
+            <!-- Latitude Input -->
+            <div class="form-group">
+                <label class="form-label">Default Latitude</label>
+                <input type="number" step="0.000001" class="form-control" 
+                       @bind="_preferences.DefaultLatitude" 
+                       @bind:after="SyncMapFromInputsAsync" />
+            </div>
+
+            <!-- Longitude Input -->
+            <div class="form-group">
+                <label class="form-label">Default Longitude</label>
+                <input type="number" step="0.000001" class="form-control" 
+                       @bind="_preferences.DefaultLongitude" 
+                       @bind:after="SyncMapFromInputsAsync" />
+            </div>
+
+            <!-- Zoom Level Slider -->
+            <div class="form-group">
+                <div class="slider-label-row">
+                    <label class="form-label">Default Zoom Level</label>
+                    <span class="slider-value">@_preferences.DefaultZoom</span>
+                </div>
+                <input type="range" min="1" max="18" class="form-range custom-slider" 
+                       @bind="_preferences.DefaultZoom" 
+                       @bind:after="SyncMapFromInputsAsync" />
+            </div>
+
+            <!-- Tile Provider Selection -->
+            <div class="form-group">
+                <label class="form-label">Map Tile Provider</label>
+                <select class="form-select" @bind="_preferences.TileProvider" @bind:after="OnTileProviderChangedAsync">
+                    <option value="OpenStreetMap">OpenStreetMap (Standard)</option>
+                    <option value="CartoDark">CartoDB Dark Matter (High Contrast)</option>
+                    <option value="CartoPositron">CartoDB Positron (Light)</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="settings-card-footer">
+        <button type="button" class="btn btn-primary" @onclick="SaveMapSettingsAsync" disabled="@_isSaving">
+            @if (_isSaving)
+            {
+                <span class="spinner-sm"></span>
+                <span>Saving...</span>
+            }
+            else
+            {
+                <span>Save Map Preferences</span>
+            }
+        </button>
+    </div>
+</div>
+
+@code {
+    private readonly string _pickerContainerId = $"leaflet-picker-{Guid.NewGuid():N}";
+    private DotNetObjectReference<MapSettingsSection>? _dotNetRef;
+    private UserPreferencesDto _preferences = new();
+    private bool _isLocating;
+    private bool _isSaving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _preferences = await SettingsService.GetPreferencesAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            await MapService.InitializePickerMapAsync(
+                _pickerContainerId, 
+                _preferences.DefaultLatitude, 
+                _preferences.DefaultLongitude, 
+                _preferences.DefaultZoom, 
+                _dotNetRef, 
+                _preferences.TileProvider);
+        }
+    }
+
+    [JSInvokable]
+    public void NotifyLocationPicked(double lat, double lng)
+    {
+        _preferences.DefaultLatitude = Math.Round(lat, 6);
+        _preferences.DefaultLongitude = Math.Round(lng, 6);
+        StateHasChanged();
+    }
+
+    private async Task SyncMapFromInputsAsync()
+    {
+        await MapService.SetPickerLocationAsync(_preferences.DefaultLatitude, _preferences.DefaultLongitude, _preferences.DefaultZoom);
+    }
+
+    private async Task OnTileProviderChangedAsync()
+    {
+        await MapService.UpdatePickerTileLayerAsync(_preferences.TileProvider);
+    }
+
+    private async Task UseCurrentLocationAsync()
+    {
+        _isLocating = true;
+        try
+        {
+            var result = await JS.InvokeAsync<GeolocationModel>("leafletMap.getCurrentBrowserLocation");
+            if (result != null)
+            {
+                _preferences.DefaultLatitude = Math.Round(result.Latitude, 6);
+                _preferences.DefaultLongitude = Math.Round(result.Longitude, 6);
+                await SyncMapFromInputsAsync();
+                ToastService.ShowSuccess("Location successfully acquired from browser.", "Location Detected");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError(ex.Message, "Location Error");
+        }
+        finally
+        {
+            _isLocating = false;
+        }
+    }
+
+    private async Task SaveMapSettingsAsync()
+    {
+        _isSaving = true;
+        try
+        {
+            await SettingsService.SavePreferencesAsync(_preferences);
+            ToastService.ShowSuccess("Map configuration updated successfully.", "Preferences Saved");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Failed to save map preferences: {ex.Message}");
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await MapService.DestroyPickerMapAsync();
+        _dotNetRef?.Dispose();
+    }
+
+    private class GeolocationModel
+    {
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
+    }
+}

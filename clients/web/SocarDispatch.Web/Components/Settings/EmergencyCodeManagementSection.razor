@@ -1,0 +1,364 @@
+@using SocarDispatch.Web.Models.Dispatch
+@using SocarDispatch.Web.Services
+@inject IEmergencyCodeService EmergencyCodeService
+@inject IToastService ToastService
+
+<div class="settings-card">
+    <div class="settings-card-header">
+        <div>
+            <h3 class="settings-card-title">Emergency Code Management</h3>
+            <p class="settings-card-subtitle">Configure priority codes, color tags, and severity levels for active dispatch operations.</p>
+        </div>
+        <button type="button" class="btn btn-primary btn-sm" @onclick="OpenAddModal">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            <span>Add Emergency Code</span>
+        </button>
+    </div>
+
+    <div class="settings-card-body p-0">
+        @if (_isLoading)
+        {
+            <div class="table-loading-state">
+                <div class="spinner-sm"></div>
+                <span>Loading emergency codes...</span>
+            </div>
+        }
+        else if (_codes.Count == 0)
+        {
+            <div class="table-empty-state">
+                <p>No emergency codes configured.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="settings-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 140px;">Code Badge</th>
+                            <th style="width: 140px;">Severity Level</th>
+                            <th>Description</th>
+                            <th style="width: 100px;">Status</th>
+                            <th style="width: 120px; text-align: right;">Actions</th>
+                        </tr>
+                    </thead>
+                                        <tbody>
+                        @foreach (var item in _codes.OrderBy(c => c.SeverityLevel))
+                        {
+                            <tr>
+                                <td>
+                                    <span class="emergency-code-badge" style="background-color: @item.ColorHex;">
+                                        @item.Code
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="severity-pill severity-@item.SeverityLevel">
+                                        Level @item.SeverityLevel
+                                    </span>
+                                </td>
+                                <td class="text-muted-color">@item.Description</td>
+                                <td>
+                                    <button type="button" class="badge-status-btn @(item.IsActive ? "active" : "inactive")" 
+                                            @onclick="() => ToggleActiveStatusAsync(item)" 
+                                            title="Click to toggle status">
+                                        @(item.IsActive ? "Active" : "Inactive")
+                                    </button>
+                                </td>
+                                <td style="text-align: right;">
+                                    <button type="button" class="btn-action" @onclick="() => OpenEditModal(item)" title="Edit">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M12 20h9"/>
+                                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                                        </svg>
+                                    </button>
+                                    <button type="button" class="btn-action btn-action-danger" @onclick="() => PromptDelete(item)" title="Delete">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="3 6 5 6 21 6"/>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                        </svg>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Add / Edit Emergency Code Modal -->
+@if (_isFormModalOpen)
+{
+    <div class="settings-modal-backdrop">
+        <div class="settings-modal">
+            <div class="settings-modal-header">
+                <h4>@(_isEditing ? "Edit Emergency Code" : "Add Emergency Code")</h4>
+                <button type="button" class="modal-close-btn" @onclick="CloseFormModal">×</button>
+            </div>
+            <EditForm Model="@_formModel" OnValidSubmit="HandleFormSubmitAsync">
+                <DataAnnotationsValidator />
+                <div class="settings-modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Code Identifier *</label>
+                        <InputText class="form-control" @bind-Value="_formModel.Code" placeholder="e.g. CODE-RED, CODE-ORANGE" />
+                        <ValidationMessage For="@(() => _formModel.Code)" class="validation-message" />
+                    </div>
+
+                    <!-- Color Picker Control -->
+                    <div class="form-group">
+                        <label class="form-label">Badge Color (Hex) *</label>
+                        <div class="color-picker-row">
+                            <input type="color" class="color-swatch-input" @bind="_formModel.ColorHex" />
+                            <InputText class="form-control font-monospace" @bind-Value="_formModel.ColorHex" placeholder="#EF4444" />
+                            <div class="color-palette-presets">
+                                <span class="palette-chip" style="background:#ef4444" @onclick='() => _formModel.ColorHex = "#ef4444"'></span>
+                                <span class="palette-chip" style="background:#f97316" @onclick='() => _formModel.ColorHex = "#f97316"'></span>
+                                <span class="palette-chip" style="background:#eab308" @onclick='() => _formModel.ColorHex = "#eab308"'></span>
+                                <span class="palette-chip" style="background:#3b82f6" @onclick='() => _formModel.ColorHex = "#3b82f6"'></span>
+                                <span class="palette-chip" style="background:#a855f7" @onclick='() => _formModel.ColorHex = "#a855f7"'></span>
+                            </div>
+                        </div>
+                        <ValidationMessage For="@(() => _formModel.ColorHex)" class="validation-message" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Severity Level (1: Highest, 10: Lowest) *</label>
+                        <InputNumber class="form-control" @bind-Value="_formModel.SeverityLevel" min="1" max="10" />
+                        <ValidationMessage For="@(() => _formModel.SeverityLevel)" class="validation-message" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <InputTextArea class="form-control" rows="3" @bind-Value="_formModel.Description" placeholder="Operational guidelines for this code..." />
+                        <ValidationMessage For="@(() => _formModel.Description)" class="validation-message" />
+                    </div>
+                </div>
+                <div class="settings-modal-footer">
+                    <button type="button" class="btn btn-ghost" @onclick="CloseFormModal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" disabled="@_isSubmitting">
+                        @if (_isSubmitting)
+                        {
+                            <span class="spinner-sm"></span>
+                            <span>Saving...</span>
+                        }
+                        else
+                        {
+                            <span>@(_isEditing ? "Update Code" : "Create Code")</span>
+                        }
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+<!-- Delete Confirmation Modal -->
+@if (_codeToDelete != null)
+{
+    <div class="settings-modal-backdrop">
+        <div class="settings-modal modal-sm">
+            <div class="settings-modal-header">
+                <h4>Confirm Deactivation</h4>
+                <button type="button" class="modal-close-btn" @onclick="CancelDelete">×</button>
+            </div>
+            <div class="settings-modal-body">
+                <p>Are you sure you want to deactivate code <strong>@_codeToDelete.Code</strong>?</p>
+            </div>
+            <div class="settings-modal-footer">
+                <button type="button" class="btn btn-ghost" @onclick="CancelDelete">Cancel</button>
+                <button type="button" class="btn btn-primary" style="background-color: var(--color-danger); border-color: var(--color-danger);" 
+                        @onclick="ConfirmDeleteAsync" disabled="@_isSubmitting">
+                    Confirm Deactivate
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<EmergencyCodeDto> _codes = new();
+    private bool _isLoading = true;
+
+    // Modal state
+    private bool _isFormModalOpen;
+    private bool _isEditing;
+    private Guid _editingCodeId;
+    private UpdateEmergencyCodeRequestDto _formModel = new();
+    private EmergencyCodeDto? _codeToDelete;
+    private bool _isSubmitting;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCodesAsync();
+    }
+
+    private async Task LoadCodesAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            var response = await EmergencyCodeService.GetEmergencyCodesAsync();
+            if (response != null && response.Success && response.Data != null)
+            {
+                _codes = response.Data;
+            }
+            else
+            {
+                ToastService.ShowError(response?.Message ?? "Failed to load emergency codes.");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error loading codes: {ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void OpenAddModal()
+    {
+        _isEditing = false;
+        _editingCodeId = Guid.Empty;
+        _formModel = new UpdateEmergencyCodeRequestDto { ColorHex = "#EF4444", SeverityLevel = 1 };
+        _isFormModalOpen = true;
+    }
+
+    private void OpenEditModal(EmergencyCodeDto code)
+    {
+        _isEditing = true;
+        _editingCodeId = code.Id;
+        _formModel = new UpdateEmergencyCodeRequestDto
+        {
+            Code = code.Code,
+            ColorHex = code.ColorHex,
+            SeverityLevel = code.SeverityLevel,
+            Description = code.Description,
+            IsActive = code.IsActive
+        };
+        _isFormModalOpen = true;
+    }
+
+    private void CloseFormModal()
+    {
+        _isFormModalOpen = false;
+    }
+
+    private async Task HandleFormSubmitAsync()
+    {
+        _isSubmitting = true;
+        try
+        {
+            if (_isEditing)
+            {
+                var response = await EmergencyCodeService.UpdateEmergencyCodeAsync(_editingCodeId, _formModel);
+                if (response != null && response.Success)
+                {
+                    ToastService.ShowSuccess("Emergency code updated successfully.", "Code Updated");
+                    CloseFormModal();
+                    await LoadCodesAsync();
+                }
+                else
+                {
+                    ToastService.ShowError(response?.Message ?? "Failed to update code.");
+                }
+            }
+            else
+            {
+                var createDto = new CreateEmergencyCodeRequestDto
+                {
+                    Code = _formModel.Code,
+                    ColorHex = _formModel.ColorHex,
+                    SeverityLevel = _formModel.SeverityLevel,
+                    Description = _formModel.Description
+                };
+                var response = await EmergencyCodeService.CreateEmergencyCodeAsync(createDto);
+                if (response != null && response.Success)
+                {
+                    ToastService.ShowSuccess("Emergency code created successfully.", "Code Created");
+                    CloseFormModal();
+                    await LoadCodesAsync();
+                }
+                else
+                {
+                    ToastService.ShowError(response?.Message ?? "Failed to create code.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error processing code: {ex.Message}");
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private async Task ToggleActiveStatusAsync(EmergencyCodeDto code)
+    {
+        var updateDto = new UpdateEmergencyCodeRequestDto
+        {
+            Code = code.Code,
+            ColorHex = code.ColorHex,
+            SeverityLevel = code.SeverityLevel,
+            Description = code.Description,
+            IsActive = !code.IsActive
+        };
+
+        var response = await EmergencyCodeService.UpdateEmergencyCodeAsync(code.Id, updateDto);
+        if (response != null && response.Success)
+        {
+            code.IsActive = !code.IsActive;
+            ToastService.ShowSuccess($"Code '{code.Code}' status updated.", "Status Changed");
+        }
+        else
+        {
+            ToastService.ShowError("Failed to update status.");
+        }
+    }
+
+    private void PromptDelete(EmergencyCodeDto code)
+    {
+        _codeToDelete = code;
+    }
+
+    private void CancelDelete()
+    {
+        _codeToDelete = null;
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_codeToDelete == null) return;
+        _isSubmitting = true;
+        try
+        {
+            var response = await EmergencyCodeService.DeleteEmergencyCodeAsync(_codeToDelete.Id);
+            if (response != null && response.Success)
+            {
+                ToastService.ShowSuccess("Emergency code deactivated successfully.", "Code Deactivated");
+                _codeToDelete = null;
+                await LoadCodesAsync();
+            }
+            else
+            {
+                ToastService.ShowError(response?.Message ?? "Failed to deactivate code.");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error: {ex.Message}");
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+}
