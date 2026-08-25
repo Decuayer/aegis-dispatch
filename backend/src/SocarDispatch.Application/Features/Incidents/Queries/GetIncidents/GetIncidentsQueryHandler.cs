@@ -46,6 +46,8 @@ public class GetIncidentsQueryHandler : IRequestHandler<GetIncidentsQuery, ApiRe
                 ReporterPhone = i.Reporter.Phone ?? string.Empty,
                 ReporterDepartment = i.Reporter.Department ?? string.Empty,
                 ReporterEmail = i.Reporter.Email ?? string.Empty,
+                ReporterSubRole = i.Reporter.SubRole ?? string.Empty,
+                ReporterAvatarUrl = i.Reporter.AvatarUrl ?? string.Empty,
                 Category = i.Category,
                 EmergencyCode = i.EmergencyCode,
                 Description = i.Description,

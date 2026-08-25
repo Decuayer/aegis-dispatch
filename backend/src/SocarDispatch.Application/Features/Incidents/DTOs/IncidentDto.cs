@@ -9,6 +9,8 @@ public class IncidentDto
     public string ReporterPhone { get; set; } = string.Empty;
     public string ReporterDepartment { get; set; } = string.Empty;
     public string ReporterEmail { get; set; } = string.Empty;
+    public string? ReporterSubRole { get; set; }
+    public string? ReporterAvatarUrl { get; set; }
 
     public string Category { get; set; } = string.Empty;
     public string EmergencyCode { get; set; } = string.Empty;

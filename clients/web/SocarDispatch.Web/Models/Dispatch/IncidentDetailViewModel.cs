@@ -18,6 +18,8 @@ public class IncidentDetailViewModel
     public string? ReporterDepartment { get; set; }
     public string? ReporterPhone { get; set; }
     public string? ReporterEmail { get; set; }
+    public string? ReporterSubRole { get; set; }
+    public string? ReporterAvatarUrl { get; set; }
 
     // Media Attachments
     public List<IncidentMediaViewModel> MediaAttachments { get; set; } = new();
