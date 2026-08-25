@@ -85,19 +85,62 @@ public class IncidentService : IIncidentService
         }
     }
 
-    public async Task<ApiResponse<IncidentDetailViewModel>?> UpdateStatusAsync(Guid id, string status, string? completionNotes = null, CancellationToken cancellationToken = default)
+    public async Task<ApiResponse<IncidentDetailViewModel>?> UpdateIncidentAsync(
+        Guid id, 
+        UpdateIncidentRequestDto request, 
+        CancellationToken cancellationToken = default)
     {
         try
         {
-            var payload = new { Status = status, CompletionNotes = completionNotes };
-            var response = await _http.PatchAsJsonAsync($"api/v1/incidents/{id}/status", payload, cancellationToken);
-            
-            return await response.Content.ReadFromJsonAsync<ApiResponse<IncidentDetailViewModel>>(cancellationToken: cancellationToken)
-                   ?? ApiResponse<IncidentDetailViewModel>.FailureResult("Empty response from server.");
+            var response = await _http.PutAsJsonAsync($"api/v1/incidents/{id}", request, cancellationToken);
+            var result = await response.Content.ReadFromJsonAsync<ApiResponse<IncidentDetailViewModel>>(cancellationToken: cancellationToken);
+
+            if (response.IsSuccessStatusCode && result != null)
+            {
+                return result;
+            }
+
+            return result ?? ApiResponse<IncidentDetailViewModel>.FailureResult("Failed to update incident: Unknown server error.");
         }
         catch (Exception ex)
         {
-            return ApiResponse<IncidentDetailViewModel>.FailureResult($"Failed to update incident status: {ex.Message}");
+            return ApiResponse<IncidentDetailViewModel>.FailureResult($"Failed to update incident: {ex.Message}");
         }
+    }
+
+    public async Task<ApiResponse<IncidentDetailViewModel>?> ChangeIncidentStatusAsync(
+        Guid id, 
+        ChangeIncidentStatusRequestDto request, 
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await _http.PatchAsJsonAsync($"api/v1/incidents/{id}/status", request, cancellationToken);
+            var result = await response.Content.ReadFromJsonAsync<ApiResponse<IncidentDetailViewModel>>(cancellationToken: cancellationToken);
+
+            if (response.IsSuccessStatusCode && result != null)
+            {
+                return result;
+            }
+
+            return result ?? ApiResponse<IncidentDetailViewModel>.FailureResult("Failed to change incident status: Unknown server error.");
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<IncidentDetailViewModel>.FailureResult($"Failed to change incident status: {ex.Message}");
+        }
+    }
+
+    public Task<ApiResponse<IncidentDetailViewModel>?> UpdateStatusAsync(
+        Guid id, 
+        string status, 
+        string? completionNotes = null, 
+        CancellationToken cancellationToken = default)
+    {
+        return ChangeIncidentStatusAsync(id, new ChangeIncidentStatusRequestDto
+        {
+            Status = status,
+            CompletionNotes = completionNotes
+        }, cancellationToken);
     }
 }

@@ -32,12 +32,24 @@
                     <span class="badge-code @GetEmergencyCodeBadgeClass(_incident.EmergencyCode)">@_incident.EmergencyCode</span>
                     <span class="badge-status @GetStatusBadgeClass(_incident.Status)">@_incident.Status</span>
                 </div>
-                <button type="button" class="btn-close" @onclick="CloseSidebar" title="Close Panel (ESC)">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"/>
-                        <line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                </button>
+                <div class="header-actions">
+                    @if (!_isEditMode && _incident.Status != "Canceled" && _incident.Status != "Resolved")
+                    {
+                        <button type="button" class="btn-header-edit" @onclick="() => _isEditMode = true" title="Edit Incident Details">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                            <span>Edit</span>
+                        </button>
+                    }
+                    <button type="button" class="btn-close" @onclick="CloseSidebar" title="Close Panel (ESC)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
             <h2 class="incident-title">@_incident.Category</h2>
             <div class="incident-timestamp">
@@ -51,165 +63,174 @@
 
         <!-- Scrollable Content Body -->
         <div class="sidebar-body">
-            <!-- Reporter Card -->
-            <section class="section-card">
-                <div class="section-title">Reporter Information</div>
-                <div class="reporter-box">
-                    <div class="reporter-avatar">
-                        @if (!string.IsNullOrWhiteSpace(_incident.ReporterAvatarUrl))
+            @if (_isEditMode)
+            {
+                <IncidentEditForm Incident="_incident" 
+                                  OnSaved="HandleIncidentSaved" 
+                                  OnCancel="() => _isEditMode = false" />
+            }
+            else
+            {
+                <!-- Reporter Card -->
+                <section class="section-card">
+                    <div class="section-title">Reporter Information</div>
+                    <div class="reporter-box">
+                        <div class="reporter-avatar">
+                            @if (!string.IsNullOrWhiteSpace(_incident.ReporterAvatarUrl))
+                            {
+                                <img src="@_incident.ReporterAvatarUrl" alt="@_incident.ReporterFullName" class="reporter-avatar-img" />
+                            }
+                            else
+                            {
+                                @GetInitials(_incident.ReporterFullName)
+                            }
+                        </div>
+                        <div class="reporter-info">
+                            <strong class="reporter-name">@_incident.ReporterFullName</strong>
+                            <span class="reporter-dept">@(!string.IsNullOrWhiteSpace(_incident.ReporterSubRole) ? _incident.ReporterSubRole : (!string.IsNullOrWhiteSpace(_incident.ReporterDepartment) ? _incident.ReporterDepartment : "Field Operations"))</span>
+                        </div>
+                        <div class="reporter-actions">
+                            @if (!string.IsNullOrWhiteSpace(_incident.ReporterPhone))
+                            {
+                                <a href="tel:@_incident.ReporterPhone" class="btn-contact phone" title="Call @_incident.ReporterPhone">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                                    </svg>
+                                </a>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(_incident.ReporterEmail))
+                            {
+                                <a href="mailto:@_incident.ReporterEmail" class="btn-contact email" title="Email @_incident.ReporterEmail">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                        <polyline points="22,6 12,13 2,6"/>
+                                    </svg>
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Collapsible Description -->
+                <section class="section-card">
+                    <div class="collapsible-header" @onclick="ToggleDescription">
+                        <div class="section-title">Situational Description</div>
+                        <button type="button" class="btn-toggle">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="@(_isDescExpanded ? "rotated" : "")">
+                                <polyline points="6 9 12 15 18 9"/>
+                            </svg>
+                        </button>
+                    </div>
+                    @if (_isDescExpanded)
+                    {
+                        <div class="description-content">
+                            <p>@(string.IsNullOrWhiteSpace(_incident.Description) ? "No additional details provided." : _incident.Description)</p>
+                        </div>
+                    }
+                </section>
+
+                <!-- Operational Incident Status Management -->
+                <section class="section-card status-actions-card">
+                    <div class="section-title">Incident Status Actions</div>
+                    <div class="status-action-buttons">
+                        @if (_incident.Status is "Open" or "Assigned")
                         {
-                            <img src="@_incident.ReporterAvatarUrl" alt="@_incident.ReporterFullName" class="reporter-avatar-img" />
+                            <button type="button" class="btn-status-action btn-resolve" @onclick="OpenResolveModal" disabled="@_isUpdatingStatus">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                </svg>
+                                <span>Mark as Resolved</span>
+                            </button>
+                            <button type="button" class="btn-status-action btn-cancel" @onclick="OpenCancelModal" disabled="@_isUpdatingStatus">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="15" y1="9" x2="9" y2="15"/>
+                                    <line x1="9" y1="9" x2="15" y2="15"/>
+                                </svg>
+                                <span>Cancel Incident</span>
+                            </button>
                         }
                         else
                         {
-                            @GetInitials(_incident.ReporterFullName)
-                        }
-                    </div>
-                    <div class="reporter-info">
-                        <strong class="reporter-name">@_incident.ReporterFullName</strong>
-                        <span class="reporter-dept">@(!string.IsNullOrWhiteSpace(_incident.ReporterSubRole) ? _incident.ReporterSubRole : (!string.IsNullOrWhiteSpace(_incident.ReporterDepartment) ? _incident.ReporterDepartment : "Field Operations"))</span>
-                    </div>
-                    <div class="reporter-actions">
-                        @if (!string.IsNullOrWhiteSpace(_incident.ReporterPhone))
-                        {
-                            <a href="tel:@_incident.ReporterPhone" class="btn-contact phone" title="Call @_incident.ReporterPhone">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                            <button type="button" class="btn-status-action btn-reopen" @onclick="ReopenIncidentAsync" disabled="@_isUpdatingStatus">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 4v6h6"/>
+                                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
                                 </svg>
-                            </a>
-                        }
-                        @if (!string.IsNullOrWhiteSpace(_incident.ReporterEmail))
-                        {
-                            <a href="mailto:@_incident.ReporterEmail" class="btn-contact email" title="Email @_incident.ReporterEmail">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                                    <polyline points="22,6 12,13 2,6"/>
-                                </svg>
-                            </a>
+                                <span>Re-open Incident</span>
+                            </button>
                         }
                     </div>
-                </div>
-            </section>
 
-            <!-- Collapsible Description -->
-            <section class="section-card">
-                <div class="collapsible-header" @onclick="ToggleDescription">
-                    <div class="section-title">Situational Description</div>
-                    <button type="button" class="btn-toggle">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="@(_isDescExpanded ? "rotated" : "")">
-                            <polyline points="6 9 12 15 18 9"/>
-                        </svg>
-                    </button>
-                </div>
-                @if (_isDescExpanded)
-                {
-                    <div class="description-content">
-                        <p>@(string.IsNullOrWhiteSpace(_incident.Description) ? "No additional details provided." : _incident.Description)</p>
-                    </div>
-                }
-            </section>
-
-            <!-- Operational Incident Status Management -->
-            <section class="section-card status-actions-card">
-                <div class="section-title">Incident Status Actions</div>
-                <div class="status-action-buttons">
-                    @if (_incident.Status is "Open" or "Assigned")
+                    @if (!string.IsNullOrWhiteSpace(_incident.CompletionNotes))
                     {
-                        <button type="button" class="btn-status-action btn-resolve" @onclick="OpenResolveModal" disabled="@_isUpdatingStatus">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="20 6 9 17 4 12"/>
-                            </svg>
-                            <span>Mark as Resolved</span>
-                        </button>
-                        <button type="button" class="btn-status-action btn-cancel" @onclick="OpenCancelModal" disabled="@_isUpdatingStatus">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"/>
-                                <line x1="15" y1="9" x2="9" y2="15"/>
-                                <line x1="9" y1="9" x2="15" y2="15"/>
-                            </svg>
-                            <span>Cancel Incident</span>
-                        </button>
+                        <div class="completion-notes-box">
+                            <div class="notes-header">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                    <polyline points="14 2 14 8 20 8"/>
+                                    <line x1="16" y1="13" x2="8" y2="13"/>
+                                    <line x1="16" y1="17" x2="8" y2="17"/>
+                                </svg>
+                                <span>Resolution / Completion Notes:</span>
+                            </div>
+                            <p class="notes-content">@_incident.CompletionNotes</p>
+                        </div>
+                    }
+
+                    @if (_incident.Reports != null && _incident.Reports.Any())
+                    {
+                        <div class="field-reports-timeline">
+                            <div class="notes-header">
+                                <span>Field Unit Activity Logs (@_incident.Reports.Count):</span>
+                            </div>
+                            @foreach (var report in _incident.Reports)
+                            {
+                                <div class="report-item">
+                                    <div class="report-meta">
+                                        <strong>@report.TeamName</strong>
+                                        <span>@report.ReportedAt.ToString("HH:mm")</span>
+                                    </div>
+                                    <p class="report-text">@report.Content</p>
+                                </div>
+                            }
+                        </div>
+                    }
+                </section>
+
+                <!-- Media Attachments -->
+                <section class="section-card">
+                    <div class="section-title">Media Attachments (@_incident.MediaAttachments.Count)</div>
+                    <MediaGalleryModal MediaItems="_incident.MediaAttachments" />
+                </section>
+
+                <!-- Response Team Section -->
+                <section class="section-card">
+                    <div class="section-title">Response Unit Dispatch</div>
+                    @if (_incident.IsAssigned)
+                    {
+                        <div class="assigned-team-banner">
+                            <div class="assigned-icon">🚒</div>
+                            <div>
+                                <span class="assigned-label">Currently Assigned Team</span>
+                                <strong class="assigned-name">@(_incident.AssignedTeamName ?? "Assigned Team")</strong>
+                            </div>
+                        </div>
                     }
                     else
                     {
-                        <button type="button" class="btn-status-action btn-reopen" @onclick="ReopenIncidentAsync" disabled="@_isUpdatingStatus">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M1 4v6h6"/>
-                                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
-                            </svg>
-                            <span>Re-open Incident</span>
-                        </button>
+                        <TeamSelectionList Teams="_teams"
+                                           IncidentLat="_incident.Latitude"
+                                           IncidentLng="_incident.Longitude"
+                                           SelectedTeamId="_selectedTeam?.Id"
+                                           OnTeamSelected="HandleTeamSelected" />
                     }
-                </div>
-
-                @if (!string.IsNullOrWhiteSpace(_incident.CompletionNotes))
-                {
-                    <div class="completion-notes-box">
-                        <div class="notes-header">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                <polyline points="14 2 14 8 20 8"/>
-                                <line x1="16" y1="13" x2="8" y2="13"/>
-                                <line x1="16" y1="17" x2="8" y2="17"/>
-                            </svg>
-                            <span>Resolution / Completion Notes:</span>
-                        </div>
-                        <p class="notes-content">@_incident.CompletionNotes</p>
-                    </div>
-                }
-
-                @if (_incident.Reports != null && _incident.Reports.Any())
-                {
-                    <div class="field-reports-timeline">
-                        <div class="notes-header">
-                            <span>Field Unit Activity Logs (@_incident.Reports.Count):</span>
-                        </div>
-                        @foreach (var report in _incident.Reports)
-                        {
-                            <div class="report-item">
-                                <div class="report-meta">
-                                    <strong>@report.TeamName</strong>
-                                    <span>@report.ReportedAt.ToString("HH:mm")</span>
-                                </div>
-                                <p class="report-text">@report.Content</p>
-                            </div>
-                        }
-                    </div>
-                }
-            </section>
-
-            <!-- Media Attachments -->
-            <section class="section-card">
-                <div class="section-title">Media Attachments (@_incident.MediaAttachments.Count)</div>
-                <MediaGalleryModal MediaItems="_incident.MediaAttachments" />
-            </section>
-
-            <!-- Response Team Section -->
-            <section class="section-card">
-                <div class="section-title">Response Unit Dispatch</div>
-                @if (_incident.IsAssigned)
-                {
-                    <div class="assigned-team-banner">
-                        <div class="assigned-icon">🚒</div>
-                        <div>
-                            <span class="assigned-label">Currently Assigned Team</span>
-                            <strong class="assigned-name">@(_incident.AssignedTeamName ?? "Assigned Team")</strong>
-                        </div>
-                    </div>
-                }
-                else
-                {
-                    <TeamSelectionList Teams="_teams"
-                                       IncidentLat="_incident.Latitude"
-                                       IncidentLng="_incident.Longitude"
-                                       SelectedTeamId="_selectedTeam?.Id"
-                                       OnTeamSelected="HandleTeamSelected" />
-                }
-            </section>
+                </section>
+            }
         </div>
 
         <!-- Sticky Footer Action -->
-        @if (!_incident.IsAssigned)
+        @if (!_isEditMode && !_incident.IsAssigned)
         {
             <div class="sidebar-footer">
                 <button type="button" 
@@ -299,135 +320,169 @@
         max-width: 100vw;
         background-color: var(--color-surface);
         border-left: 1px solid var(--color-border);
-        box-shadow: var(--shadow-lg);
-        z-index: 1050;
+        box-shadow: -4px 0 20px rgba(0, 0, 0, 0.4);
+        z-index: 1045;
         display: flex;
         flex-direction: column;
-        transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .sidebar-drawer.open {
         right: 0;
     }
 
-    /* Loading / Empty States */
     .sidebar-loading, .sidebar-empty {
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        height: 100%;
-        padding: 32px;
-        text-align: center;
-        gap: 16px;
+        flex: 1;
+        padding: 2rem;
+        gap: 1rem;
         color: var(--color-text-muted);
     }
 
-    /* Header */
     .sidebar-header {
-        padding: 20px;
+        padding: 1.25rem 1.5rem;
         border-bottom: 1px solid var(--color-border);
-        background-color: var(--color-surface-2);
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
+        background: var(--color-surface-raised, #131d2a);
     }
 
     .header-top {
         display: flex;
         align-items: center;
         justify-content: space-between;
+        margin-bottom: 0.5rem;
     }
 
     .badges-row {
         display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .header-actions {
+        display: flex;
         align-items: center;
         gap: 8px;
     }
+
+    .btn-header-edit {
+        background: rgba(59, 130, 246, 0.15);
+        border: 1px solid rgba(59, 130, 246, 0.35);
+        color: #60a5fa;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition: all 0.2s;
+    }
+    .btn-header-edit:hover {
+        background: rgba(59, 130, 246, 0.3);
+        border-color: #3b82f6;
+        color: #fff;
+    }
+
+    .badge-code, .badge-status {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.25rem 0.6rem;
+        border-radius: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .badge-code-red { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid #ef4444; }
+    .badge-code-orange { background: rgba(249, 115, 22, 0.2); color: #f97316; border: 1px solid #f97316; }
+    .badge-code-yellow { background: rgba(234, 179, 8, 0.2); color: #eab308; border: 1px solid #eab308; }
+    .badge-code-green { background: rgba(34, 197, 94, 0.2); color: #22c55e; border: 1px solid #22c55e; }
+    .badge-code-default { background: rgba(148, 163, 184, 0.2); color: #94a3b8; border: 1px solid #94a3b8; }
+
+    .badge-status-open { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+    .badge-status-assigned { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+    .badge-status-resolved { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+    .badge-status-canceled { background: rgba(100, 116, 139, 0.15); color: #94a3b8; }
 
     .btn-close {
         background: transparent;
         border: none;
         color: var(--color-text-muted);
         cursor: pointer;
-        padding: 4px;
+        padding: 0.25rem;
         border-radius: 4px;
         display: flex;
-        transition: color 0.15s ease, background 0.15s ease;
+        align-items: center;
+        transition: color 0.2s;
     }
-
     .btn-close:hover {
-        color: var(--color-text-primary);
-        background-color: var(--color-surface-3);
+        color: var(--color-text-primary, #fff);
     }
 
     .incident-title {
-        font-size: 18px;
+        margin: 0 0 0.4rem;
+        font-size: 1.25rem;
         font-weight: 700;
-        color: var(--color-text-primary);
-        margin: 0;
+        color: var(--color-text-primary, #fff);
     }
 
     .incident-timestamp {
         display: flex;
         align-items: center;
-        gap: 5px;
-        font-size: 12px;
+        gap: 0.4rem;
+        font-size: 0.75rem;
         color: var(--color-text-muted);
     }
 
-    /* Body */
     .sidebar-body {
         flex: 1;
         overflow-y: auto;
-        padding: 16px 20px;
+        padding: 1.25rem 1.5rem;
         display: flex;
         flex-direction: column;
-        gap: 16px;
+        gap: 1.25rem;
     }
 
     .section-card {
-        background-color: var(--color-surface-2);
+        background: var(--color-surface-raised, #162232);
         border: 1px solid var(--color-border);
         border-radius: 8px;
-        padding: 12px 14px;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
+        padding: 1rem;
     }
 
     .section-title {
-        font-size: 11px;
-        font-weight: 700;
+        font-size: 0.8rem;
+        font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: var(--color-text-muted);
+        letter-spacing: 0.6px;
+        color: var(--color-text-secondary);
+        margin-bottom: 0.75rem;
     }
 
-    /* Reporter Box */
     .reporter-box {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 0.75rem;
     }
 
     .reporter-avatar {
         width: 36px;
         height: 36px;
         border-radius: 50%;
-        background-color: var(--color-accent-muted);
-        color: var(--color-accent);
-        font-weight: 700;
-        font-size: 13px;
+        background: var(--color-primary);
+        color: #fff;
         display: flex;
         align-items: center;
         justify-content: center;
-        overflow: hidden;
+        font-size: 0.85rem;
+        font-weight: 600;
     }
-
     .reporter-avatar-img {
-        width: 100%;
-        height: 100%;
+        width: 36px;
+        height: 36px;
         border-radius: 50%;
         object-fit: cover;
     }
@@ -439,39 +494,37 @@
     }
 
     .reporter-name {
-        font-size: 13px;
-        color: var(--color-text-primary);
+        font-size: 0.9rem;
+        color: var(--color-text-primary, #fff);
     }
 
     .reporter-dept {
-        font-size: 11px;
+        font-size: 0.75rem;
         color: var(--color-text-muted);
     }
 
     .reporter-actions {
         display: flex;
-        align-items: center;
-        gap: 6px;
+        gap: 0.5rem;
     }
 
     .btn-contact {
-        padding: 7px;
-        border-radius: 6px;
-        background-color: var(--color-surface-3);
-        color: var(--color-accent);
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.05);
         border: 1px solid var(--color-border);
-        display: inline-flex;
+        color: var(--color-text-secondary);
+        display: flex;
         align-items: center;
         justify-content: center;
-        transition: all 0.15s ease;
+        transition: all 0.2s;
     }
-
     .btn-contact:hover {
-        background-color: var(--color-accent);
-        color: white;
+        background: var(--color-primary);
+        color: #fff;
     }
 
-    /* Description */
     .collapsible-header {
         display: flex;
         align-items: center;
@@ -479,230 +532,215 @@
         cursor: pointer;
     }
 
+    .collapsible-header .section-title {
+        margin-bottom: 0;
+    }
+
     .btn-toggle {
         background: transparent;
         border: none;
         color: var(--color-text-muted);
         cursor: pointer;
-        padding: 4px;
-        border-radius: 4px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.15s ease;
-    }
-
-    .btn-toggle:hover {
-        background: var(--color-surface-3);
-        color: var(--color-text-primary);
+        padding: 0;
+        display: flex;
     }
 
     .btn-toggle svg {
-        transition: transform 0.2s ease;
+        transition: transform 0.2s;
     }
-
     .btn-toggle svg.rotated {
         transform: rotate(180deg);
     }
 
-    .description-content p {
-        margin: 0;
-        font-size: 13px;
-        color: var(--color-text-primary);
-        line-height: 1.5;
-        white-space: pre-wrap;
+    .description-content {
+        margin-top: 0.75rem;
+        font-size: 0.85rem;
+        line-height: 1.45;
+        color: var(--color-text-secondary);
     }
 
-    /* Status Actions */
     .status-actions-card {
-        border-left: 3px solid var(--color-accent);
+        border-color: rgba(59, 130, 246, 0.2);
     }
 
     .status-action-buttons {
         display: flex;
-        gap: 8px;
+        gap: 0.5rem;
+        flex-wrap: wrap;
     }
 
     .btn-status-action {
         flex: 1;
+        min-width: 130px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 6px;
-        padding: 8px 12px;
-        font-size: 12px;
-        font-weight: 600;
+        gap: 0.4rem;
+        padding: 0.5rem 0.75rem;
         border-radius: 6px;
-        border: 1px solid transparent;
+        font-size: 0.8rem;
+        font-weight: 600;
         cursor: pointer;
-        transition: all 0.15s ease;
+        transition: all 0.2s;
+        border: 1px solid transparent;
     }
 
     .btn-resolve {
-        background-color: rgba(34, 197, 94, 0.15);
-        color: #22c55e;
+        background: rgba(34, 197, 94, 0.15);
+        color: #4ade80;
         border-color: rgba(34, 197, 94, 0.3);
     }
-    .btn-resolve:hover {
-        background-color: #22c55e;
-        color: #ffffff;
+    .btn-resolve:hover:not(:disabled) {
+        background: #22c55e;
+        color: #fff;
     }
 
     .btn-cancel {
-        background-color: rgba(239, 68, 68, 0.15);
-        color: #ef4444;
+        background: rgba(239, 68, 68, 0.15);
+        color: #f87171;
         border-color: rgba(239, 68, 68, 0.3);
     }
-    .btn-cancel:hover {
-        background-color: #ef4444;
-        color: #ffffff;
+    .btn-cancel:hover:not(:disabled) {
+        background: #ef4444;
+        color: #fff;
     }
 
     .btn-reopen {
-        background-color: rgba(59, 130, 246, 0.15);
-        color: #3b82f6;
+        background: rgba(59, 130, 246, 0.15);
+        color: #60a5fa;
         border-color: rgba(59, 130, 246, 0.3);
     }
-    .btn-reopen:hover {
-        background-color: #3b82f6;
-        color: #ffffff;
+    .btn-reopen:hover:not(:disabled) {
+        background: #3b82f6;
+        color: #fff;
     }
 
     .completion-notes-box {
-        margin-top: 8px;
-        padding: 10px 12px;
-        background-color: var(--color-surface-3);
+        margin-top: 0.75rem;
+        padding: 0.6rem 0.8rem;
+        background: rgba(0, 0, 0, 0.2);
         border-radius: 6px;
-        border: 1px solid var(--color-border);
+        border-left: 3px solid #22c55e;
     }
 
     .notes-header {
         display: flex;
         align-items: center;
-        gap: 6px;
-        font-size: 11px;
-        font-weight: 700;
-        color: var(--color-text-muted);
-        text-transform: uppercase;
-        margin-bottom: 4px;
+        gap: 0.4rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--color-text-secondary);
+        margin-bottom: 0.3rem;
     }
 
     .notes-content {
         margin: 0;
-        font-size: 12px;
-        color: var(--color-text-primary);
-        line-height: 1.4;
+        font-size: 0.8rem;
+        color: var(--color-text-primary, #fff);
     }
 
     .field-reports-timeline {
-        margin-top: 8px;
+        margin-top: 0.75rem;
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 0.5rem;
     }
 
     .report-item {
-        padding: 8px 10px;
-        background-color: var(--color-surface-3);
+        background: rgba(0, 0, 0, 0.15);
+        padding: 0.5rem 0.7rem;
         border-radius: 6px;
-        border-left: 2px solid var(--color-accent);
+        border-left: 2px solid var(--color-primary);
     }
 
     .report-meta {
         display: flex;
         justify-content: space-between;
-        font-size: 11px;
+        font-size: 0.75rem;
         color: var(--color-text-muted);
-        margin-bottom: 2px;
+        margin-bottom: 0.2rem;
     }
 
     .report-text {
         margin: 0;
-        font-size: 12px;
-        color: var(--color-text-primary);
+        font-size: 0.8rem;
+        color: var(--color-text-secondary);
     }
 
-    /* Assigned Team Banner */
     .assigned-team-banner {
         display: flex;
         align-items: center;
-        gap: 12px;
-        padding: 12px;
-        background-color: var(--color-accent-muted);
-        border: 1px solid var(--color-accent);
+        gap: 0.75rem;
+        padding: 0.75rem;
+        background: rgba(34, 197, 94, 0.1);
+        border: 1px solid rgba(34, 197, 94, 0.3);
         border-radius: 6px;
     }
 
     .assigned-icon {
-        font-size: 24px;
+        font-size: 1.5rem;
     }
 
     .assigned-label {
-        font-size: 11px;
-        color: var(--color-text-muted);
         display: block;
+        font-size: 0.7rem;
+        color: #4ade80;
+        text-transform: uppercase;
+        font-weight: 600;
     }
 
     .assigned-name {
-        font-size: 14px;
-        color: var(--color-accent);
+        font-size: 0.9rem;
+        color: var(--color-text-primary, #fff);
     }
 
-    /* Footer */
     .sidebar-footer {
-        padding: 14px 20px;
-        background-color: var(--color-surface-2);
+        padding: 1rem 1.5rem;
         border-top: 1px solid var(--color-border);
+        background: var(--color-surface-raised, #131d2a);
     }
 
     .btn-dispatch-action {
         width: 100%;
-        padding: 12px 16px;
-        font-size: 14px;
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
         font-weight: 600;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
     }
 
-    /* Status Modal Styles */
+    /* Modal Backdrop & Container for Status Notes */
     .status-modal-backdrop {
         position: fixed;
         inset: 0;
-        background: rgba(0, 0, 0, 0.7);
-        backdrop-filter: blur(4px);
+        background: rgba(0, 0, 0, 0.6);
         z-index: 1060;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 16px;
+        padding: 1rem;
     }
 
     .status-modal-container {
-        width: 100%;
-        max-width: 460px;
-        background-color: var(--color-surface);
-        border: 1px solid var(--color-border);
+        background: var(--color-surface, #1e293b);
+        border: 1px solid var(--color-border, #334155);
         border-radius: 8px;
-        box-shadow: var(--shadow-lg);
-        overflow: hidden;
+        width: 100%;
+        max-width: 420px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
     }
 
     .status-modal-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 14px 18px;
-        background-color: var(--color-surface-2);
-        border-bottom: 1px solid var(--color-border);
+        padding: 1rem;
+        border-bottom: 1px solid var(--color-border, #334155);
     }
 
     .status-modal-title {
-        font-size: 15px;
-        font-weight: 700;
-        color: var(--color-text-primary);
         margin: 0;
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--color-text-primary, #fff);
     }
 
     .btn-close-sm {
@@ -710,80 +748,29 @@
         border: none;
         color: var(--color-text-muted);
         cursor: pointer;
-        font-size: 14px;
+        font-size: 1rem;
     }
 
     .status-modal-body {
-        padding: 18px;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
+        padding: 1rem;
     }
 
     .status-modal-desc {
-        margin: 0;
-        font-size: 13px;
-        color: var(--color-text-muted);
+        font-size: 0.85rem;
+        color: var(--color-text-secondary, #cbd5e1);
+        margin-bottom: 1rem;
     }
 
     .status-modal-footer {
         display: flex;
         justify-content: flex-end;
-        gap: 8px;
-        padding: 12px 18px;
-        background-color: var(--color-surface-2);
-        border-top: 1px solid var(--color-border);
+        gap: 0.5rem;
+        padding: 0.75rem 1rem;
+        border-top: 1px solid var(--color-border, #334155);
     }
 
-    .btn-success-solid {
-        background-color: #22c55e;
-        color: #ffffff;
-        border: none;
-        padding: 6px 14px;
-        border-radius: 6px;
-        font-weight: 600;
-        cursor: pointer;
-    }
-    .btn-success-solid:hover {
-        background-color: #16a34a;
-    }
-
-    .btn-danger-solid {
-        background-color: #ef4444;
-        color: #ffffff;
-        border: none;
-        padding: 6px 14px;
-        border-radius: 6px;
-        font-weight: 600;
-        cursor: pointer;
-    }
-    .btn-danger-solid:hover {
-        background-color: #dc2626;
-    }
-
-    /* Badges */
-    .badge-code {
-        font-size: 10px;
-        font-weight: 800;
-        padding: 2px 6px;
-        border-radius: 4px;
-        color: white;
-        text-transform: uppercase;
-    }
-
-    .badge-code-1 { background-color: var(--color-danger); }
-    .badge-code-2 { background-color: var(--color-warning); }
-    .badge-code-3 { background-color: #eab308; }
-
-    .badge-status {
-        font-size: 11px;
-        font-weight: 700;
-        padding: 2px 8px;
-        border-radius: 12px;
-    }
-
-    .badge-status-open { background: rgba(245, 158, 11, 0.15); color: var(--color-warning); }
-    .badge-status-assigned { background: rgba(59, 130, 246, 0.15); color: var(--color-accent); }
-    .badge-status-resolved { background: rgba(34, 197, 94, 0.15); color: var(--color-success); }
-    .badge-status-canceled { background: var(--color-surface-3); color: var(--color-text-muted); }
+    .btn-success-solid { background: #22c55e; color: #fff; }
+    .btn-success-solid:hover:not(:disabled) { background: #16a34a; }
+    .btn-danger-solid { background: #ef4444; color: #fff; }
+    .btn-danger-solid:hover:not(:disabled) { background: #dc2626; }
 </style>

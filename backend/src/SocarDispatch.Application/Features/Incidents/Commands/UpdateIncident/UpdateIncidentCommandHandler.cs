@@ -7,16 +7,19 @@ using SocarDispatch.Application.Features.Incidents.DTOs;
 using SocarDispatch.Domain.Exceptions;
 using SocarDispatch.Domain.Entities;
 using SocarDispatch.Domain.Enums;
+using SocarDispatch.Domain.Events;
 
 namespace SocarDispatch.Application.Features.Incidents.Commands.UpdateIncident;
 
 public class UpdateIncidentCommandHandler : IRequestHandler<UpdateIncidentCommand, ApiResponse<IncidentDto>>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IPublisher? _publisher;
 
-    public UpdateIncidentCommandHandler(IApplicationDbContext context)
+    public UpdateIncidentCommandHandler(IApplicationDbContext context, IPublisher? publisher = null)
     {
         _context = context;
+        _publisher = publisher;
     }
 
     public async Task<ApiResponse<IncidentDto>> Handle(UpdateIncidentCommand request, CancellationToken cancellationToken)
@@ -60,6 +63,21 @@ public class UpdateIncidentCommandHandler : IRequestHandler<UpdateIncidentComman
         incident.Location = new Point((double)request.Longitude, (double)request.Latitude) { SRID = 4326 };
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        // Publish domain event for real-time SignalR broadcasts
+        if (_publisher != null)
+        {
+            await _publisher.Publish(new IncidentUpdatedEvent(
+                incident.Id,
+                incident.Category,
+                incident.EmergencyCode,
+                incident.Description,
+                incident.Latitude,
+                incident.Longitude,
+                request.RequesterId,
+                DateTime.UtcNow
+            ), cancellationToken);
+        }
 
         var latestAssignment = incident.Assignments.OrderByDescending(a => a.AssignedAt).FirstOrDefault();
 
