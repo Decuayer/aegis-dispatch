@@ -23,6 +23,10 @@ public class GetIncidentByIdQueryHandler : IRequestHandler<GetIncidentByIdQuery,
             .Include(i => i.Assignments)
                 .ThenInclude(a => a.Team)
             .Include(i => i.MediaAttachments)
+            .Include(i => i.Reports)
+                .ThenInclude(r => r.Team)
+            .Include(i => i.Reports)
+                .ThenInclude(r => r.ReportedBy)
             .AsNoTracking()
             .FirstOrDefaultAsync(i => i.Id == request.Id, cancellationToken);
 
@@ -38,6 +42,9 @@ public class GetIncidentByIdQueryHandler : IRequestHandler<GetIncidentByIdQuery,
             Id = incident.Id,
             ReporterId = incident.ReporterId,
             ReporterFullName = $"{incident.Reporter.FirstName} {incident.Reporter.LastName}".Trim(),
+            ReporterPhone = incident.Reporter.Phone ?? string.Empty,
+            ReporterDepartment = incident.Reporter.Department ?? string.Empty,
+            ReporterEmail = incident.Reporter.Email ?? string.Empty,
             Category = incident.Category,
             EmergencyCode = incident.EmergencyCode,
             Description = incident.Description,
@@ -53,7 +60,20 @@ public class GetIncidentByIdQueryHandler : IRequestHandler<GetIncidentByIdQuery,
             Longitude = incident.Longitude,
             CreatedAt = incident.CreatedAt,
             AssignedTeamId = latestAssignment?.TeamId,
-            AssignedTeamName = latestAssignment?.Team.TeamName
+            AssignedTeamName = latestAssignment?.Team.TeamName,
+            CompletionNotes = latestAssignment?.CompletionNotes,
+            Reports = incident.Reports.OrderByDescending(r => r.ReportedAt).Select(r => new IncidentReportDto
+            {
+                Id = r.Id,
+                IncidentId = r.IncidentId,
+                TeamId = r.TeamId,
+                TeamName = r.Team != null ? r.Team.TeamName : string.Empty,
+                ReportedByUserId = r.ReportedByUserId,
+                ReportedByFullName = r.ReportedBy != null ? $"{r.ReportedBy.FirstName} {r.ReportedBy.LastName}".Trim() : string.Empty,
+                Content = r.Content,
+                MediaUrl = r.MediaUrl,
+                ReportedAt = r.ReportedAt
+            }).ToList()
         };
 
         return ApiResponse<IncidentDto>.SuccessResult(dto, "Incident details retrieved.");

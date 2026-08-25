@@ -12,8 +12,11 @@ public class MapService : IMapService
         _js = js;
     }
 
-    public async Task InitializeMapAsync(string containerId, double lat = 40.409264, double lng = 49.867092, int zoom = 14)
-        => await _js.InvokeVoidAsync("leafletMap.initMap", containerId, lat, lng, zoom);
+    public async Task InitializeMapAsync(string containerId, double lat = 40.409264, double lng = 49.867092, int zoom = 14, string tileProvider = "OpenStreetMap")
+        => await _js.InvokeVoidAsync("leafletMap.initMap", containerId, lat, lng, zoom, tileProvider);
+
+    public async Task UpdateMainTileLayerAsync(string tileProvider)
+        => await _js.InvokeVoidAsync("leafletMap.updateMainTileLayer", tileProvider);
 
     public async Task AddIncidentMarkerAsync(MapIncidentDto incident)
         => await _js.InvokeVoidAsync("leafletMap.addIncidentMarker", new

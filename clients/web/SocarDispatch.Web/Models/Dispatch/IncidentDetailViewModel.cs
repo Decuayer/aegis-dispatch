@@ -17,6 +17,7 @@ public class IncidentDetailViewModel
     public string ReporterFullName { get; set; } = string.Empty;
     public string? ReporterDepartment { get; set; }
     public string? ReporterPhone { get; set; }
+    public string? ReporterEmail { get; set; }
 
     // Media Attachments
     public List<IncidentMediaViewModel> MediaAttachments { get; set; } = new();
@@ -24,6 +25,8 @@ public class IncidentDetailViewModel
     // Assigned Team Information (If the incident is assigned)
     public Guid? AssignedTeamId { get; set; }
     public string? AssignedTeamName { get; set; }
+    public string? CompletionNotes { get; set; }
+    public List<IncidentReportViewModel> Reports { get; set; } = new();
 
     // UI Facilitator Helper Features
     public bool IsAssigned => AssignedTeamId.HasValue || Status == "Assigned";
@@ -43,4 +46,17 @@ public class IncidentDetailViewModel
             return $"{(int)span.TotalDays} days ago";
         }
     }
+}
+
+public class IncidentReportViewModel
+{
+    public Guid Id { get; set; }
+    public Guid IncidentId { get; set; }
+    public Guid TeamId { get; set; }
+    public string TeamName { get; set; } = string.Empty;
+    public Guid ReportedByUserId { get; set; }
+    public string ReportedByFullName { get; set; } = string.Empty;
+    public string Content { get; set; } = string.Empty;
+    public string? MediaUrl { get; set; }
+    public DateTime ReportedAt { get; set; }
 }

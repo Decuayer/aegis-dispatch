@@ -5,7 +5,8 @@ namespace SocarDispatch.Web.Services;
 
 public interface IMapService
 {
-    Task InitializeMapAsync(string containerId, double lat = 40.409264, double lng = 49.867092, int zoom = 14);
+    Task InitializeMapAsync(string containerId, double lat = 40.409264, double lng = 49.867092, int zoom = 14, string tileProvider = "OpenStreetMap");
+    Task UpdateMainTileLayerAsync(string tileProvider);
     Task AddIncidentMarkerAsync(MapIncidentDto incident);
     Task AddTeamMarkerAsync(MapTeamDto team);
     Task RemoveIncidentMarkerAsync(Guid incidentId);

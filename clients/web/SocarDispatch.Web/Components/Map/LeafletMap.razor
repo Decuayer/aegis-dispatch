@@ -26,9 +26,9 @@
     {
         if (!firstRender) return;
 
-        // 1. Initialize the map with the coordinates and zoom level read from the settings.
+        // 1. Initialize the map with the coordinates, zoom level, and tile provider read from settings.
         var prefs = await SettingsService.GetPreferencesAsync();
-        await MapService.InitializeMapAsync(_containerId, prefs.DefaultLatitude, prefs.DefaultLongitude, prefs.DefaultZoom);
+        await MapService.InitializeMapAsync(_containerId, prefs.DefaultLatitude, prefs.DefaultLongitude, prefs.DefaultZoom, prefs.TileProvider ?? "OpenStreetMap");
 
         // 2. Connect the DotNet reference
         _dotNetRef = DotNetObjectReference.Create(this);
@@ -47,16 +47,16 @@
     // ──────────────────────────────────────────────
     // REST API — İlk Veri Yükleme
     // ──────────────────────────────────────────────
-    private async Task LoadIncidentsAsync()
+    public async Task LoadIncidentsAsync()
     {
         try
         {
             var response = await Http.GetFromJsonAsync<ApiResponse<List<MapIncidentDto>>>(
-                "api/v1/incidents?status=Open");
+                "api/v1/incidents");
 
             if (response?.Data != null)
             {
-                foreach (var incident in response.Data)
+                foreach (var incident in response.Data.Where(i => i.Status != "Resolved" && i.Status != "Canceled"))
                 {
                     await MapService.AddIncidentMarkerAsync(incident);
                 }
@@ -68,7 +68,7 @@
         }
     }
 
-    private async Task LoadTeamsAsync()
+    public async Task LoadTeamsAsync()
     {
         try
         {
@@ -144,6 +144,8 @@
         await InvokeAsync(async () =>
         {
             await MapService.UpdateIncidentAssignmentAsync(e.IncidentId, e.TeamId, "Assigned Team");
+            await MapService.UpdateTeamStatusAsync(e.TeamId, "Forwarded");
+            await MapService.UpdateIncidentStatusAsync(e.IncidentId, "Assigned");
         });
     }
 

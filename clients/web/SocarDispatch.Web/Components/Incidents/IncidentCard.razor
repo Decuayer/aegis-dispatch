@@ -84,32 +84,38 @@
         }
     }
 
-    private string GetCardSeverityClass(string? code) => code switch
+    private string GetCardSeverityClass(string? code)
     {
-        "Code Red" => "severity-red",
-        "Code Orange" => "severity-orange",
-        "Code Yellow" => "severity-yellow",
-        "Code Green" => "severity-green",
-        _ => ""
-    };
+        var c = (code ?? string.Empty).ToLowerInvariant();
+        if (c.Contains("red") || c.Contains("kirmizi") || c.Contains("1")) return "severity-red";
+        if (c.Contains("orange") || c.Contains("turuncu") || c.Contains("2")) return "severity-orange";
+        if (c.Contains("yellow") || c.Contains("sari") || c.Contains("3")) return "severity-yellow";
+        if (c.Contains("green") || c.Contains("yesil") || c.Contains("4")) return "severity-green";
+        return "";
+    }
 
-    private string GetEmergencyCodeBadgeClass(string? code) => code switch
+    private string GetEmergencyCodeBadgeClass(string? code)
     {
-        "Code Red" => "badge-code-red",
-        "Code Orange" => "badge-code-orange",
-        "Code Yellow" => "badge-code-yellow",
-        "Code Green" => "badge-code-green",
-        _ => "badge-code-default"
-    };
+        var c = (code ?? string.Empty).ToLowerInvariant();
+        if (c.Contains("red") || c.Contains("kirmizi") || c.Contains("1")) return "badge-code-red";
+        if (c.Contains("orange") || c.Contains("turuncu") || c.Contains("2")) return "badge-code-orange";
+        if (c.Contains("yellow") || c.Contains("sari") || c.Contains("3")) return "badge-code-yellow";
+        if (c.Contains("green") || c.Contains("yesil") || c.Contains("4")) return "badge-code-green";
+        return "badge-code-default";
+    }
 
-    private string GetStatusBadgeClass(string? status) => status switch
+    private string GetStatusBadgeClass(string? status)
     {
-        "Open" => "badge-status-open",
-        "Assigned" => "badge-status-assigned",
-        "Resolved" => "badge-status-resolved",
-        "Canceled" => "badge-status-canceled",
-        _ => "badge-status-default"
-    };
+        var s = (status ?? string.Empty).ToLowerInvariant();
+        return s switch
+        {
+            "open" => "badge-status-open",
+            "assigned" => "badge-status-assigned",
+            "resolved" => "badge-status-resolved",
+            "canceled" => "badge-status-canceled",
+            _ => "badge-status-default"
+        };
+    }
 
     private string GetInitials(string? fullName)
     {
