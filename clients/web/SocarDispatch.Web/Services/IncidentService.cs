@@ -41,6 +41,29 @@ public class IncidentService : IIncidentService
         }
     }
 
+    public async Task<ApiResponse<List<IncidentDetailViewModel>>?> GetAllIncidentsAsync(
+        string? status = null, 
+        string? category = null, 
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var queryParams = new List<string>();
+            if (!string.IsNullOrWhiteSpace(status) && status != "All")
+                queryParams.Add($"status={Uri.EscapeDataString(status)}");
+            if (!string.IsNullOrWhiteSpace(category) && category != "All")
+                queryParams.Add($"category={Uri.EscapeDataString(category)}");
+            var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : string.Empty;
+            var url = $"api/v1/incidents{queryString}";
+            return await _http.GetFromJsonAsync<ApiResponse<List<IncidentDetailViewModel>>>(url, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<List<IncidentDetailViewModel>>.FailureResult($"Failed to retrieve incidents: {ex.Message}");
+        }
+    }
+
+
     public async Task<ApiResponse<IncidentDetailViewModel>?> UpdateStatusAsync(Guid id, string status, string? completionNotes = null, CancellationToken cancellationToken = default)
     {
         try
