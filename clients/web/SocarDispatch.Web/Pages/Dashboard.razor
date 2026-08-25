@@ -16,7 +16,15 @@
         <h1 class="dash-title">Overview</h1>
         <p class="dash-sub">Real-time emergency dispatch and field team status</p>
     </div>
+    <button type="button" class="btn-report-incident" @onclick="() => _isCreateModalOpen = true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        <span>Report Incident</span>
+    </button>
 </div>
+
 
 <!-- Dynamic Key Metrics -->
 <div class="dash-stats">
@@ -93,6 +101,9 @@
                  IncidentId="_selectedIncidentId"
                  OnIncidentAssigned="HandleIncidentAssigned" />
 
+<!-- Emergency Incident Creation Modal -->
+<CreateIncidentModal @bind-IsVisible="_isCreateModalOpen"
+                     OnIncidentCreated="HandleIncidentCreated" />
 
 @code {
     private int _activeIncidents = 0;
@@ -103,6 +114,13 @@
 
     private Guid? _selectedIncidentId;
     private bool _isSidebarOpen = false;
+
+    private bool _isCreateModalOpen = false;
+    private async Task HandleIncidentCreated(IncidentDetailViewModel incident)
+    {
+        // Refresh KPI metrics after creating a new incident
+        await LoadDashboardStatsAsync();
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -296,4 +314,25 @@
         color: var(--color-text-muted);
         margin: 0;
     }
+
+    .btn-report-incident {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #ef4444;
+        color: #ffffff;
+        font-size: 13px;
+        font-weight: 600;
+        padding: 8px 16px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-report-incident:hover {
+        background: #dc2626;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+
 </style>
