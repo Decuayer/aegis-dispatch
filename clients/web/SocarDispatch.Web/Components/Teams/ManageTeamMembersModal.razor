@@ -1,0 +1,274 @@
+@* Components/Teams/ManageTeamMembersModal.razor *@
+@using SocarDispatch.Web.Models.Auth
+@using SocarDispatch.Web.Models.Dispatch
+@using SocarDispatch.Web.Services
+@inject ITeamService TeamService
+@inject IUserService UserService
+@inject IToastService ToastService
+
+@if (IsVisible && Team != null)
+{
+    <div class="modal-backdrop" @onclick="HandleClose">
+        <div class="modal-card modal-card-lg" @onclick:stopPropagation="true">
+            <!-- Header -->
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <div class="modal-icon">📋</div>
+                    <div>
+                        <h3 class="modal-title">Manage Team Roster</h3>
+                        <p class="modal-subtitle">Add or remove responders for <strong>@Team.TeamName</strong>.</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" @onclick="HandleClose" title="Close">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Body -->
+            <div class="modal-body modal-roster-body">
+                <!-- Add Member Section -->
+                <div class="roster-add-section">
+                    <label class="form-label">Search & Add Responders</label>
+                    <div class="search-input-wrapper">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input type="text" 
+                               class="form-control search-input" 
+                               placeholder="Search responder by name or department..." 
+                               @bind="_searchCandidateTerm" 
+                               @bind:event="oninput" />
+                    </div>
+
+                    @if (_isSearchingUsers)
+                    {
+                        <div class="loading-state-mini">
+                            <span class="spinner-sm"></span> Searching responders...
+                        </div>
+                    }
+                    else if (CandidateUsers.Count > 0)
+                    {
+                        <div class="candidate-users-list">
+                            @foreach (var user in CandidateUsers)
+                            {
+                                <div class="candidate-item">
+                                    <div class="candidate-info">
+                                        <strong>@user.FirstName @user.LastName</strong>
+                                        <small class="text-muted">@(string.IsNullOrEmpty(user.Department) ? "Team Role" : user.Department) @(string.IsNullOrEmpty(user.SubRole) ? "" : $"• {user.SubRole}")</small>
+                                    </div>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-primary" 
+                                            @onclick="() => AddMember(user.Id)"
+                                            disabled="@_isProcessing">
+                                        + Add to Team
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <!-- Current Roster Section -->
+                <div class="roster-current-section">
+                    <label class="form-label">
+                        Current Roster (@Team.Members.Count Responders)
+                    </label>
+
+                    @if (Team.Members.Count == 0)
+                    {
+                        <p class="text-muted">No responders currently in this team.</p>
+                    }
+                    else
+                    {
+                        <div class="roster-members-list">
+                            @foreach (var member in Team.Members)
+                            {
+                                var isLeader = member.UserId == Team.LeaderId;
+                                <div class="roster-member-row">
+                                    <div class="member-detail">
+                                        <div class="member-avatar">@GetInitials(member.FullName)</div>
+                                        <div>
+                                            <div class="member-name">
+                                                @member.FullName
+                                                @if (isLeader)
+                                                {
+                                                    <span class="badge-leader-tag">Leader</span>
+                                                }
+                                            </div>
+                                            <small class="text-muted">@member.Department @(string.IsNullOrEmpty(member.SubRole) ? "" : $"• {member.SubRole}")</small>
+                                        </div>
+                                    </div>
+                                    <div class="member-actions">
+                                        @if (isLeader)
+                                        {
+                                            <span class="text-subtle-note" title="Reassign leadership before removing">Leader</span>
+                                        }
+                                        else
+                                        {
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-ghost-danger" 
+                                                    @onclick="() => RemoveMember(member.UserId)"
+                                                    disabled="@_isProcessing">
+                                                Remove
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" @onclick="HandleClose">
+                    Done
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    [Parameter]
+    public TeamDto? Team { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public EventCallback<TeamDto> OnRosterUpdated { get; set; }
+
+    private string _searchCandidateTerm = string.Empty;
+    private bool _isSearchingUsers;
+    private bool _isProcessing;
+    private List<UserDto> _allTeamUsers = new();
+
+    private List<UserDto> CandidateUsers => _allTeamUsers
+        .Where(u => Team != null && !Team.Members.Any(m => m.UserId == u.Id))
+        .Where(u => string.IsNullOrWhiteSpace(_searchCandidateTerm) || 
+                    $"{u.FirstName} {u.LastName}".Contains(_searchCandidateTerm, StringComparison.OrdinalIgnoreCase) ||
+                    u.Department.Contains(_searchCandidateTerm, StringComparison.OrdinalIgnoreCase))
+        .Take(5)
+        .ToList();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && _allTeamUsers.Count == 0)
+        {
+            await LoadTeamUsers();
+        }
+    }
+
+    private async Task LoadTeamUsers()
+    {
+        _isSearchingUsers = true;
+        try
+        {
+            var response = await UserService.GetUsersAsync(role: RoleType.Team);
+            if (response != null && response.Success && response.Data != null)
+            {
+                _allTeamUsers = response.Data;
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Failed to load candidate responders: {ex.Message}");
+        }
+        finally
+        {
+            _isSearchingUsers = false;
+        }
+    }
+
+    private async Task AddMember(Guid userId)
+    {
+        if (Team == null || _isProcessing) return;
+
+        _isProcessing = true;
+        try
+        {
+            var response = await TeamService.AddMemberAsync(Team.Id, userId);
+            if (response != null && response.Success && response.Data != null)
+            {
+                Team.Members = response.Data.Members;
+                Team.UpdatedAt = response.Data.UpdatedAt;
+                ToastService.ShowSuccess("Responder added to team roster.");
+                if (OnRosterUpdated.HasDelegate)
+                {
+                    await OnRosterUpdated.InvokeAsync(response.Data);
+                }
+            }
+            else
+            {
+                ToastService.ShowError(response?.Message ?? "Failed to add member.");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error adding member: {ex.Message}");
+        }
+        finally
+        {
+            _isProcessing = false;
+        }
+    }
+
+    private async Task RemoveMember(Guid userId)
+    {
+        if (Team == null || _isProcessing) return;
+
+        _isProcessing = true;
+        try
+        {
+            var response = await TeamService.RemoveMemberAsync(Team.Id, userId);
+            if (response != null && response.Success && response.Data != null)
+            {
+                Team.Members = response.Data.Members;
+                Team.UpdatedAt = response.Data.UpdatedAt;
+                ToastService.ShowSuccess("Responder removed from team roster.");
+                if (OnRosterUpdated.HasDelegate)
+                {
+                    await OnRosterUpdated.InvokeAsync(response.Data);
+                }
+            }
+            else
+            {
+                ToastService.ShowError(response?.Message ?? "Failed to remove member.");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error removing member: {ex.Message}");
+        }
+        finally
+        {
+            _isProcessing = false;
+        }
+    }
+
+    private async Task HandleClose()
+    {
+        _searchCandidateTerm = string.Empty;
+        if (OnClose.HasDelegate)
+        {
+            await OnClose.InvokeAsync();
+        }
+    }
+
+    private string GetInitials(string? fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName)) return "R";
+        var parts = fullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 1) return parts[0][0].ToString().ToUpper();
+        return $"{parts[0][0]}{parts[^1][0]}".ToUpper();
+    }
+}

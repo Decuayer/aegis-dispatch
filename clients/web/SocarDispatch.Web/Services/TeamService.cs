@@ -40,4 +40,71 @@ public class TeamService : ITeamService
             return ApiResponse<TeamDto>.FailureResult($"Failed to retrieve team details: {ex.Message}");
         }
     }
+
+    public async Task<ApiResponse<TeamDto>?> CreateTeamAsync(CreateTeamRequestDto request, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await _http.PostAsJsonAsync("api/v1/teams", request, cancellationToken);
+            return await response.Content.ReadFromJsonAsync<ApiResponse<TeamDto>>(cancellationToken: cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<TeamDto>.FailureResult($"Failed to create team: {ex.Message}");
+        }
+    }
+
+    public async Task<ApiResponse<TeamDto>?> UpdateTeamAsync(Guid id, UpdateTeamRequestDto request, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await _http.PutAsJsonAsync($"api/v1/teams/{id}", request, cancellationToken);
+            return await response.Content.ReadFromJsonAsync<ApiResponse<TeamDto>>(cancellationToken: cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<TeamDto>.FailureResult($"Failed to update team: {ex.Message}");
+        }
+    }
+
+    public async Task<ApiResponse<TeamDto>?> UpdateTeamStatusAsync(Guid id, string status, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var request = new UpdateTeamStatusRequestDto { Status = status };
+            var response = await _http.PatchAsJsonAsync($"api/v1/teams/{id}/status", request, cancellationToken);
+            return await response.Content.ReadFromJsonAsync<ApiResponse<TeamDto>>(cancellationToken: cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<TeamDto>.FailureResult($"Failed to update team status: {ex.Message}");
+        }
+    }
+
+    public async Task<ApiResponse<TeamDto>?> AddMemberAsync(Guid teamId, Guid userId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var request = new AddTeamMemberRequestDto { UserId = userId };
+            var response = await _http.PostAsJsonAsync($"api/v1/teams/{teamId}/members", request, cancellationToken);
+            return await response.Content.ReadFromJsonAsync<ApiResponse<TeamDto>>(cancellationToken: cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<TeamDto>.FailureResult($"Failed to add team member: {ex.Message}");
+        }
+    }
+
+    public async Task<ApiResponse<TeamDto>?> RemoveMemberAsync(Guid teamId, Guid userId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await _http.DeleteAsync($"api/v1/teams/{teamId}/members/{userId}", cancellationToken);
+            return await response.Content.ReadFromJsonAsync<ApiResponse<TeamDto>>(cancellationToken: cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<TeamDto>.FailureResult($"Failed to remove team member: {ex.Message}");
+        }
+    }
 }

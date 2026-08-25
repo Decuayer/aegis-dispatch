@@ -1,0 +1,186 @@
+@* Components/Teams/EditTeamModal.razor *@
+@using SocarDispatch.Web.Models.Auth
+@using SocarDispatch.Web.Models.Dispatch
+@using SocarDispatch.Web.Services
+@inject ITeamService TeamService
+@inject IUserService UserService
+@inject IToastService ToastService
+
+@if (IsVisible && Team != null)
+{
+    <div class="modal-backdrop" @onclick="HandleCancel">
+        <div class="modal-card" @onclick:stopPropagation="true">
+            <!-- Header -->
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <div class="modal-icon">✏️</div>
+                    <div>
+                        <h3 class="modal-title">Edit Response Team</h3>
+                        <p class="modal-subtitle">Update unit name and designated team leadership.</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" @onclick="HandleCancel" title="Cancel">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Body -->
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label" for="edit-team-name">
+                        Team Name <span class="required-star">*</span>
+                    </label>
+                    <input id="edit-team-name"
+                           type="text" 
+                           class="form-control" 
+                           @bind="_teamName" 
+                           maxlength="100" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="edit-leader-search">
+                        Designated Team Leader
+                    </label>
+
+                    @if (_isLoadingUsers)
+                    {
+                        <div class="loading-state-mini">
+                            <span class="spinner-sm"></span> Loading team personnel...
+                        </div>
+                    }
+                    else
+                    {
+                        <select id="edit-leader-search" class="form-select" @bind="_selectedLeaderId">
+                            <option value="">-- No Leader (Unassigned) --</option>
+                            @foreach (var user in _availableUsers)
+                            {
+                                <option value="@user.Id">@user.FirstName @user.LastName (@(string.IsNullOrEmpty(user.Department) ? "Team Member" : user.Department))</option>
+                            }
+                        </select>
+                    }
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" @onclick="HandleCancel" disabled="@_isSubmitting">
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-primary" @onclick="HandleSubmit" disabled="@(_isSubmitting || string.IsNullOrWhiteSpace(_teamName))">
+                    @if (_isSubmitting)
+                    {
+                        <span class="spinner-sm"></span>
+                        <span>Saving...</span>
+                    }
+                    else
+                    {
+                        <span>Save Changes</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    [Parameter]
+    public TeamDto? Team { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public EventCallback<TeamDto> OnTeamUpdated { get; set; }
+
+    private string _teamName = string.Empty;
+    private string _selectedLeaderId = string.Empty;
+    private bool _isSubmitting;
+    private bool _isLoadingUsers;
+    private List<UserDto> _availableUsers = new();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && Team != null)
+        {
+            _teamName = Team.TeamName;
+            _selectedLeaderId = Team.LeaderId?.ToString() ?? string.Empty;
+            if (_availableUsers.Count == 0)
+            {
+                await LoadTeamUsers();
+            }
+        }
+    }
+
+    private async Task LoadTeamUsers()
+    {
+        _isLoadingUsers = true;
+        try
+        {
+            var response = await UserService.GetUsersAsync(role: RoleType.Team);
+            if (response != null && response.Success && response.Data != null)
+            {
+                _availableUsers = response.Data;
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Failed to load responders: {ex.Message}");
+        }
+        finally
+        {
+            _isLoadingUsers = false;
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (Team == null || string.IsNullOrWhiteSpace(_teamName)) return;
+
+        _isSubmitting = true;
+        try
+        {
+            Guid? leaderGuid = Guid.TryParse(_selectedLeaderId, out var parsedGuid) ? parsedGuid : null;
+            var request = new UpdateTeamRequestDto
+            {
+                TeamName = _teamName.Trim(),
+                LeaderId = leaderGuid
+            };
+
+            var response = await TeamService.UpdateTeamAsync(Team.Id, request);
+            if (response != null && response.Success && response.Data != null)
+            {
+                ToastService.ShowSuccess("Team information updated successfully.");
+                if (OnTeamUpdated.HasDelegate)
+                {
+                    await OnTeamUpdated.InvokeAsync(response.Data);
+                }
+            }
+            else
+            {
+                ToastService.ShowError(response?.Message ?? "Failed to update team.");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Update error: {ex.Message}");
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        if (OnClose.HasDelegate)
+        {
+            await OnClose.InvokeAsync();
+        }
+    }
+}

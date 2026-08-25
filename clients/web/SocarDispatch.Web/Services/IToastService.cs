@@ -23,4 +23,10 @@ public interface IToastService
     event Action<ToastMessage>? OnToastAdded;
     void Show(string title, string message, ToastLevel level = ToastLevel.Info, int durationMs = 5000);
     void ShowEmergencyAlert(string category, string emergencyCode, string? reporter);
+
+    // Convenience Helper Methods
+    void ShowSuccess(string message, string title = "Success") => Show(title, message, ToastLevel.Success);
+    void ShowError(string message, string title = "Error") => Show(title, message, ToastLevel.Danger);
+    void ShowWarning(string message, string title = "Warning") => Show(title, message, ToastLevel.Warning);
+    void ShowInfo(string message, string title = "Info") => Show(title, message, ToastLevel.Info);
 }
