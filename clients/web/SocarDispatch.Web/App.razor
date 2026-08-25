@@ -5,12 +5,12 @@
                 <NotAuthorized Context="authContext">
                     @if (authContext.User.Identity?.IsAuthenticated == true)
                     {
-                        @* Giriş yapılmış ancak rol yetersiz ise (Operator değilse) *@
+                        @* If logged in but the role is insufficient (i.e., not an Operator) *@
                         <RedirectToAccessDenied />
                     }
                     else
                     {
-                        @* Giriş yapılmamışsa *@
+                        @* If not logged in *@
                         <RedirectToLogin />
                     }
                 </NotAuthorized>
@@ -25,11 +25,11 @@
             <FocusOnNavigate RouteData="@routeData" Selector="h1" />
         </Found>
         <NotFound>
-            <PageTitle>Sayfa Bulunamadı</PageTitle>
-            <LayoutView Layout="@typeof(MainLayout)">
+            <PageTitle>Page Not Found</PageTitle>
+            <LayoutView Layout="@typeof(EmptyLayout)">
                 <div class="container text-center mt-5">
-                    <h3>404 - Sayfa Bulunamadı</h3>
-                    <p>Aradığınız sayfa mevcut değil veya taşınmış olabilir.</p>
+                    <h3>404 - Page Not Found</h3>
+                    <p>The page you are looking for does not exist or may have been moved.</p>
                 </div>
             </LayoutView>
         </NotFound>
