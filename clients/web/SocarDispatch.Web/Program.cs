@@ -56,4 +56,10 @@ builder.Services.AddScoped<IAssignmentService, AssignmentService>();
 builder.Services.AddScoped<ITeamService, TeamService>();
 builder.Services.AddScoped<IUserService, UserService>();
 
+// Settings & Configuration Services
+builder.Services.AddScoped<ISettingsService, SettingsService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IEmergencyCodeService, EmergencyCodeService>();
+
+
 await builder.Build().RunAsync();

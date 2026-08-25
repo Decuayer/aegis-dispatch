@@ -8,6 +8,8 @@ public class UserService : IUserService
 {
     private readonly HttpClient _http;
 
+    public event Action<UserDto>? OnUserProfileUpdated;
+
     public UserService(HttpClient http)
     {
         _http = http;
@@ -35,6 +37,39 @@ public class UserService : IUserService
         catch (Exception ex)
         {
             return ApiResponse<List<UserDto>>.FailureResult($"Failed to retrieve users: {ex.Message}");
+        }
+    }
+
+    public async Task<ApiResponse<UserDto>?> GetCurrentUserAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await _http.GetFromJsonAsync<ApiResponse<UserDto>>("api/v1/users/me", cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<UserDto>.FailureResult($"Failed to fetch profile: {ex.Message}");
+        }
+    }
+
+    public async Task<ApiResponse<UserDto>?> UpdateCurrentUserProfileAsync(UpdateUserProfileRequestDto request, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await _http.PutAsJsonAsync("api/v1/users/me", request, cancellationToken);
+            var result = await response.Content.ReadFromJsonAsync<ApiResponse<UserDto>>(cancellationToken: cancellationToken);
+
+            if (result != null && result.Success && result.Data != null)
+            {
+                // Bilgilendir: Sağ üst köşe ve diğer bileşenler anında güncellensin
+                OnUserProfileUpdated?.Invoke(result.Data);
+            }
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<UserDto>.FailureResult($"Failed to update profile: {ex.Message}");
         }
     }
 }

@@ -74,4 +74,16 @@ public class MapService : IMapService
     public async Task UpdateIncidentAssignmentAsync(Guid incidentId, Guid teamId, string teamName)
         => await _js.InvokeVoidAsync("leafletMap.updateIncidentAssignment", incidentId.ToString(), teamId.ToString(), teamName);
 
+    public async Task InitializePickerMapAsync<T>(string containerId, double lat, double lng, int zoom, DotNetObjectReference<T> dotNetRef, string tileProvider = "OpenStreetMap") where T : class
+        => await _js.InvokeVoidAsync("leafletMap.initPickerMap", containerId, lat, lng, zoom, dotNetRef, tileProvider);
+
+    public async Task SetPickerLocationAsync(double lat, double lng, int? zoom = null)
+        => await _js.InvokeVoidAsync("leafletMap.setPickerLocation", lat, lng, zoom);
+
+    public async Task UpdatePickerTileLayerAsync(string tileProvider)
+        => await _js.InvokeVoidAsync("leafletMap.updatePickerTileLayer", tileProvider);
+
+    public async Task DestroyPickerMapAsync()
+        => await _js.InvokeVoidAsync("leafletMap.destroyPickerMap");
+
 }

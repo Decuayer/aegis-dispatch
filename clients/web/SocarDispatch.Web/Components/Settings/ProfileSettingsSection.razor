@@ -1,0 +1,285 @@
+@using System.Net.Http.Headers
+@using SocarDispatch.Web.Models.Auth
+@using SocarDispatch.Web.Models.Common
+@using SocarDispatch.Web.Services
+@inject IUserService UserService
+@inject IToastService ToastService
+@inject HttpClient Http
+
+<div class="settings-card">
+    <div class="settings-card-header">
+        <div>
+            <h3 class="settings-card-title">Operator Profile & Identity</h3>
+            <p class="settings-card-subtitle">View your dispatch credentials, update contact information, upload profile photo, or set an avatar URL.</p>
+        </div>
+    </div>
+
+    <div class="settings-card-body">
+        @if (_isLoading)
+        {
+            <div class="table-loading-state">
+                <div class="spinner-sm"></div>
+                <span>Loading profile details...</span>
+            </div>
+        }
+        else if (_user != null)
+        {
+            <!-- Operator Badge & Avatar Management -->
+            <div class="profile-overview-card">
+                <div class="profile-avatar-container">
+                    <div class="profile-avatar">
+                        @if (!string.IsNullOrWhiteSpace(_formModel.AvatarUrl))
+                        {
+                            <img src="@_formModel.AvatarUrl" alt="Avatar" class="profile-avatar-img" onerror="this.style.display='none'" />
+                        }
+                        else
+                        {
+                            @GetInitials(_user.FirstName, _user.LastName)
+                        }
+                    </div>
+
+                    @if (_isUploading)
+                    {
+                        <div class="avatar-upload-overlay">
+                            <span class="spinner-sm"></span>
+                        </div>
+                    }
+                </div>
+
+                <div class="profile-info">
+                    <div class="profile-name-row">
+                        <h4>@_user.FirstName @_user.LastName</h4>
+                        <span class="badge-role">@_user.RoleType</span>
+                        @if (!string.IsNullOrEmpty(_user.SubRole))
+                        {
+                            <span class="badge-subrole">@_user.SubRole</span>
+                        }
+                    </div>
+                    <div class="profile-email">@_user.Email</div>
+                    <div class="profile-department">🏢 @_user.Department</div>
+                </div>
+            </div>
+
+            <!-- Avatar Source Control (File Upload or Direct URL) -->
+            <div class="avatar-source-box">
+                <div class="avatar-source-header">
+                    <span class="avatar-source-title">Profile Photo / Avatar</span>
+                    @if (!string.IsNullOrWhiteSpace(_formModel.AvatarUrl))
+                    {
+                        <button type="button" class="btn-remove-avatar" @onclick="RemoveAvatar">
+                            Remove Photo
+                        </button>
+                    }
+                </div>
+
+                <div class="avatar-upload-controls">
+                    <!-- File Upload Input (Hidden + Styled Button) -->
+                    <label class="btn btn-ghost btn-sm btn-upload-file">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        <span>Upload Photo File</span>
+                        <InputFile OnChange="HandleFileSelectedAsync" accept="image/png,image/jpeg,image/webp" style="display:none;" />
+                    </label>
+
+                    <span class="text-subtle-color font-weight-500">or enter image URL:</span>
+
+                    <!-- Direct URL Input -->
+                    <input type="text" class="form-control form-control-sm avatar-url-input" 
+                           placeholder="https://example.com/photo.jpg" 
+                           @bind="_formModel.AvatarUrl" 
+                           @bind:event="oninput" />
+                </div>
+            </div>
+
+            <div class="divider-line"></div>
+
+            <!-- Profile Edit Form -->
+            <EditForm Model="@_formModel" OnValidSubmit="HandleProfileUpdateAsync">
+                <DataAnnotationsValidator />
+                <div class="settings-grid">
+                    <!-- First Name -->
+                    <div class="form-group">
+                        <label class="form-label">First Name *</label>
+                        <InputText class="form-control" @bind-Value="_formModel.FirstName" />
+                        <ValidationMessage For="@(() => _formModel.FirstName)" class="validation-message" />
+                    </div>
+
+                    <!-- Last Name -->
+                    <div class="form-group">
+                        <label class="form-label">Last Name *</label>
+                        <InputText class="form-control" @bind-Value="_formModel.LastName" />
+                        <ValidationMessage For="@(() => _formModel.LastName)" class="validation-message" />
+                    </div>
+
+                    <!-- Phone Number -->
+                    <div class="form-group">
+                        <label class="form-label">Phone Number</label>
+                        <InputText class="form-control" @bind-Value="_formModel.Phone" placeholder="+994 (XX) XXX-XX-XX" />
+                        <ValidationMessage For="@(() => _formModel.Phone)" class="validation-message" />
+                    </div>
+
+                    <!-- Department -->
+                    <div class="form-group">
+                        <label class="form-label">Department *</label>
+                        <InputText class="form-control" @bind-Value="_formModel.Department" placeholder="e.g. Emergency Response, Security" />
+                        <ValidationMessage For="@(() => _formModel.Department)" class="validation-message" />
+                    </div>
+
+                    <!-- Sub-Role / Title -->
+                    <div class="form-group">
+                        <label class="form-label">Sub-Role / Title</label>
+                        <InputText class="form-control" @bind-Value="_formModel.SubRole" placeholder="e.g. Senior Dispatcher, Shift Supervisor" />
+                        <ValidationMessage For="@(() => _formModel.SubRole)" class="validation-message" />
+                    </div>
+                </div>
+
+                <div class="settings-footer-action">
+                    <button type="submit" class="btn btn-primary" disabled="@(_isSaving || _isUploading)">
+                        @if (_isSaving)
+                        {
+                            <span class="spinner-sm"></span>
+                            <span>Saving Changes...</span>
+                        }
+                        else
+                        {
+                            <span>Update Profile Info</span>
+                        }
+                    </button>
+                </div>
+            </EditForm>
+        }
+    </div>
+</div>
+
+@code {
+    private UserDto? _user;
+    private UpdateUserProfileRequestDto _formModel = new();
+    private bool _isLoading = true;
+    private bool _isSaving;
+    private bool _isUploading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProfileAsync();
+    }
+
+    private async Task LoadProfileAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            var response = await UserService.GetCurrentUserAsync();
+            if (response != null && response.Success && response.Data != null)
+            {
+                _user = response.Data;
+                _formModel = new UpdateUserProfileRequestDto
+                {
+                    FirstName = _user.FirstName,
+                    LastName = _user.LastName,
+                    Phone = _user.Phone,
+                    Department = _user.Department,
+                    SubRole = _user.SubRole,
+                    AvatarUrl = _user.AvatarUrl
+                };
+            }
+            else
+            {
+                ToastService.ShowError(response?.Message ?? "Failed to load user profile.");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error: {ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task HandleFileSelectedAsync(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file == null) return;
+
+        // Limit size to 5MB
+        if (file.Size > 5 * 1024 * 1024)
+        {
+            ToastService.ShowError("Photo file size must not exceed 5 MB.", "File Too Large");
+            return;
+        }
+
+        _isUploading = true;
+        try
+        {
+            using var content = new MultipartFormDataContent();
+            var fileContent = new StreamContent(file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024));
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
+            
+            content.Add(fileContent, "File", file.Name);
+            content.Add(new StringContent("avatar"), "Category");
+
+            var response = await Http.PostAsync("api/v1/media/upload", content);
+            var result = await response.Content.ReadFromJsonAsync<ApiResponse<MediaUploadResponseDto>>();
+
+            if (result != null && result.Success && result.Data != null)
+            {
+                _formModel.AvatarUrl = result.Data.MediaUrl;
+                ToastService.ShowSuccess("Photo uploaded successfully to storage.", "Upload Complete");
+            }
+            else
+            {
+                ToastService.ShowError(result?.Message ?? "Failed to upload photo.");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Upload error: {ex.Message}");
+        }
+        finally
+        {
+            _isUploading = false;
+        }
+    }
+
+    private void RemoveAvatar()
+    {
+        _formModel.AvatarUrl = string.Empty;
+    }
+
+    private async Task HandleProfileUpdateAsync()
+    {
+        _isSaving = true;
+        try
+        {
+            var response = await UserService.UpdateCurrentUserProfileAsync(_formModel);
+            if (response != null && response.Success && response.Data != null)
+            {
+                _user = response.Data;
+                ToastService.ShowSuccess("Profile information updated successfully.", "Profile Updated");
+            }
+            else
+            {
+                ToastService.ShowError(response?.Message ?? "Failed to update profile.");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error updating profile: {ex.Message}");
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private string GetInitials(string? first, string? last)
+    {
+        var f = !string.IsNullOrEmpty(first) ? first[0].ToString().ToUpper() : "O";
+        var l = !string.IsNullOrEmpty(last) ? last[0].ToString().ToUpper() : "P";
+        return $"{f}{l}";
+    }
+}

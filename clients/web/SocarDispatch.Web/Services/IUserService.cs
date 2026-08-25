@@ -5,6 +5,8 @@ namespace SocarDispatch.Web.Services;
 
 public interface IUserService
 {
-    /// Retrieves a list of users filtered by search query and/or role.
+    event Action<UserDto>? OnUserProfileUpdated;
     Task<ApiResponse<List<UserDto>>?> GetUsersAsync(string? search = null, RoleType? role = null, CancellationToken cancellationToken = default);
+    Task<ApiResponse<UserDto>?> GetCurrentUserAsync(CancellationToken cancellationToken = default);
+    Task<ApiResponse<UserDto>?> UpdateCurrentUserProfileAsync(UpdateUserProfileRequestDto request, CancellationToken cancellationToken = default);
 }
