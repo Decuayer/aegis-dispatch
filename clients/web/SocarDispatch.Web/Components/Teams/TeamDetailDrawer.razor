@@ -1,0 +1,478 @@
+@* Components/Teams/TeamDetailDrawer.razor *@
+@using SocarDispatch.Web.Models.Dispatch
+@using SocarDispatch.Web.Services
+@inject ITeamService TeamService
+@inject IToastService ToastService
+@inject NavigationManager Navigation
+
+@if (IsOpen)
+{
+    <!-- Backdrop Overlay -->
+    <div class="sidebar-backdrop visible" @onclick="CloseDrawer"></div>
+
+    <!-- Drawer Panel -->
+    <aside class="sidebar-drawer team-drawer open" aria-label="Team Details and Roster Panel">
+        @if (Team == null)
+        {
+            <div class="sidebar-empty">
+                <p>Select a team to view its personnel roster and operational details.</p>
+                <button type="button" class="btn btn-ghost" @onclick="CloseDrawer">Close</button>
+            </div>
+        }
+        else
+        {
+            <!-- Header -->
+            <div class="sidebar-header">
+                <div class="header-top">
+                    <div class="badges-row">
+                        <span class="badge-status @GetStatusBadgeClass(Team.Status)">@Team.Status</span>
+                        @if (Team.CurrentLatitude.HasValue && Team.CurrentLongitude.HasValue)
+                        {
+                            <span class="badge-code badge-code-green">GPS Online</span>
+                        }
+                    </div>
+                    <button type="button" class="btn-close" @onclick="CloseDrawer" title="Close Panel">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <h2 class="incident-title">@Team.TeamName</h2>
+                <div class="incident-timestamp">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    <span>Updated: @Team.UpdatedAt.ToString("MMM dd, yyyy HH:mm")</span>
+                </div>
+            </div>
+
+            <!-- Scrollable Body -->
+            <div class="sidebar-body">
+                <!-- Operational Status Override -->
+                <section class="section-card">
+                    <div class="section-title">Operational Status Override</div>
+                    <div class="status-control-row">
+                        <select class="form-select status-select" value="@Team.Status" @onchange="HandleStatusChange" disabled="@_isUpdatingStatus">
+                            <option value="Idle">Idle (Available)</option>
+                            <option value="Forwarded">Forwarded (En Route)</option>
+                            <option value="OnScene">On Scene</option>
+                            <option value="Busy">Busy (Unavailable)</option>
+                        </select>
+                        @if (_isUpdatingStatus)
+                        {
+                            <span class="spinner-sm"></span>
+                        }
+                    </div>
+                </section>
+
+                <!-- Action Controls -->
+                <section class="section-card">
+                    <div class="section-title">Management Actions</div>
+                    <div class="drawer-actions-grid">
+                        <button type="button" class="btn btn-outline-primary" @onclick="HandleEditTeamClick">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                            Edit Team
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" @onclick="HandleManageMembersClick">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                                <line x1="19" y1="8" x2="19" y2="14"/>
+                                <line x1="22" y1="11" x2="16" y2="11"/>
+                            </svg>
+                            Manage Roster
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Leader Section -->
+                <section class="section-card">
+                    <div class="section-title">Team Leader</div>
+                    @if (!string.IsNullOrWhiteSpace(Team.LeaderFullName))
+                    {
+                        var leaderMember = Team.Members.FirstOrDefault(m => m.UserId == Team.LeaderId);
+                        <div class="reporter-box">
+                            <div class="reporter-avatar">
+                                @GetInitials(Team.LeaderFullName)
+                            </div>
+                            <div class="reporter-details">
+                                <div class="reporter-name">@Team.LeaderFullName</div>
+                                <div class="reporter-phone">@(leaderMember?.Phone ?? "No phone recorded")</div>
+                                <div class="reporter-email">@(leaderMember?.Email ?? "No email recorded")</div>
+                                @if (!string.IsNullOrEmpty(leaderMember?.Department))
+                                {
+                                    <span class="badge-user-dept">@leaderMember.Department</span>
+                                }
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">No leader currently designated for this team.</p>
+                    }
+                </section>
+
+                <!-- Live GPS Coordinates -->
+                <section class="section-card">
+                    <div class="section-title">Location & Telemetry</div>
+                    @if (Team.CurrentLatitude.HasValue && Team.CurrentLongitude.HasValue)
+                    {
+                        <div class="gps-info-box">
+                            <div class="gps-coords">
+                                <span class="coord-label">LAT:</span> <code>@Team.CurrentLatitude.Value.ToString("F6")</code>
+                                <span class="coord-label" style="margin-left: 10px;">LNG:</span> <code>@Team.CurrentLongitude.Value.ToString("F6")</code>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-ghost" @onclick="NavigateToMap">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+                                </svg>
+                                View on Live Map
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">No active GPS coordinates reported yet.</p>
+                    }
+                </section>
+
+                <!-- Personnel Roster -->
+                <section class="section-card">
+                    <div class="section-title">
+                        <span>Personnel Roster</span>
+                        <span class="badge-count">@Team.Members.Count</span>
+                    </div>
+
+                    @if (Team.Members.Count == 0)
+                    {
+                        <p class="text-muted">No members assigned to this team roster.</p>
+                    }
+                    else
+                    {
+                        <div class="roster-list">
+                            @foreach (var member in Team.Members)
+                            {
+                                <div class="roster-item">
+                                    <div class="roster-avatar">@GetInitials(member.FullName)</div>
+                                    <div class="roster-meta">
+                                        <div class="roster-name-row">
+                                            <strong>@member.FullName</strong>
+                                            @if (member.UserId == Team.LeaderId)
+                                            {
+                                                <span class="badge-leader-tag">Leader</span>
+                                            }
+                                        </div>
+                                        <div class="roster-sub">
+                                            <span>@(string.IsNullOrEmpty(member.Department) ? "Field Responder" : member.Department)</span>
+                                            @if (!string.IsNullOrEmpty(member.SubRole))
+                                            {
+                                                <span>• @member.SubRole</span>
+                                            }
+                                        </div>
+                                        <div class="roster-contact">
+                                            @if (!string.IsNullOrEmpty(member.Phone))
+                                            {
+                                                <span>📞 @member.Phone</span>
+                                            }
+                                        </div>
+                                    </div>
+                                    <span class="badge-member-status @GetMemberStatusBadgeClass(member.MemberStatus)">
+                                        @member.MemberStatus
+                                    </span>
+                                </div>
+                            }
+                        </div>
+                    }
+                </section>
+            </div>
+        }
+    </aside>
+}
+
+<style>
+    .sidebar-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(2px);
+        z-index: 1040;
+    }
+
+    .sidebar-drawer {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 440px;
+        max-width: 100vw;
+        background-color: var(--color-surface);
+        border-left: 1px solid var(--color-border);
+        box-shadow: var(--shadow-lg);
+        z-index: 1050;
+        display: flex;
+        flex-direction: column;
+        animation: slideLeft 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @@keyframes slideLeft {
+        from { transform: translateX(100%); }
+        to { transform: translateX(0); }
+    }
+
+    .sidebar-header {
+        padding: 18px 20px;
+        background-color: var(--color-surface-2);
+        border-bottom: 1px solid var(--color-border);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .header-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+    }
+
+    .badges-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-close {
+        background: transparent;
+        border: none;
+        color: var(--color-text-muted);
+        cursor: pointer;
+        padding: 6px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s ease;
+    }
+
+    .btn-close:hover {
+        background-color: var(--color-surface-3);
+        color: var(--color-text-primary);
+    }
+
+    .sidebar-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 18px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .section-card {
+        background-color: var(--color-surface-2);
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        padding: 14px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .section-title {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: var(--color-text-muted);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .badge-count {
+        background-color: var(--color-surface-3);
+        color: var(--color-text-primary);
+        padding: 2px 6px;
+        border-radius: 10px;
+        font-size: 10px;
+    }
+
+    .reporter-box {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .reporter-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background-color: var(--color-accent-muted);
+        color: var(--color-accent);
+        font-weight: 700;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .reporter-details {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .reporter-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--color-text-primary);
+    }
+
+    .reporter-phone, .reporter-email {
+        font-size: 11px;
+        color: var(--color-text-muted);
+    }
+
+    .text-muted, p.text-muted {
+        color: #94a3b8 !important;
+        font-size: 12px;
+        line-height: 1.4;
+        margin: 0;
+    }
+
+    .section-title {
+        color: #cbd5e1 !important;
+    }
+
+    .drawer-actions-grid .btn-outline-primary {
+        background-color: rgba(59, 130, 246, 0.12);
+        border: 1px solid rgba(59, 130, 246, 0.35);
+        color: #60a5fa;
+        font-weight: 600;
+    }
+
+    .drawer-actions-grid .btn-outline-primary:hover {
+        background-color: var(--color-accent);
+        color: #ffffff;
+    }
+
+</style>
+
+@code {
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public TeamDto? Team { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public EventCallback<TeamDto> OnTeamChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<TeamDto> OnEditRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<TeamDto> OnManageMembersRequested { get; set; }
+
+    private bool _isUpdatingStatus;
+
+    private async Task CloseDrawer()
+    {
+        if (OnClose.HasDelegate)
+        {
+            await OnClose.InvokeAsync();
+        }
+    }
+
+    private async Task HandleStatusChange(ChangeEventArgs e)
+    {
+        if (Team == null || _isUpdatingStatus) return;
+
+        var newStatus = e.Value?.ToString();
+        if (string.IsNullOrWhiteSpace(newStatus) || newStatus == Team.Status) return;
+
+        _isUpdatingStatus = true;
+        try
+        {
+            var response = await TeamService.UpdateTeamStatusAsync(Team.Id, newStatus);
+            if (response != null && response.Success && response.Data != null)
+            {
+                Team.Status = response.Data.Status;
+                Team.UpdatedAt = response.Data.UpdatedAt;
+                ToastService.ShowSuccess($"Team status updated to {newStatus}");
+                if (OnTeamChanged.HasDelegate)
+                {
+                    await OnTeamChanged.InvokeAsync(response.Data);
+                }
+            }
+            else
+            {
+                ToastService.ShowError(response?.Message ?? "Failed to update team status.");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Status update error: {ex.Message}");
+        }
+        finally
+        {
+            _isUpdatingStatus = false;
+        }
+    }
+
+    private async Task HandleEditTeamClick()
+    {
+        if (Team != null && OnEditRequested.HasDelegate)
+        {
+            await OnEditRequested.InvokeAsync(Team);
+        }
+    }
+
+    private async Task HandleManageMembersClick()
+    {
+        if (Team != null && OnManageMembersRequested.HasDelegate)
+        {
+            await OnManageMembersRequested.InvokeAsync(Team);
+        }
+    }
+
+    private void NavigateToMap()
+    {
+        Navigation.NavigateTo("map");
+    }
+
+    private string GetStatusBadgeClass(string? status) => status switch
+    {
+        "Idle" => "badge-status-idle",
+        "Forwarded" => "badge-status-forwarded",
+        "OnScene" => "badge-status-onscene",
+        "Busy" => "badge-status-busy",
+        _ => "badge-status-default"
+    };
+
+    private string GetMemberStatusBadgeClass(string? status) => status switch
+    {
+        "Available" => "badge-code-green",
+        "EnRoute" => "badge-code-orange",
+        "OnScene" => "badge-code-yellow",
+        "Unavailable" => "badge-code-red",
+        _ => "badge-code-default"
+    };
+
+    private string GetInitials(string? fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName)) return "T";
+        var parts = fullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 1) return parts[0][0].ToString().ToUpper();
+        return $"{parts[0][0]}{parts[^1][0]}".ToUpper();
+    }
+}

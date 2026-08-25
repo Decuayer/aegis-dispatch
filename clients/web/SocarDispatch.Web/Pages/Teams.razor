@@ -1,0 +1,336 @@
+@* clients/web/SocarDispatch.Web/Pages/Teams.razor *@
+@page "/teams"
+@attribute [Authorize(Roles = "Operator")]
+
+@using SocarDispatch.Web.Models.Dispatch
+@using SocarDispatch.Web.Services
+@using SocarDispatch.Web.Services.SignalR
+@using SocarDispatch.Web.Events
+@using SocarDispatch.Web.Components.Teams
+
+@inject ITeamService TeamService
+@inject ILocationHubClient LocationHub
+@inject IIncidentHubClient IncidentHub
+@inject IToastService ToastService
+@inject NavigationManager Navigation
+@implements IDisposable
+
+<PageTitle>Response Teams — SOCAR Dispatch</PageTitle>
+
+<div class="teams-page">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Response Teams Management</h1>
+            <p class="page-subtitle">Monitor operational readiness, inspect rosters, and manage response personnel.</p>
+        </div>
+        <div class="header-stats">
+            <span class="stat-pill">Total Units: <strong>@_teams.Count</strong></span>
+            <span class="stat-pill idle">Idle (Ready): <strong>@GetStatusCount("Idle")</strong></span>
+            <span class="stat-pill forwarded">Active/En Route: <strong>@(GetStatusCount("Forwarded") + GetStatusCount("OnScene"))</strong></span>
+        </div>
+    </div>
+
+    <!-- Toolbar: Status Filter Tabs, Search & Action -->
+    <div class="teams-toolbar">
+        <!-- Status Filter Tabs -->
+        <div class="filter-tabs">
+            <button type="button" 
+                    class="tab-btn @(_selectedStatus == "All" ? "active" : "")" 
+                    @onclick='() => SetStatusFilter("All")'>
+                All
+                <span class="tab-count">@_teams.Count</span>
+            </button>
+            <button type="button" 
+                    class="tab-btn @(_selectedStatus == "Idle" ? "active" : "")" 
+                    @onclick='() => SetStatusFilter("Idle")'>
+                Idle
+                <span class="tab-count count-idle">@GetStatusCount("Idle")</span>
+            </button>
+            <button type="button" 
+                    class="tab-btn @(_selectedStatus == "Forwarded" ? "active" : "")" 
+                    @onclick='() => SetStatusFilter("Forwarded")'>
+                Forwarded
+                <span class="tab-count count-forwarded">@GetStatusCount("Forwarded")</span>
+            </button>
+            <button type="button" 
+                    class="tab-btn @(_selectedStatus == "OnScene" ? "active" : "")" 
+                    @onclick='() => SetStatusFilter("OnScene")'>
+                On Scene
+                <span class="tab-count count-onscene">@GetStatusCount("OnScene")</span>
+            </button>
+            <button type="button" 
+                    class="tab-btn @(_selectedStatus == "Busy" ? "active" : "")" 
+                    @onclick='() => SetStatusFilter("Busy")'>
+                Busy
+                <span class="tab-count count-busy">@GetStatusCount("Busy")</span>
+            </button>
+        </div>
+
+        <!-- Search & Create Button -->
+        <div class="toolbar-actions">
+            <div class="search-input-wrapper">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input type="text" 
+                       class="form-control search-input" 
+                       placeholder="Search teams or personnel..." 
+                       value="@_searchTerm" 
+                       @oninput="HandleSearchInput" />
+            </div>
+
+            <button type="button" class="btn btn-primary btn-create" @onclick="OpenCreateModal">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Create New Team
+            </button>
+        </div>
+    </div>
+
+    <!-- Teams Grid Content -->
+    <div class="teams-content">
+        @if (_isLoading)
+        {
+            <div class="loading-state">
+                <div class="spinner-sm"></div>
+                <p>Loading response teams...</p>
+            </div>
+        }
+        else if (FilteredTeams.Count == 0)
+        {
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                </div>
+                <h3>No response teams found</h3>
+                <p>No teams match your search or filter criteria. Try adjusting the filter or create a new unit.</p>
+                <button type="button" class="btn btn-ghost" @onclick="ResetFilters">Reset Filters</button>
+            </div>
+        }
+        else
+        {
+            <div class="teams-grid">
+                @foreach (var team in FilteredTeams)
+                {
+                    <TeamCard @key="team.Id" 
+                              Team="team" 
+                              OnSelect="HandleTeamSelected" />
+                }
+            </div>
+        }
+    </div>
+
+    <!-- Team Detail Drawer -->
+    <TeamDetailDrawer IsOpen="@_isDrawerOpen" 
+                      Team="@_selectedTeam" 
+                      OnClose="CloseDrawer" 
+                      OnTeamChanged="HandleTeamUpdated" 
+                      OnEditRequested="OpenEditModal" 
+                      OnManageMembersRequested="OpenManageMembersModal" />
+
+    <!-- Create Team Modal -->
+    <CreateTeamModal IsVisible="@_isCreateModalOpen" 
+                     OnClose="CloseCreateModal" 
+                     OnTeamCreated="HandleTeamCreated" />
+
+    <!-- Edit Team Modal -->
+    <EditTeamModal IsVisible="@_isEditModalOpen" 
+                   Team="@_selectedTeam" 
+                   OnClose="CloseEditModal" 
+                   OnTeamUpdated="HandleTeamUpdated" />
+
+    <!-- Manage Team Members Modal -->
+    <ManageTeamMembersModal IsVisible="@_isManageMembersModalOpen" 
+                            Team="@_selectedTeam" 
+                            OnClose="CloseManageMembersModal" 
+                            OnRosterUpdated="HandleTeamUpdated" />
+</div>
+
+@code {
+    private List<TeamDto> _teams = new();
+    private bool _isLoading = true;
+    private string _selectedStatus = "All";
+    private string _searchTerm = string.Empty;
+
+    // Drawer and Modal States
+    private bool _isDrawerOpen;
+    private TeamDto? _selectedTeam;
+    private bool _isCreateModalOpen;
+    private bool _isEditModalOpen;
+    private bool _isManageMembersModalOpen;
+
+    private List<TeamDto> FilteredTeams => _teams
+        .Where(t => _selectedStatus == "All" || string.Equals(t.Status, _selectedStatus, StringComparison.OrdinalIgnoreCase))
+        .Where(t => string.IsNullOrWhiteSpace(_searchTerm) ||
+                    t.TeamName.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    (!string.IsNullOrEmpty(t.LeaderFullName) && t.LeaderFullName.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase)) ||
+                    t.Members.Any(m => m.FullName.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                                       m.Department.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase)))
+        .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // 1. Subscribe to SignalR Real-time events
+        LocationHub.OnTeamLocationUpdated += HandleLocationUpdated;
+        IncidentHub.OnTeamDispatched += HandleTeamDispatched;
+
+        // 2. Fetch initial teams data
+        await LoadTeamsAsync();
+    }
+
+    private async Task LoadTeamsAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            var response = await TeamService.GetTeamsAsync();
+            if (response != null && response.Success && response.Data != null)
+            {
+                _teams = response.Data;
+            }
+            else
+            {
+                ToastService.ShowError(response?.Message ?? "Failed to load response teams.");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error loading teams: {ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void SetStatusFilter(string status)
+    {
+        _selectedStatus = status;
+    }
+
+    private void HandleSearchInput(ChangeEventArgs e)
+    {
+        _searchTerm = e.Value?.ToString() ?? string.Empty;
+    }
+
+    private void ResetFilters()
+    {
+        _selectedStatus = "All";
+        _searchTerm = string.Empty;
+    }
+
+    private int GetStatusCount(string status)
+    {
+        return _teams.Count(t => string.Equals(t.Status, status, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private void HandleTeamSelected(TeamDto team)
+    {
+        _selectedTeam = team;
+        _isDrawerOpen = true;
+    }
+
+    private void CloseDrawer()
+    {
+        _isDrawerOpen = false;
+    }
+
+    private void OpenCreateModal()
+    {
+        _isCreateModalOpen = true;
+    }
+
+    private void CloseCreateModal()
+    {
+        _isCreateModalOpen = false;
+    }
+
+    private void HandleTeamCreated(TeamDto newTeam)
+    {
+        _teams.Insert(0, newTeam);
+        _isCreateModalOpen = false;
+        _selectedTeam = newTeam;
+        _isDrawerOpen = true;
+        StateHasChanged();
+    }
+
+    private void OpenEditModal(TeamDto team)
+    {
+        _selectedTeam = team;
+        _isEditModalOpen = true;
+    }
+
+    private void CloseEditModal()
+    {
+        _isEditModalOpen = false;
+    }
+
+    private void OpenManageMembersModal(TeamDto team)
+    {
+        _selectedTeam = team;
+        _isManageMembersModalOpen = true;
+    }
+
+    private void CloseManageMembersModal()
+    {
+        _isManageMembersModalOpen = false;
+    }
+
+    private void HandleTeamUpdated(TeamDto updatedTeam)
+    {
+        var index = _teams.FindIndex(t => t.Id == updatedTeam.Id);
+        if (index >= 0)
+        {
+            _teams[index] = updatedTeam;
+        }
+        _selectedTeam = updatedTeam;
+        StateHasChanged();
+    }
+
+    // ──────────────────────────────────────────────
+    // SignalR Real-Time Event Handlers
+    // ──────────────────────────────────────────────
+    private void HandleLocationUpdated(object? sender, TeamLocationUpdatedEventArgs e)
+    {
+        InvokeAsync(() =>
+        {
+            var target = _teams.FirstOrDefault(t => t.Id == e.TeamId);
+            if (target != null)
+            {
+                target.CurrentLatitude = (decimal)e.Latitude;
+                target.CurrentLongitude = (decimal)e.Longitude;
+                target.UpdatedAt = e.UpdatedAt;
+                StateHasChanged();
+            }
+        });
+    }
+
+    private void HandleTeamDispatched(object? sender, TeamDispatchedEventArgs e)
+    {
+        InvokeAsync(() =>
+        {
+            var target = _teams.FirstOrDefault(t => t.Id == e.TeamId);
+            if (target != null)
+            {
+                target.Status = "Forwarded";
+                target.UpdatedAt = e.AssignedAt;
+                StateHasChanged();
+            }
+        });
+    }
+
+    public void Dispose()
+    {
+        LocationHub.OnTeamLocationUpdated -= HandleLocationUpdated;
+        IncidentHub.OnTeamDispatched -= HandleTeamDispatched;
+    }
+}

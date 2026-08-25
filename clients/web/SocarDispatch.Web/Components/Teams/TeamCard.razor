@@ -1,0 +1,125 @@
+@* Components/Teams/TeamCard.razor *@
+@using SocarDispatch.Web.Models.Dispatch
+
+<div class="team-card @GetCardStatusClass(Team.Status)" @onclick="HandleCardClick">
+    <!-- Header: Team Name & Status Badge -->
+    <div class="team-card-header">
+        <div class="team-identity">
+            <div class="team-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+            </div>
+            <h3 class="team-title">@Team.TeamName</h3>
+        </div>
+        <span class="badge-status @GetStatusBadgeClass(Team.Status)">
+            @Team.Status
+        </span>
+    </div>
+
+    <!-- Body: Leader & Member Details -->
+    <div class="team-card-body">
+        <div class="meta-row">
+            <span class="meta-label">Team Leader</span>
+            <span class="meta-value leader-value">
+                @if (!string.IsNullOrWhiteSpace(Team.LeaderFullName))
+                {
+                    <span class="leader-dot"></span>
+                    @Team.LeaderFullName
+                }
+                else
+                {
+                    <span class="text-muted">Unassigned</span>
+                }
+            </span>
+        </div>
+
+        <div class="meta-row">
+            <span class="meta-label">Roster Size</span>
+            <span class="meta-value member-count-badge">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <line x1="19" y1="8" x2="19" y2="14"/>
+                    <line x1="22" y1="11" x2="16" y2="11"/>
+                </svg>
+                @Team.Members.Count Members
+            </span>
+        </div>
+    </div>
+
+    <!-- Footer: Location & Timestamp -->
+    <div class="team-card-footer">
+        <div class="location-indicator">
+            @if (Team.CurrentLatitude.HasValue && Team.CurrentLongitude.HasValue)
+            {
+                <span class="gps-badge active" title="Live GPS Connected">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+                    </svg>
+                    GPS Active
+                </span>
+            }
+            else
+            {
+                <span class="gps-badge inactive" title="No live GPS fix">
+                    No GPS Fix
+                </span>
+            }
+        </div>
+
+        <div class="update-timestamp" title="@Team.UpdatedAt.ToString("g")">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <span>@GetTimeAgo(Team.UpdatedAt)</span>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public TeamDto Team { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback<TeamDto> OnSelect { get; set; }
+
+    private async Task HandleCardClick()
+    {
+        if (OnSelect.HasDelegate)
+        {
+            await OnSelect.InvokeAsync(Team);
+        }
+    }
+
+    private string GetCardStatusClass(string? status) => status switch
+    {
+        "Idle" => "status-idle-border",
+        "Forwarded" => "status-forwarded-border",
+        "OnScene" => "status-onscene-border",
+        "Busy" => "status-busy-border",
+        _ => ""
+    };
+
+    private string GetStatusBadgeClass(string? status) => status switch
+    {
+        "Idle" => "badge-status-idle",
+        "Forwarded" => "badge-status-forwarded",
+        "OnScene" => "badge-status-onscene",
+        "Busy" => "badge-status-busy",
+        _ => "badge-status-default"
+    };
+
+    private string GetTimeAgo(DateTime dateTime)
+    {
+        var span = DateTime.UtcNow - dateTime;
+        if (span.TotalMinutes < 1) return "Just now";
+        if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes}m ago";
+        if (span.TotalHours < 24) return $"{(int)span.TotalHours}h ago";
+        return $"{(int)span.TotalDays}d ago";
+    }
+}

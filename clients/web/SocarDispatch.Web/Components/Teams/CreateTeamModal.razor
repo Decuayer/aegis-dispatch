@@ -1,0 +1,187 @@
+@* Components/Teams/CreateTeamModal.razor *@
+@using SocarDispatch.Web.Models.Auth
+@using SocarDispatch.Web.Models.Dispatch
+@using SocarDispatch.Web.Services
+@inject ITeamService TeamService
+@inject IUserService UserService
+@inject IToastService ToastService
+
+@if (IsVisible)
+{
+    <div class="modal-backdrop" @onclick="HandleCancel">
+        <div class="modal-card" @onclick:stopPropagation="true">
+            <!-- Header -->
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <div class="modal-icon">👥</div>
+                    <div>
+                        <h3 class="modal-title">Create Response Team</h3>
+                        <p class="modal-subtitle">Register a new emergency response unit and designate team leadership.</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" @onclick="HandleCancel" title="Cancel">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Body -->
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label" for="team-name">
+                        Team Name <span class="required-star">*</span>
+                    </label>
+                    <input id="team-name"
+                           type="text" 
+                           class="form-control" 
+                           placeholder="e.g. Fire & Rescue Team Alpha" 
+                           @bind="_teamName" 
+                           maxlength="100" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="leader-search">
+                        Designated Team Leader <span class="optional-tag">(Optional)</span>
+                    </label>
+
+                    @if (_isLoadingUsers)
+                    {
+                        <div class="loading-state-mini">
+                            <span class="spinner-sm"></span> Loading available team personnel...
+                        </div>
+                    }
+                    else
+                    {
+                        <select id="leader-search" class="form-select" @bind="_selectedLeaderId">
+                            <option value="">-- Select Team Leader --</option>
+                            @foreach (var user in _availableUsers)
+                            {
+                                <option value="@user.Id">@user.FirstName @user.LastName (@(string.IsNullOrEmpty(user.Department) ? "Team Member" : user.Department))</option>
+                            }
+                        </select>
+                    }
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" @onclick="HandleCancel" disabled="@_isSubmitting">
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-primary" @onclick="HandleSubmit" disabled="@(_isSubmitting || string.IsNullOrWhiteSpace(_teamName))">
+                    @if (_isSubmitting)
+                    {
+                        <span class="spinner-sm"></span>
+                        <span>Creating...</span>
+                    }
+                    else
+                    {
+                        <span>Create Team</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public EventCallback<TeamDto> OnTeamCreated { get; set; }
+
+    private string _teamName = string.Empty;
+    private string _selectedLeaderId = string.Empty;
+    private bool _isSubmitting;
+    private bool _isLoadingUsers;
+    private List<UserDto> _availableUsers = new();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && _availableUsers.Count == 0)
+        {
+            await LoadTeamUsers();
+        }
+    }
+
+    private async Task LoadTeamUsers()
+    {
+        _isLoadingUsers = true;
+        try
+        {
+            var response = await UserService.GetUsersAsync(role: RoleType.Team);
+            if (response != null && response.Success && response.Data != null)
+            {
+                _availableUsers = response.Data;
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Failed to load responders: {ex.Message}");
+        }
+        finally
+        {
+            _isLoadingUsers = false;
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (string.IsNullOrWhiteSpace(_teamName))
+        {
+            ToastService.ShowWarning("Please enter a valid team name.");
+            return;
+        }
+
+        _isSubmitting = true;
+        try
+        {
+            Guid? leaderGuid = Guid.TryParse(_selectedLeaderId, out var parsedGuid) ? parsedGuid : null;
+            var request = new CreateTeamRequestDto
+            {
+                TeamName = _teamName.Trim(),
+                LeaderId = leaderGuid
+            };
+
+            var response = await TeamService.CreateTeamAsync(request);
+            if (response != null && response.Success && response.Data != null)
+            {
+                ToastService.ShowSuccess($"Team '{response.Data.TeamName}' created successfully.");
+                _teamName = string.Empty;
+                _selectedLeaderId = string.Empty;
+                if (OnTeamCreated.HasDelegate)
+                {
+                    await OnTeamCreated.InvokeAsync(response.Data);
+                }
+            }
+            else
+            {
+                ToastService.ShowError(response?.Message ?? "Failed to create team.");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Creation error: {ex.Message}");
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        _teamName = string.Empty;
+        _selectedLeaderId = string.Empty;
+        if (OnClose.HasDelegate)
+        {
+            await OnClose.InvokeAsync();
+        }
+    }
+}
