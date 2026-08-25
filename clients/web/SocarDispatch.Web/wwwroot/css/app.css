@@ -232,9 +232,63 @@ a:hover {
     color: var(--color-text-muted);
 }
 
-.btn-danger-ghost:hover:not(:disabled) {
-    background-color: var(--color-danger-muted);
-    color: var(--color-danger);
+/* =========================================================
+   Form Controls & Inputs
+   ========================================================= */
+
+.form-control,
+.form-select {
+    display: block;
+    width: 100%;
+    padding: 8px 12px;
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--color-text-primary);
+    background-color: var(--color-surface);
+    background-clip: padding-box;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+    outline: none;
+    box-shadow: var(--shadow-sm);
+}
+
+.form-control::placeholder {
+    color: var(--color-text-subtle);
+    opacity: 0.8;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px var(--color-accent-muted);
+    background-color: var(--color-surface);
+    color: var(--color-text-primary);
+}
+
+.form-select {
+    padding-right: 32px;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%238b909a' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 12px 10px;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+.form-select option {
+    background-color: var(--color-surface);
+    color: var(--color-text-primary);
+}
+
+.form-control-sm,
+.form-select-sm {
+    padding: 5px 8px;
+    font-size: 12px;
+    border-radius: 4px;
 }
 
 /* =========================================================
