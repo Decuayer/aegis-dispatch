@@ -26,9 +26,29 @@ public class GetIncidentsQueryHandler : IRequestHandler<GetIncidentsQuery, ApiRe
             .AsNoTracking()
             .AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(request.Status) && !request.Status.Equals("All", StringComparison.OrdinalIgnoreCase) && Enum.TryParse<IncidentStatus>(request.Status, true, out var parsedStatus))
+        if (!string.IsNullOrWhiteSpace(request.Status) && !request.Status.Equals("All", StringComparison.OrdinalIgnoreCase))
         {
-            query = query.Where(i => i.Status == parsedStatus);
+            if (request.Status.Equals("Active", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(i => i.Status == IncidentStatus.Open || i.Status == IncidentStatus.Assigned);
+            }
+            else if (request.Status.Contains(','))
+            {
+                var statusList = request.Status.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Select(s => Enum.TryParse<IncidentStatus>(s, true, out var parsed) ? (IncidentStatus?)parsed : null)
+                    .Where(s => s.HasValue)
+                    .Select(s => s!.Value)
+                    .ToList();
+
+                if (statusList.Count > 0)
+                {
+                    query = query.Where(i => statusList.Contains(i.Status));
+                }
+            }
+            else if (Enum.TryParse<IncidentStatus>(request.Status, true, out var parsedStatus))
+            {
+                query = query.Where(i => i.Status == parsedStatus);
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(request.Category) && !request.Category.Equals("All", StringComparison.OrdinalIgnoreCase))

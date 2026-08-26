@@ -575,6 +575,10 @@ code {
 .lf-status-resolved  { color: var(--color-success); }
 .lf-status-canceled  { color: var(--color-text-muted); }
 
+.lf-marker-assigned {
+    filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.6));
+}
+
 .lf-popup-actions {
     padding: 10px 14px 12px;
     display: flex;

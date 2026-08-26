@@ -32,7 +32,7 @@ public class IncidentService : IIncidentService
         try
         {
             return await _http.GetFromJsonAsync<ApiResponse<List<IncidentDetailViewModel>>>(
-                "api/v1/incidents?status=Open", 
+                "api/v1/incidents?status=Open,Assigned", 
                 cancellationToken);
         }
         catch (Exception ex)
