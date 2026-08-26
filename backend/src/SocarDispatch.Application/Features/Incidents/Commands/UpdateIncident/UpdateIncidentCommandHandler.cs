@@ -93,8 +93,11 @@ public class UpdateIncidentCommandHandler : IRequestHandler<UpdateIncidentComman
             Latitude = incident.Latitude,
             Longitude = incident.Longitude,
             CreatedAt = incident.CreatedAt,
+            AssignedAt = latestAssignment?.AssignedAt,
+            CompletedAt = latestAssignment?.CompletedAt,
             AssignedTeamId = latestAssignment?.TeamId,
             AssignedTeamName = latestAssignment?.Team.TeamName,
+            CompletionNotes = latestAssignment?.CompletionNotes,
             MediaAttachments = incident.MediaAttachments.Select(m => new IncidentMediaDto
             {
                 Id = m.Id,

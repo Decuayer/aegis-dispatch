@@ -8,6 +8,7 @@
 
 @inject IIncidentHubClient IncidentHub
 @inject HttpClient Http
+@inject IIncidentService IncidentService
 @implements IDisposable
 
 <PageTitle>Dashboard — SOCAR Dispatch</PageTitle>
@@ -79,7 +80,16 @@
     <!-- 4. Average Response Time -->
     <div class="stat-card">
         <div class="stat-label">Avg. Response Time</div>
-        <div class="stat-value">@_avgResponseTime</div>
+        <div class="stat-value">
+            @if (_isLoading)
+            {
+                <span class="stat-loading">...</span>
+            }
+            else
+            {
+                @_avgResponseTime
+            }
+        </div>
         <div class="stat-hint">Last 24 hours</div>
     </div>
 </div>
@@ -122,7 +132,7 @@
     private int _availableTeams = 0;
     private int _dispatchedTeams = 0;
     private bool _isLoading = true;
-    private string _avgResponseTime = "4.2m";
+    private string _avgResponseTime = "--";
     private Guid? _selectedIncidentId;
     private bool _isSidebarOpen = false;
     private bool _isCreateModalOpen = false;
@@ -156,6 +166,33 @@
                 _availableTeams = teamsResponse.Data.Count(t => t.Status == "Idle");
                 _dispatchedTeams = teamsResponse.Data.Count(t => t.Status is "Forwarded" or "OnScene" or "Busy");
             }
+
+            // Calculate Dynamic Avg Response Time for the last 24 hours
+            var twentyFourHoursAgo = DateTime.UtcNow.AddHours(-24);
+            var recentIncidentsResponse = await IncidentService.GetAllIncidentsAsync(from: twentyFourHoursAgo);
+
+            if (recentIncidentsResponse?.Data != null && recentIncidentsResponse.Data.Count > 0)
+            {
+                var assignedIncidents = recentIncidentsResponse.Data
+                    .Where(i => i.AssignedAt.HasValue && i.AssignedAt.Value >= i.CreatedAt)
+                    .ToList();
+
+                if (assignedIncidents.Count > 0)
+                {
+                    var avgMinutes = assignedIncidents
+                        .Average(i => (i.AssignedAt!.Value - i.CreatedAt).TotalMinutes);
+
+                    _avgResponseTime = FormatResponseTime(avgMinutes);
+                }
+                else
+                {
+                    _avgResponseTime = "--";
+                }
+            }
+            else
+            {
+                _avgResponseTime = "--";
+            }
         }
         catch (Exception ex)
         {
@@ -167,6 +204,28 @@
         }
     }
 
+    private static string FormatResponseTime(double? avgMinutes)
+    {
+        if (!avgMinutes.HasValue || double.IsNaN(avgMinutes.Value) || avgMinutes.Value < 0)
+        {
+            return "--";
+        }
+
+        var minutes = avgMinutes.Value;
+        if (minutes < 1.0)
+        {
+            var seconds = (int)Math.Round(minutes * 60);
+            return $"{seconds}s";
+        }
+        if (minutes < 60.0)
+        {
+            return $"{minutes:F1}m";
+        }
+
+        var hours = minutes / 60.0;
+        return $"{hours:F1}h";
+    }
+
     // SignalR Live Handlers
     private void HandleNewIncident(object? sender, NewIncidentReceivedEventArgs e)
     {
@@ -174,13 +233,10 @@
         InvokeAsync(StateHasChanged);
     }
 
-    private void HandleIncidentStatusChanged(object? sender, IncidentStatusChangedEventArgs e)
+    private async void HandleIncidentStatusChanged(object? sender, IncidentStatusChangedEventArgs e)
     {
-        if (e.Status is "Resolved" or "Canceled" && e.PreviousStatus is not ("Resolved" or "Canceled"))
-        {
-            _activeIncidents = Math.Max(0, _activeIncidents - 1);
-            InvokeAsync(StateHasChanged);
-        }
+        await LoadDashboardStatsAsync();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async void HandleIncidentUpdatedRealtime(object? sender, IncidentUpdatedEventArgs e)
@@ -189,11 +245,10 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    private void HandleTeamDispatched(object? sender, TeamDispatchedEventArgs e)
+    private async void HandleTeamDispatched(object? sender, TeamDispatchedEventArgs e)
     {
-        _availableTeams = Math.Max(0, _availableTeams - 1);
-        _dispatchedTeams++;
-        InvokeAsync(StateHasChanged);
+        await LoadDashboardStatsAsync();
+        await InvokeAsync(StateHasChanged);
     }
 
     // Map & Feed & Modal Callbacks

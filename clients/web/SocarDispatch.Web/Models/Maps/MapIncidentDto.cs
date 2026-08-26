@@ -11,5 +11,6 @@ public class MapIncidentDto
     public decimal Latitude { get; set; }
     public decimal Longitude { get; set; }
     public DateTime CreatedAt { get; set; }
+    public DateTime? AssignedAt { get; set; }
     public string? AssignedTeamName { get; set; }
 }
