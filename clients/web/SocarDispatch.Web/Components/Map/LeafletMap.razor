@@ -1,6 +1,8 @@
 @* Components/Map/LeafletMap.razor *@
 @using SocarDispatch.Web.Services.SignalR
 @using SocarDispatch.Web.Events
+@using SocarDispatch.Web.Models.Map
+@using SocarDispatch.Web.Models.Settings
 @inject IMapService MapService
 @inject IIncidentHubClient IncidentHub
 @inject ILocationHubClient LocationHub
@@ -15,44 +17,81 @@
 @code {
     private readonly string _containerId = $"leaflet-map-{Guid.NewGuid():N}";
     private DotNetObjectReference<LeafletMap>? _dotNetRef;
+    private UserPreferencesDto? _cachedPreferences;
 
     [Parameter] public string Height { get; set; } = "560px";
 
-    // Harita popup butonlarından Blazor'a gelen geri çağırma eventleri
+    // Callback events from map popups
     [Parameter] public EventCallback<Guid> OnIncidentDetailRequested { get; set; }
     [Parameter] public EventCallback<Guid> OnAssignTeamRequested { get; set; }
 
-        protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
 
-        // 1. Initialize the map with the coordinates, zoom level, and tile provider read from settings.
-        var prefs = await SettingsService.GetPreferencesAsync();
-        await MapService.InitializeMapAsync(_containerId, prefs.DefaultLatitude, prefs.DefaultLongitude, prefs.DefaultZoom, prefs.TileProvider ?? "OpenStreetMap");
+        // 1. Initialize map with settings preferences
+        _cachedPreferences = await SettingsService.GetPreferencesAsync();
+        await MapService.InitializeMapAsync(
+            _containerId, 
+            _cachedPreferences.DefaultLatitude, 
+            _cachedPreferences.DefaultLongitude, 
+            _cachedPreferences.DefaultZoom, 
+            _cachedPreferences.TileProvider ?? "OpenStreetMap");
 
-        // 2. Connect the DotNet reference
+        // 2. Connect DotNet reference for popup button interop
         _dotNetRef = DotNetObjectReference.Create(this);
         await MapService.SetDotNetReferenceAsync(_dotNetRef);
 
-        // 3. Upload incident and teams
+        // 3. Load initial active incidents and teams
         await LoadIncidentsAsync();
         await LoadTeamsAsync();
 
-        // 4. SignalR subscriptions and initialization
+        // 4. SignalR event subscriptions
         SubscribeToHubEvents();
         await IncidentHub.StartAsync();
         await LocationHub.StartAsync();
     }
 
     // ──────────────────────────────────────────────
-    // REST API — İlk Veri Yükleme
+    // Public Map Control Methods (Invoked via @ref)
     // ──────────────────────────────────────────────
+
+    public async Task PanToIncidentAsync(Guid incidentId)
+        => await MapService.PanToIncidentAsync(incidentId);
+
+    public async Task PanToTeamAsync(Guid teamId)
+        => await MapService.PanToTeamAsync(teamId);
+
+    public async Task PanToLocationAsync(double lat, double lng, int zoom = 15)
+        => await MapService.PanToLocationAsync(lat, lng, zoom);
+
+    public async Task ToggleIncidentsLayerAsync(bool visible)
+        => await MapService.ToggleIncidentsLayerAsync(visible);
+
+    public async Task ToggleTeamsLayerAsync(bool visible)
+        => await MapService.ToggleTeamsLayerAsync(visible);
+
+    public async Task ChangeTileLayerAsync(string tileProvider)
+        => await MapService.UpdateMainTileLayerAsync(tileProvider);
+
+    public async Task InvalidateSizeAsync()
+        => await MapService.InvalidateSizeAsync();
+
+    public async Task ResetViewAsync()
+    {
+        var prefs = _cachedPreferences ?? await SettingsService.GetPreferencesAsync();
+        await MapService.PanToLocationAsync(prefs.DefaultLatitude, prefs.DefaultLongitude, prefs.DefaultZoom);
+    }
+
+    // ──────────────────────────────────────────────
+    // REST API — Initial Data Fetching
+    // ──────────────────────────────────────────────
+
     public async Task LoadIncidentsAsync()
     {
         try
         {
-            var response = await Http.GetFromJsonAsync<ApiResponse<List<MapIncidentDto>>>(
-                "api/v1/incidents");
+            var response = await Http.GetFromJsonAsync<ApiResponse<List<MapIncidentDto>>>("api/v1/incidents");
 
             if (response?.Data != null)
             {
@@ -72,8 +111,7 @@
     {
         try
         {
-            var response = await Http.GetFromJsonAsync<ApiResponse<List<MapTeamDto>>>(
-                "api/v1/teams");
+            var response = await Http.GetFromJsonAsync<ApiResponse<List<MapTeamDto>>>("api/v1/teams");
 
             if (response?.Data != null)
             {
@@ -90,8 +128,9 @@
     }
 
     // ──────────────────────────────────────────────
-    // SignalR — Gerçek Zamanlı Event Yönetimi
+    // SignalR — Real-time Event Management
     // ──────────────────────────────────────────────
+
     private void SubscribeToHubEvents()
     {
         IncidentHub.OnNewIncidentReceived += HandleNewIncident;
@@ -131,7 +170,6 @@
 
     private async void HandleNewIncident(object? sender, NewIncidentReceivedEventArgs e)
     {
-        // 🚨 Sesli ve görsel toast bildirimini tetikle
         ToastService.ShowEmergencyAlert(e.Category, e.EmergencyCode, e.ReporterFullName);
 
         var incident = new MapIncidentDto
@@ -179,8 +217,9 @@
     }
 
     // ──────────────────────────────────────────────
-    // JS → C# Geri Çağırmalar (Popup Butonları)
+    // JS → C# Interop Callbacks (Popup Buttons)
     // ──────────────────────────────────────────────
+
     [JSInvokable]
     public async Task NotifyIncidentDetail(string incidentIdStr)
     {
@@ -196,8 +235,9 @@
     }
 
     // ──────────────────────────────────────────────
-    // Temizleme (Resource Cleanup)
+    // Resource Cleanup
     // ──────────────────────────────────────────────
+
     public async ValueTask DisposeAsync()
     {
         UnsubscribeFromHubEvents();
@@ -205,3 +245,12 @@
         _dotNetRef?.Dispose();
     }
 }
+
+<style>
+    .leaflet-map-wrapper {
+        min-height: 100%;
+        width: 100%;
+        background-color: var(--color-bg, #111318);
+        border-radius: inherit;
+    }
+</style>

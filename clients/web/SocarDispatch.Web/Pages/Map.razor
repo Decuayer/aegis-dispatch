@@ -1,0 +1,87 @@
+@* Pages/Map.razor *@
+@page "/map"
+@attribute [Authorize(Roles = "Operator")]
+@using SocarDispatch.Web.Components.Map
+@using SocarDispatch.Web.Components.Dispatch
+
+<PageTitle>Live Map — SOCAR Dispatch</PageTitle>
+
+<div class="live-map-page-container">
+    <!-- Floating Top Search / Quick-Pan Bar -->
+    <div class="map-floating-top">
+        <MapEntityFocusBar Incidents="_incidents"
+                           Teams="_teams"
+                           OnIncidentFocused="HandleIncidentFocused"
+                           OnTeamFocused="HandleTeamFocused" />
+    </div>
+
+    <!-- Floating Top-Right Layer & Tile Controls -->
+    <div class="map-floating-controls">
+        <MapControlOverlay ActiveIncidentCount="_activeIncidentsCount"
+                           ActiveTeamCount="_activeTeamsCount"
+                           SelectedTileProvider="@_selectedTileProvider"
+                           OnToggleIncidents="HandleToggleIncidents"
+                           OnToggleTeams="HandleToggleTeams"
+                           OnTileProviderChanged="HandleTileProviderChanged"
+                           OnResetView="HandleResetView" />
+    </div>
+
+    <!-- Full-Height Interactive GIS Leaflet Map Canvas -->
+    <LeafletMap @ref="_mapRef"
+                Height="100%"
+                OnIncidentDetailRequested="HandleIncidentDetail"
+                OnAssignTeamRequested="HandleAssignTeam" />
+
+    <!-- Operational Incident & Dispatch Sidebar Drawer -->
+    <IncidentSidebar @bind-IsOpen="_isSidebarOpen"
+                     IncidentId="_selectedIncidentId"
+                     OnIncidentAssigned="HandleIncidentAssigned"
+                     OnIncidentUpdated="HandleIncidentUpdated" />
+</div>
+
+<style>
+    .live-map-page-container {
+        position: relative;
+        /* Negate page-content padding to create edge-to-edge full canvas */
+        margin: -24px;
+        height: calc(100vh - 52px);
+        width: calc(100% + 48px);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .map-floating-top {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        z-index: 1000;
+    }
+
+    .map-floating-controls {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        z-index: 1000;
+    }
+
+    @@media (max-width: 768px) {
+        .live-map-page-container {
+            margin: -16px;
+            width: calc(100% + 32px);
+            height: calc(100vh - 52px);
+        }
+
+        .map-floating-top {
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            width: auto;
+        }
+
+        .map-floating-controls {
+            top: 70px;
+            right: 10px;
+        }
+    }
+</style>

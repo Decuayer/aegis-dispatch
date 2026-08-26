@@ -107,12 +107,6 @@ window.leafletMap = (function () {
         // Normal layer group — for teams
         teamLayerGroup = L.layerGroup().addTo(map);
 
-        // Layer Control
-        const overlays = {
-            "🔴 Active Incidents": incidentClusterGroup,
-            "🟢 Field Teams": teamLayerGroup
-        };
-        L.control.layers(null, overlays, { position: 'topright', collapsed: false }).addTo(map);
     }
 
     function updateMainTileLayer(tileProvider) {
@@ -338,6 +332,47 @@ window.leafletMap = (function () {
         if (map) map.flyTo([lat, lng], zoom || 15, { animate: true });
     }
 
+    function panToTeam(teamId) {
+        if (teamMarkers[teamId]) {
+            const latlng = teamMarkers[teamId].getLatLng();
+            map.flyTo(latlng, 16, { animate: true, duration: 1.5 });
+            teamMarkers[teamId].openTooltip();
+        }
+    }
+
+    function toggleIncidentsLayer(visible) {
+        if (!map || !incidentClusterGroup) return;
+        if (visible) {
+            if (!map.hasLayer(incidentClusterGroup)) {
+                map.addLayer(incidentClusterGroup);
+            }
+        } else {
+            if (map.hasLayer(incidentClusterGroup)) {
+                map.removeLayer(incidentClusterGroup);
+            }
+        }
+    }
+
+    function toggleTeamsLayer(visible) {
+        if (!map || !teamLayerGroup) return;
+        if (visible) {
+            if (!map.hasLayer(teamLayerGroup)) {
+                map.addLayer(teamLayerGroup);
+            }
+        } else {
+            if (map.hasLayer(teamLayerGroup)) {
+                map.removeLayer(teamLayerGroup);
+            }
+        }
+    }
+
+    function invalidateSize() {
+        if (map) {
+            setTimeout(() => map.invalidateSize(), 100);
+        }
+    }
+
+
     // Callback hooks for Blazor (DotNet reference)
     let _dotNetRef = null;
 
@@ -447,10 +482,13 @@ window.leafletMap = (function () {
     function getTileUrl(provider) {
         switch (provider) {
             case 'CartoDark':
-                return 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+                // Free Esri Dark Gray Canvas (No API key required)
+                return 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}';
             case 'CartoPositron':
-                return 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+                // Free Esri Light Gray Canvas (No API key required)
+                return 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}';
             default:
+                // Standard OpenStreetMap (No API key required)
                 return 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
         }
     }
@@ -496,10 +534,7 @@ window.leafletMap = (function () {
             );
         });
     }
-
-
-
-
+    
     // Public API
     return {
         initMap,
@@ -513,7 +548,11 @@ window.leafletMap = (function () {
         removeIncidentMarker,
         removeTeamMarker,
         panToIncident,
+        panToTeam,
         panToLocation,
+        toggleIncidentsLayer,
+        toggleTeamsLayer,
+        invalidateSize,
         setDotNetRef,
         onIncidentDetailClick,
         onAssignTeamClick,
