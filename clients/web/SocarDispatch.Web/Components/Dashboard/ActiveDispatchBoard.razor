@@ -1,0 +1,695 @@
+@* clients/web/SocarDispatch.Web/Components/Dashboard/ActiveDispatchBoard.razor *@
+@namespace SocarDispatch.Web.Components.Dashboard
+
+<div class="dispatch-board-card">
+    <!-- Board Header -->
+    <div class="board-header">
+        <div class="board-title-group">
+            <div class="board-icon-box">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+            </div>
+            <div>
+                <h2 class="board-title">Active Incidents & Team Deployments</h2>
+                <p class="board-subtitle">Relational dispatch matrix and real-time response unit status</p>
+            </div>
+        </div>
+
+        <!-- Controls (Filters, Search, Sort) -->
+        <div class="board-controls">
+            <!-- Search Input -->
+            <div class="search-box">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text"
+                       placeholder="Filter by category, code, team..."
+                       @bind="_searchTerm"
+                       @bind:event="oninput"
+                       class="search-input" />
+            </div>
+
+            <!-- Filter Status Pill Group -->
+            <div class="filter-pill-group">
+                <button type="button" 
+                        class="pill-btn @(_filterStatus == "All" ? "active" : "")" 
+                        @onclick='() => _filterStatus = "All"'>
+                    All (@_activeRows.Count)
+                </button>
+                <button type="button" 
+                        class="pill-btn warning @(_filterStatus == "Unassigned" ? "active" : "")" 
+                        @onclick='() => _filterStatus = "Unassigned"'>
+                    Unassigned (@_activeRows.Count(r => !r.IsAssigned))
+                </button>
+                <button type="button" 
+                        class="pill-btn success @(_filterStatus == "Assigned" ? "active" : "")" 
+                        @onclick='() => _filterStatus = "Assigned"'>
+                    Assigned (@_activeRows.Count(r => r.IsAssigned))
+                </button>
+            </div>
+
+            <!-- Sort Dropdown -->
+            <div class="sort-wrapper">
+                <span class="sort-label">Sort:</span>
+                <select class="sort-select" @bind="_sortBy">
+                    <option value="Severity">Priority (Severity)</option>
+                    <option value="Status">Unassigned First</option>
+                    <option value="TimeDesc">Newest First</option>
+                    <option value="TimeAsc">Oldest First</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Board Body / Table -->
+    <div class="board-body">
+        @if (_isLoading)
+        {
+            <div class="board-loading-skeleton">
+                @for (int i = 0; i < 4; i++)
+                {
+                    <div class="skeleton-row">
+                        <div class="sk-item sk-code"></div>
+                        <div class="sk-item sk-desc"></div>
+                        <div class="sk-item sk-team"></div>
+                        <div class="sk-item sk-btn"></div>
+                    </div>
+                }
+            </div>
+        }
+        else if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <div class="board-error-box">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <span>@_errorMessage</span>
+                <button type="button" class="btn-retry" @onclick="LoadBoardDataAsync">Retry</button>
+            </div>
+        }
+        else if (!FilteredRows.Any())
+        {
+            <div class="board-empty-box">
+                <div class="empty-icon-ring">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                </div>
+                <h3>No active incidents match criteria</h3>
+                <p>All active emergency units and reported events are operating normally.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="dispatch-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 140px;">Severity / Code</th>
+                            <th style="min-width: 220px;">Incident & Location</th>
+                            <th style="width: 130px;">Time Elapsed</th>
+                            <th style="min-width: 240px;">Assigned Team & Leader</th>
+                            <th style="width: 130px;">Team Status</th>
+                            <th style="width: 150px; text-align: right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in FilteredRows)
+                        {
+                            <tr @key="row.IncidentId"
+                                class="dispatch-row @(_animatingRowIds.Contains(row.IncidentId) ? "is-new-row" : "") @(!row.IsAssigned ? "row-unassigned" : "")"
+                                @onclick="() => HandleRowClick(row.IncidentId)">
+                                
+                                <!-- 1. Severity & Code -->
+                                <td>
+                                    <span class="badge-code @GetEmergencyCodeBadgeClass(row.EmergencyCode)">
+                                        @row.EmergencyCode
+                                    </span>
+                                </td>
+
+                                <!-- 2. Incident Category & Summary -->
+                                <td>
+                                    <div class="incident-meta-cell">
+                                        <span class="incident-cat-title">@row.Category</span>
+                                        <span class="incident-coords" title="GPS Coordinates">
+                                            📍 @row.Latitude.ToString("F4"), @row.Longitude.ToString("F4")
+                                        </span>
+                                        @if (!string.IsNullOrWhiteSpace(row.Description))
+                                        {
+                                            <span class="incident-snippet">@row.Description</span>
+                                        }
+                                    </div>
+                                </td>
+
+                                <!-- 3. Time Elapsed -->
+                                <td>
+                                    <div class="time-elapsed-cell" title="@row.CreatedAt.ToString("g")">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <polyline points="12 6 12 12 16 14"></polyline>
+                                        </svg>
+                                        <span>@row.ElapsedTimeFormatted</span>
+                                    </div>
+                                </td>
+
+                                <!-- 4. Assigned Team & Leader -->
+                                <td>
+                                    @if (row.IsAssigned && !string.IsNullOrEmpty(row.AssignedTeamName))
+                                    {
+                                        <div class="assigned-team-box">
+                                            <div class="team-avatar-icon">🚒</div>
+                                            <div class="team-text-details">
+                                                <strong class="team-name">@row.AssignedTeamName</strong>
+                                                <span class="team-leader">
+                                                    Leader: @(string.IsNullOrWhiteSpace(row.TeamLeaderName) ? "Unassigned" : row.TeamLeaderName)
+                                                </span>
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="unassigned-badge-box">
+                                            <span class="pulse-warning-dot"></span>
+                                            <span class="badge-unassigned">Unassigned</span>
+                                        </div>
+                                    }
+                                </td>
+
+                                <!-- 5. Team Status Badge -->
+                                <td>
+                                    @if (row.IsAssigned)
+                                    {
+                                        <span class="badge-team-status @GetTeamStatusBadgeClass(row.TeamStatus)">
+                                            @(row.TeamStatus ?? "Assigned")
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-awaiting-dispatch">Awaiting Dispatch</span>
+                                    }
+                                </td>
+
+                                <!-- 6. Quick Action -->
+                                <td style="text-align: right;">
+                                    @if (!row.IsAssigned)
+                                    {
+                                        <button type="button" 
+                                                class="btn-quick-dispatch"
+                                                @onclick:stopPropagation="true"
+                                                @onclick="() => HandleQuickDispatchClick(row.IncidentId)"
+                                                title="Assign an available response team immediately">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                                            </svg>
+                                            <span>Dispatch Team</span>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button type="button"
+                                                class="btn-row-inspect"
+                                                @onclick:stopPropagation="true"
+                                                @onclick="() => HandleRowClick(row.IncidentId)"
+                                                title="View detailed situation overview">
+                                            <span>Details</span>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="9 18 15 12 9 6"></polyline>
+                                            </svg>
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .dispatch-board-card {
+        background-color: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: var(--shadow-sm);
+        margin-top: 24px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .board-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 20px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--color-border);
+    }
+
+    .board-title-group {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .board-icon-box {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        background: rgba(59, 130, 246, 0.12);
+        color: var(--color-accent);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .board-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--color-text-primary);
+        margin: 0 0 2px;
+    }
+
+    .board-subtitle {
+        font-size: 12px;
+        color: var(--color-text-muted);
+        margin: 0;
+    }
+
+    .board-controls {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .search-box {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .search-box svg {
+        position: absolute;
+        left: 10px;
+        color: var(--color-text-muted);
+        pointer-events: none;
+    }
+
+    .search-input {
+        background: var(--color-surface-2);
+        border: 1px solid var(--color-border);
+        color: var(--color-text-primary);
+        border-radius: 6px;
+        padding: 6px 12px 6px 30px;
+        font-size: 12px;
+        width: 200px;
+        transition: all 0.2s ease;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: var(--color-accent);
+        box-shadow: 0 0 0 2px var(--color-accent-muted);
+        width: 240px;
+    }
+
+    .filter-pill-group {
+        display: inline-flex;
+        background: var(--color-surface-2);
+        padding: 3px;
+        border-radius: 6px;
+        border: 1px solid var(--color-border);
+    }
+
+    .pill-btn {
+        background: transparent;
+        border: none;
+        color: var(--color-text-muted);
+        font-size: 12px;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+
+    .pill-btn.active {
+        background: var(--color-surface-3);
+        color: var(--color-text-primary);
+    }
+
+    .pill-btn.warning.active {
+        background: rgba(245, 158, 11, 0.2);
+        color: #fbbf24;
+    }
+
+    .pill-btn.success.active {
+        background: rgba(34, 197, 94, 0.2);
+        color: #4ade80;
+    }
+
+    .sort-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .sort-label {
+        font-size: 12px;
+        color: var(--color-text-muted);
+        font-weight: 500;
+    }
+
+    .sort-select {
+        background: var(--color-surface-2);
+        border: 1px solid var(--color-border);
+        color: var(--color-text-primary);
+        border-radius: 6px;
+        padding: 5px 10px;
+        font-size: 12px;
+        cursor: pointer;
+        outline: none;
+    }
+
+    /* Table Styles */
+    .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .dispatch-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 13px;
+    }
+
+    .dispatch-table th {
+        text-align: left;
+        padding: 10px 14px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--color-text-muted);
+        border-bottom: 1px solid var(--color-border);
+    }
+
+    .dispatch-row {
+        cursor: pointer;
+        transition: background-color 0.15s ease, transform 0.15s ease;
+    }
+
+    .dispatch-row td {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--color-border-light);
+        vertical-align: middle;
+    }
+
+    .dispatch-row:hover td {
+        background-color: rgba(255, 255, 255, 0.03);
+    }
+
+    .dispatch-row.row-unassigned td {
+        background-color: rgba(245, 158, 11, 0.02);
+    }
+
+    .dispatch-row.row-unassigned:hover td {
+        background-color: rgba(245, 158, 11, 0.06);
+    }
+
+    .dispatch-row.is-new-row td {
+        animation: rowHighlight 3.5s ease-out;
+    }
+
+    @@keyframes rowHighlight {
+        0% { background-color: rgba(59, 130, 246, 0.35); }
+        100% { background-color: transparent; }
+    }
+
+    /* Cell Elements */
+    .badge-code {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 4px;
+        letter-spacing: 0.3px;
+    }
+
+    .badge-code-red    { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .badge-code-orange { background: rgba(249, 115, 22, 0.15); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.3); }
+    .badge-code-yellow { background: rgba(245, 158, 11, 0.15); color: #facc15; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-code-green  { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+    .badge-code-default{ background: var(--color-surface-3); color: var(--color-text-secondary); border: 1px solid var(--color-border); }
+
+    .incident-meta-cell {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .incident-cat-title {
+        font-weight: 600;
+        color: var(--color-text-primary);
+    }
+
+    .incident-coords {
+        font-size: 11px;
+        color: var(--color-text-muted);
+        font-family: monospace;
+    }
+
+    .incident-snippet {
+        font-size: 11px;
+        color: var(--color-text-subtle);
+        max-width: 320px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .time-elapsed-cell {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 12px;
+        color: var(--color-text-muted);
+    }
+
+    /* Team Cell */
+    .assigned-team-box {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .team-avatar-icon {
+        font-size: 16px;
+    }
+
+    .team-text-details {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .team-name {
+        color: var(--color-text-primary);
+        font-size: 13px;
+    }
+
+    .team-leader {
+        font-size: 11px;
+        color: var(--color-text-muted);
+    }
+
+    .unassigned-badge-box {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .pulse-warning-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background-color: #f59e0b;
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+        animation: pulseWarning 1.8s infinite;
+    }
+
+    @@keyframes pulseWarning {
+        0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+        70% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+    }
+
+    .badge-unassigned {
+        font-size: 11px;
+        font-weight: 700;
+        color: #f59e0b;
+        background: rgba(245, 158, 11, 0.12);
+        padding: 3px 8px;
+        border-radius: 4px;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    /* Team Status */
+    .badge-team-status {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: 12px;
+        text-transform: capitalize;
+    }
+
+    .badge-team-idle      { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; }
+    .badge-team-forwarded { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+    .badge-team-onscene   { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+    .badge-team-busy      { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+
+    .badge-awaiting-dispatch {
+        font-size: 11px;
+        color: var(--color-text-subtle);
+        font-style: italic;
+    }
+
+    /* Buttons */
+    .btn-quick-dispatch {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #f59e0b;
+        color: #111318;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-quick-dispatch:hover {
+        background: #d97706;
+        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+        transform: translateY(-1px);
+    }
+
+    .btn-row-inspect {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: var(--color-surface-2);
+        color: var(--color-text-secondary);
+        font-size: 12px;
+        font-weight: 500;
+        padding: 5px 10px;
+        border-radius: 6px;
+        border: 1px solid var(--color-border);
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+
+    .btn-row-inspect:hover {
+        background: var(--color-surface-3);
+        color: var(--color-text-primary);
+        border-color: var(--color-border-light);
+    }
+
+    /* Loading & Empty States */
+    .board-loading-skeleton {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 10px 0;
+    }
+
+    .skeleton-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        height: 48px;
+        background: var(--color-surface-2);
+        border-radius: 6px;
+        padding: 0 16px;
+        animation: pulseSkeleton 1.5s infinite ease-in-out;
+    }
+
+    @@keyframes pulseSkeleton {
+        0%, 100% { opacity: 0.4; }
+        50% { opacity: 0.8; }
+    }
+
+    .board-empty-box {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+        text-align: center;
+    }
+
+    .empty-icon-ring {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: rgba(34, 197, 94, 0.1);
+        color: #22c55e;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 12px;
+    }
+
+    .board-empty-box h3 {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--color-text-primary);
+        margin: 0 0 4px;
+    }
+
+    .board-empty-box p {
+        font-size: 13px;
+        color: var(--color-text-muted);
+        margin: 0;
+    }
+
+    .board-error-box {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #f87171;
+        padding: 12px 16px;
+        border-radius: 6px;
+        font-size: 13px;
+    }
+
+    .btn-retry {
+        margin-left: auto;
+        background: #ef4444;
+        color: #fff;
+        border: none;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+</style>
