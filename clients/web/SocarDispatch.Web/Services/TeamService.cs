@@ -107,4 +107,19 @@ public class TeamService : ITeamService
             return ApiResponse<TeamDto>.FailureResult($"Failed to remove team member: {ex.Message}");
         }
     }
+
+        public async Task<ApiResponse<TeamMemberDto>?> UpdateMemberStatusAsync(Guid teamId, Guid userId, string status, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var request = new UpdateMemberStatusRequestDto { Status = status };
+            var response = await _http.PatchAsJsonAsync($"api/v1/teams/{teamId}/members/{userId}/status", request, cancellationToken);
+            return await response.Content.ReadFromJsonAsync<ApiResponse<TeamMemberDto>>(cancellationToken: cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<TeamMemberDto>.FailureResult($"Failed to update member status: {ex.Message}");
+        }
+    }
+
 }

@@ -91,7 +91,7 @@ public class AssignmentAndStatusLogicTests
         result.Data.Should().NotBeNull();
         result.Data.TeamName.Should().Be("A Blok İSG Ekibi");
 
-        // Veritabanı Durum Kontrolleri
+        // Database Health Checks
         var updatedIncident = await context.Incidents.FindAsync(incident.Id);
         updatedIncident!.Status.Should().Be(IncidentStatus.Assigned);
 
@@ -148,7 +148,7 @@ public class AssignmentAndStatusLogicTests
         updatedTeam!.Status.Should().Be(TeamStatus.OnScene);
     }
 
-    // 3. SDDC-38: INCIDENT RESOLUTION -> TEAM RELEASED TO IDLE & COMPLETED_AT POPULATED & EVENT PUBLISHED
+    // 3. INCIDENT RESOLUTION -> TEAM RELEASED TO IDLE & COMPLETED_AT POPULATED & EVENT PUBLISHED
     [Fact]
     public async Task ChangeIncidentStatus_WhenResolved_ShouldReleaseTeamToIdle_SetCompletedAt_AndPublishEvent()
     {
@@ -199,15 +199,15 @@ public class AssignmentAndStatusLogicTests
         var updatedIncident = await context.Incidents.FindAsync(incident.Id);
         updatedIncident!.Status.Should().Be(IncidentStatus.Resolved);
 
-        // SDDC-38: Ekip tekrar Idle yapılmış olmalı
+        // The team must have been set to Idle again.
         var updatedTeam = await context.Teams.FindAsync(team.Id);
         updatedTeam!.Status.Should().Be(TeamStatus.Idle);
 
-        // SDDC-38 / SD-012: CompletedAt doldurulmuş olmalı
+        // CompletedAt must be populated
         var updatedAssignment = await context.Assignments.FindAsync(assignment.Id);
         updatedAssignment!.CompletedAt.Should().NotBeNull();
 
-        // SDDC-15: IncidentStatusChangedEvent fırlatılmış olmalı
+        // IncidentStatusChangedEvent must have been raised
         publisherMock.Verify(p => p.Publish(It.Is<IncidentStatusChangedEvent>(e =>
             e.IncidentId == incident.Id &&
             e.PreviousStatus == IncidentStatus.Assigned &&
@@ -216,7 +216,7 @@ public class AssignmentAndStatusLogicTests
         ), It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    // 4. SDDC-38: REPORTER SELF-CANCELLATION TEST
+    // 4. REPORTER SELF-CANCELLATION TEST
     [Fact]
     public async Task ChangeIncidentStatus_WhenReporterCancelsOwnOpenIncident_ShouldSucceed()
     {
@@ -252,7 +252,7 @@ public class AssignmentAndStatusLogicTests
         updatedIncident!.Status.Should().Be(IncidentStatus.Canceled);
     }
 
-    // 5. SDDC-38: REPORTER CANNOT CANCEL ASSIGNED INCIDENT TEST
+    // 5. REPORTER CANNOT CANCEL ASSIGNED INCIDENT TEST
     [Fact]
     public async Task ChangeIncidentStatus_WhenReporterTriesToCancelAssignedIncident_ShouldThrowDomainException()
     {

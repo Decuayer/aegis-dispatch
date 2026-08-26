@@ -129,30 +129,16 @@
         }
     </div>
 
-    <!-- Team Detail Drawer -->
-    <TeamDetailDrawer IsOpen="@_isDrawerOpen" 
-                      Team="@_selectedTeam" 
-                      OnClose="CloseDrawer" 
-                      OnTeamChanged="HandleTeamUpdated" 
-                      OnEditRequested="OpenEditModal" 
-                      OnManageMembersRequested="OpenManageMembersModal" />
+    <!-- Team Detail & Management Modal -->
+    <TeamDetailModal IsVisible="@_isDetailModalOpen" 
+                     Team="@_selectedTeam" 
+                     OnClose="CloseDetailModal" 
+                     OnTeamChanged="HandleTeamUpdated" />
 
     <!-- Create Team Modal -->
     <CreateTeamModal IsVisible="@_isCreateModalOpen" 
                      OnClose="CloseCreateModal" 
                      OnTeamCreated="HandleTeamCreated" />
-
-    <!-- Edit Team Modal -->
-    <EditTeamModal IsVisible="@_isEditModalOpen" 
-                   Team="@_selectedTeam" 
-                   OnClose="CloseEditModal" 
-                   OnTeamUpdated="HandleTeamUpdated" />
-
-    <!-- Manage Team Members Modal -->
-    <ManageTeamMembersModal IsVisible="@_isManageMembersModalOpen" 
-                            Team="@_selectedTeam" 
-                            OnClose="CloseManageMembersModal" 
-                            OnRosterUpdated="HandleTeamUpdated" />
 </div>
 
 @code {
@@ -161,12 +147,10 @@
     private string _selectedStatus = "All";
     private string _searchTerm = string.Empty;
 
-    // Drawer and Modal States
-    private bool _isDrawerOpen;
-    private TeamDto? _selectedTeam;
+    // Modal States
+    private bool _isDetailModalOpen;
     private bool _isCreateModalOpen;
-    private bool _isEditModalOpen;
-    private bool _isManageMembersModalOpen;
+    private TeamDto? _selectedTeam;
 
     private List<TeamDto> FilteredTeams => _teams
         .Where(t => _selectedStatus == "All" || string.Equals(t.Status, _selectedStatus, StringComparison.OrdinalIgnoreCase))
@@ -182,6 +166,7 @@
         // 1. Subscribe to SignalR Real-time events
         LocationHub.OnTeamLocationUpdated += HandleLocationUpdated;
         IncidentHub.OnTeamDispatched += HandleTeamDispatched;
+        IncidentHub.OnMemberStatusChanged += HandleMemberStatusChanged;
 
         // 2. Fetch initial teams data
         await LoadTeamsAsync();
@@ -236,12 +221,12 @@
     private void HandleTeamSelected(TeamDto team)
     {
         _selectedTeam = team;
-        _isDrawerOpen = true;
+        _isDetailModalOpen = true;
     }
 
-    private void CloseDrawer()
+    private void CloseDetailModal()
     {
-        _isDrawerOpen = false;
+        _isDetailModalOpen = false;
     }
 
     private void OpenCreateModal()
@@ -259,30 +244,8 @@
         _teams.Insert(0, newTeam);
         _isCreateModalOpen = false;
         _selectedTeam = newTeam;
-        _isDrawerOpen = true;
+        _isDetailModalOpen = true;
         StateHasChanged();
-    }
-
-    private void OpenEditModal(TeamDto team)
-    {
-        _selectedTeam = team;
-        _isEditModalOpen = true;
-    }
-
-    private void CloseEditModal()
-    {
-        _isEditModalOpen = false;
-    }
-
-    private void OpenManageMembersModal(TeamDto team)
-    {
-        _selectedTeam = team;
-        _isManageMembersModalOpen = true;
-    }
-
-    private void CloseManageMembersModal()
-    {
-        _isManageMembersModalOpen = false;
     }
 
     private void HandleTeamUpdated(TeamDto updatedTeam)
@@ -328,9 +291,28 @@
         });
     }
 
+    private void HandleMemberStatusChanged(object? sender, MemberStatusChangedEventArgs e)
+    {
+        InvokeAsync(() =>
+        {
+            var targetTeam = _teams.FirstOrDefault(t => t.Id == e.TeamId);
+            if (targetTeam != null)
+            {
+                var targetMember = targetTeam.Members.FirstOrDefault(m => m.UserId == e.UserId);
+                if (targetMember != null)
+                {
+                    targetMember.MemberStatus = e.NewStatus;
+                    targetMember.StatusUpdatedAt = e.ChangedAt;
+                    StateHasChanged();
+                }
+            }
+        });
+    }
+
     public void Dispose()
     {
         LocationHub.OnTeamLocationUpdated -= HandleLocationUpdated;
         IncidentHub.OnTeamDispatched -= HandleTeamDispatched;
+        IncidentHub.OnMemberStatusChanged -= HandleMemberStatusChanged;
     }
 }

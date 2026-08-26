@@ -1,0 +1,216 @@
+@* Components/Teams/TeamDetailModal.razor *@
+@using SocarDispatch.Web.Models.Dispatch
+@using SocarDispatch.Web.Services
+@inject ITeamService TeamService
+@inject IToastService ToastService
+@inject NavigationManager Navigation
+
+@if (IsVisible && Team != null)
+{
+    <div class="modal-backdrop" @onclick="HandleClose">
+        <div class="modal-card modal-card-lg team-detail-modal" @onclick:stopPropagation="true">
+            <!-- Modal Header -->
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <div class="modal-icon">🛡️</div>
+                    <div>
+                        <div class="modal-header-top-row">
+                            <h3 class="modal-title">@Team.TeamName</h3>
+                            <span class="badge-status @GetStatusBadgeClass(Team.Status)">@Team.Status</span>
+                            @if (Team.CurrentLatitude.HasValue && Team.CurrentLongitude.HasValue)
+                            {
+                                <span class="badge-code badge-code-green">GPS Live</span>
+                            }
+                        </div>
+                        <p class="modal-subtitle">
+                            Updated: @Team.UpdatedAt.ToString("MMM dd, yyyy HH:mm")
+                        </p>
+                    </div>
+                </div>
+
+                <div class="modal-header-actions">
+                    <button type="button" 
+                            class="btn btn-sm @(_isEditMode ? "btn-secondary" : "btn-outline-primary")" 
+                            @onclick="ToggleEditMode">
+                        @if (_isEditMode)
+                        {
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            <span>View Mode</span>
+                        }
+                        else
+                        {
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                            <span>Edit Mode</span>
+                        }
+                    </button>
+                    <button type="button" class="btn-close" @onclick="HandleClose" title="Close">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="modal-body team-detail-body">
+                @if (_isEditMode)
+                {
+                    <!-- EDIT MODE: Embedded TeamEditForm -->
+                    <TeamEditForm Team="Team" 
+                                  OnSaved="HandleTeamSaved" 
+                                  OnCancel="() => _isEditMode = false" />
+                }
+                else
+                {
+                    <!-- VIEW MODE: Comprehensive Detail Inspection -->
+                    <div class="team-inspection-layout">
+                        <!-- Left Column: Leadership & GPS Info -->
+                        <div class="inspection-sidebar">
+                            <!-- Quick Status Override -->
+                            <div class="inspection-card">
+                                <span class="card-section-label">Operational Status</span>
+                                <div class="status-select-wrap">
+                                    <select class="form-select" 
+                                            value="@Team.Status" 
+                                            @onchange="HandleStatusOverride" 
+                                            disabled="@_isUpdatingStatus">
+                                        <option value="Idle">Idle (Available)</option>
+                                        <option value="Forwarded">Forwarded (En Route)</option>
+                                        <option value="OnScene">On Scene</option>
+                                        <option value="Busy">Busy (Unavailable)</option>
+                                    </select>
+                                    @if (_isUpdatingStatus)
+                                    {
+                                        <span class="spinner-sm"></span>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Designated Leader -->
+                            <div class="inspection-card">
+                                <span class="card-section-label">Team Leader</span>
+                                @if (!string.IsNullOrWhiteSpace(Team.LeaderFullName))
+                                {
+                                    var leaderMember = Team.Members.FirstOrDefault(m => m.UserId == Team.LeaderId);
+                                    <div class="leader-profile-box">
+                                        <div class="leader-avatar">@GetInitials(Team.LeaderFullName)</div>
+                                        <div class="leader-details">
+                                            <div class="leader-name">@Team.LeaderFullName</div>
+                                            <div class="leader-meta">@(leaderMember?.Department ?? "Field Unit")</div>
+                                            @if (!string.IsNullOrEmpty(leaderMember?.Phone))
+                                            {
+                                                <div class="leader-contact">📞 @leaderMember.Phone</div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <p class="text-muted-sm">No designated leader assigned.</p>
+                                }
+                            </div>
+
+                            <!-- Telemetry & Location -->
+                            <div class="inspection-card">
+                                <span class="card-section-label">Live Telemetry</span>
+                                @if (Team.CurrentLatitude.HasValue && Team.CurrentLongitude.HasValue)
+                                {
+                                    <div class="telemetry-info">
+                                        <div class="coord-line">
+                                            <span class="coord-tag">LAT</span> <code>@Team.CurrentLatitude.Value.ToString("F6")</code>
+                                        </div>
+                                        <div class="coord-line">
+                                            <span class="coord-tag">LNG</span> <code>@Team.CurrentLongitude.Value.ToString("F6")</code>
+                                        </div>
+                                        <button type="button" class="btn btn-xs btn-ghost-primary" @onclick="NavigateToMap">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+                                            </svg>
+                                            View on Live Map
+                                        </button>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <p class="text-muted-sm">No GPS telemetry signal recorded.</p>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Personnel Roster List -->
+                        <div class="inspection-main">
+                            <div class="inspection-card roster-full-card">
+                                <div class="roster-header-row">
+                                    <span class="card-section-label">Personnel Roster</span>
+                                    <span class="badge-count">@Team.Members.Count Responders</span>
+                                </div>
+
+                                @if (Team.Members.Count == 0)
+                                {
+                                    <div class="empty-roster-placeholder">
+                                        <p>No responders assigned to this unit.</p>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" @onclick="ToggleEditMode">
+                                            + Assign Personnel in Edit Mode
+                                        </button>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="roster-view-list">
+                                        @foreach (var member in Team.Members)
+                                        {
+                                            var isLeader = member.UserId == Team.LeaderId;
+                                            <div class="roster-view-item" @key="member.UserId">
+                                                <div class="member-view-profile">
+                                                    <div class="member-avatar">@GetInitials(member.FullName)</div>
+                                                    <div class="member-view-info">
+                                                        <div class="member-name-row">
+                                                            <strong>@member.FullName</strong>
+                                                            @if (isLeader)
+                                                            {
+                                                                <span class="badge-leader-tag">Leader</span>
+                                                            }
+                                                        </div>
+                                                        <span class="member-view-dept">
+                                                            @(string.IsNullOrEmpty(member.Department) ? "Responder" : member.Department)
+                                                            @if (!string.IsNullOrEmpty(member.SubRole))
+                                                            {
+                                                                <span>• @member.SubRole</span>
+                                                            }
+                                                        </span>
+                                                        @if (!string.IsNullOrEmpty(member.Phone))
+                                                        {
+                                                            <span class="member-view-phone">📞 @member.Phone</span>
+                                                        }
+                                                    </div>
+                                                </div>
+
+                                                <span class="badge-member-status @GetMemberStatusBadgeClass(member.MemberStatus)">
+                                                    @member.MemberStatus
+                                                </span>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" @onclick="HandleClose">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+}

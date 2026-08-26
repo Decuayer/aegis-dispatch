@@ -11,6 +11,7 @@ public interface IIncidentHubClient : IAsyncDisposable
     event EventHandler<IncidentStatusChangedEventArgs>? OnIncidentStatusChanged;
     event EventHandler<IncidentUpdatedEventArgs>? OnIncidentUpdated;
     event EventHandler<TeamDispatchedEventArgs>? OnTeamDispatched;
+    event EventHandler<MemberStatusChangedEventArgs>? OnMemberStatusChanged;
     event EventHandler<HubConnectionState>? OnConnectionStateChanged;
 
     Task StartAsync();

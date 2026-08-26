@@ -101,7 +101,7 @@ public class ChangeIncidentStatusCommandHandler : IRequestHandler<ChangeIncident
         }
 
         // -------------------------------------------------------------
-        // 2. Automatic Team Release & Assignment Completion (SDDC-38)
+        // 2. Automatic Team Release & Assignment Completion
         // -------------------------------------------------------------
         var previousStatus = incident.Status;
         incident.Status = targetStatus;
@@ -123,7 +123,7 @@ public class ChangeIncidentStatusCommandHandler : IRequestHandler<ChangeIncident
         await _context.SaveChangesAsync(cancellationToken);
 
         // -------------------------------------------------------------
-        // 3. Real-Time Event Dispatch (SDDC-15 Link)
+        // 3. Real-Time Event Dispatch
         // -------------------------------------------------------------
         await _publisher.Publish(new IncidentStatusChangedEvent(
             incident.Id,

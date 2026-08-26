@@ -17,6 +17,8 @@ public class IncidentHubClient : IIncidentHubClient
     public event EventHandler<IncidentUpdatedEventArgs>? OnIncidentUpdated;
     public event EventHandler<TeamDispatchedEventArgs>? OnTeamDispatched;
     public event EventHandler<HubConnectionState>? OnConnectionStateChanged;
+    public event EventHandler<MemberStatusChangedEventArgs>? OnMemberStatusChanged;
+
 
     public HubConnectionState ConnectionState => _hubConnection?.State ?? HubConnectionState.Disconnected;
 
@@ -117,6 +119,21 @@ public class IncidentHubClient : IIncidentHubClient
             });
         });
 
+        _hubConnection.On<MemberStatusChangedPayload>("MemberStatusChanged", payload =>
+        {
+            _logger.LogInformation("[IncidentHub] Member status changed: Team {TeamId}, User {UserId} -> {NewStatus}", 
+                payload.TeamId, payload.UserId, payload.NewStatus);
+            OnMemberStatusChanged?.Invoke(this, new MemberStatusChangedEventArgs
+            {
+                TeamId = payload.TeamId,
+                UserId = payload.UserId,
+                PreviousStatus = payload.PreviousStatus,
+                NewStatus = payload.NewStatus,
+                ChangedById = payload.ChangedById,
+                ChangedAt = payload.ChangedAt
+            });
+        });
+
         // Reconnect & Lifecycle
         _hubConnection.Reconnecting += ex =>
         {
@@ -209,4 +226,14 @@ public class IncidentHubClient : IIncidentHubClient
         [property: JsonPropertyName("operatorId")] Guid OperatorId,
         [property: JsonPropertyName("assignedAt")] DateTime AssignedAt
     );
+
+    private record MemberStatusChangedPayload(
+        [property: JsonPropertyName("teamId")] Guid TeamId,
+        [property: JsonPropertyName("userId")] Guid UserId,
+        [property: JsonPropertyName("previousStatus")] string PreviousStatus,
+        [property: JsonPropertyName("newStatus")] string NewStatus,
+        [property: JsonPropertyName("changedById")] Guid ChangedById,
+        [property: JsonPropertyName("changedAt")] DateTime ChangedAt
+    );
+
 }

@@ -25,4 +25,7 @@ public interface ITeamService
 
     /// Removes a personnel from the team roster.
     Task<ApiResponse<TeamDto>?> RemoveMemberAsync(Guid teamId, Guid userId, CancellationToken cancellationToken = default);
+
+    /// Updates the operational status of an individual team member.
+    Task<ApiResponse<TeamMemberDto>?> UpdateMemberStatusAsync(Guid teamId, Guid userId, string status, CancellationToken cancellationToken = default);
 }
