@@ -117,6 +117,12 @@
     </div>
 </div>
 
+<!-- Active Incidents & Assigned Teams Relational Dispatch Board -->
+<ActiveDispatchBoard
+    @ref="_dispatchBoardRef"
+    OnIncidentSelected="HandleIncidentDetail"
+    OnQuickDispatchRequested="HandleOpenQuickDispatch" />
+
 <!-- Operational Incident & Dispatch Sidebar Drawer -->
 <IncidentSidebar @bind-IsOpen="_isSidebarOpen"
                  IncidentId="_selectedIncidentId"
@@ -126,6 +132,12 @@
 <!-- Emergency Incident Creation Modal -->
 <CreateIncidentModal @bind-IsVisible="_isCreateModalOpen"
                      OnIncidentCreated="HandleIncidentCreated" />
+
+<!-- Fast Team Dispatch Modal -->
+<QuickDispatchModal IsVisible="_isQuickDispatchOpen"
+                    IncidentId="_quickDispatchIncidentId"
+                    OnClose="HandleCloseQuickDispatch"
+                    OnDispatched="HandleQuickDispatched" />
 
 @code {
     private int _activeIncidents = 0;
@@ -137,6 +149,9 @@
     private bool _isSidebarOpen = false;
     private bool _isCreateModalOpen = false;
     private LeafletMap? _leafletMapRef;
+    private ActiveDispatchBoard? _dispatchBoardRef;
+    private bool _isQuickDispatchOpen = false;
+    private Guid? _quickDispatchIncidentId;
 
     protected override async Task OnInitializedAsync()
     {
@@ -260,13 +275,39 @@
 
     private void HandleAssignTeam(Guid incidentId)
     {
-        _selectedIncidentId = incidentId;
-        _isSidebarOpen = true;
+        HandleOpenQuickDispatch(incidentId);
+    }
+
+    private void HandleOpenQuickDispatch(Guid incidentId)
+    {
+        _quickDispatchIncidentId = incidentId;
+        _isQuickDispatchOpen = true;
+    }
+
+    private void HandleCloseQuickDispatch()
+    {
+        _isQuickDispatchOpen = false;
+        _quickDispatchIncidentId = null;
+    }
+
+    private async Task HandleQuickDispatched(Guid incidentId)
+    {
+        _isQuickDispatchOpen = false;
+        _quickDispatchIncidentId = null;
+        await HandleIncidentAssigned(incidentId);
+        if (_dispatchBoardRef != null)
+        {
+            await _dispatchBoardRef.LoadBoardDataAsync();
+        }
     }
 
     private async Task HandleIncidentCreated(IncidentDetailViewModel incident)
     {
         await LoadDashboardStatsAsync();
+        if (_dispatchBoardRef != null)
+        {
+            await _dispatchBoardRef.LoadBoardDataAsync();
+        }
     }
 
     private async Task HandleIncidentAssigned(Guid incidentId)
@@ -277,6 +318,10 @@
             await _leafletMapRef.LoadIncidentsAsync();
             await _leafletMapRef.LoadTeamsAsync();
         }
+        if (_dispatchBoardRef != null)
+        {
+            await _dispatchBoardRef.LoadBoardDataAsync();
+        }
     }
 
     private async Task HandleIncidentUpdated(IncidentDetailViewModel incident)
@@ -285,6 +330,10 @@
         if (_leafletMapRef != null)
         {
             await _leafletMapRef.LoadIncidentsAsync();
+        }
+        if (_dispatchBoardRef != null)
+        {
+            await _dispatchBoardRef.LoadBoardDataAsync();
         }
     }
 
