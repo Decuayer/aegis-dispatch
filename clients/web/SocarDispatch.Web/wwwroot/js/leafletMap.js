@@ -30,20 +30,38 @@ window.leafletMap = (function () {
     // Custom SVG-based incident marker icon
     function createIncidentIcon(emergencyCode, status) {
         const color = getIncidentColor(emergencyCode, status);
-        const iconSymbol = (status === 'Resolved') ? '✓' : (status === 'Canceled' ? '✕' : '!');
+        const isAssigned = (status === 'Assigned');
+        const isResolved = (status === 'Resolved');
+        const isCanceled = (status === 'Canceled');
+
+        let iconSymbol = '!';
+        if (isResolved) iconSymbol = '✓';
+        else if (isCanceled) iconSymbol = '✕';
+        else if (isAssigned) iconSymbol = '⚡';
+
+        // Assigned dispatch badge indicator
+        const assignedBadge = isAssigned ? `
+          <circle cx="25" cy="7" r="6" fill="#3b82f6" stroke="white" stroke-width="1.5"/>
+          <text x="25" y="10" text-anchor="middle" font-size="8" fill="white" font-weight="bold" font-family="Inter,sans-serif">A</text>
+        ` : '';
+
+        const strokeProps = isAssigned ? 'stroke="#60a5fa" stroke-width="2.5" stroke-dasharray="3,2"' : 'stroke="white" stroke-width="2"';
+
         const svg = `
-          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">
-            <path d="M16 0C7.16 0 0 7.16 0 16c0 10 16 24 16 24S32 26 32 16C32 7.16 24.84 0 16 0z"
-                  fill="${color}" stroke="white" stroke-width="2"/>
-            <text x="16" y="21" text-anchor="middle" font-size="14" fill="white" font-weight="bold"
+          <svg xmlns="http://www.w3.org/2000/svg" width="34" height="42" viewBox="0 0 34 42">
+            <path d="M16 2C7.16 2 0 9.16 0 18c0 10 16 24 16 24S32 28 32 18C32 9.16 24.84 2 16 2z"
+                  fill="${color}" ${strokeProps}/>
+            <text x="16" y="23" text-anchor="middle" font-size="14" fill="white" font-weight="bold"
                   font-family="Inter,sans-serif">${iconSymbol}</text>
+            ${assignedBadge}
           </svg>`;
+
         return L.divIcon({
             html: svg,
-            className: '',
-            iconSize: [32, 40],
-            iconAnchor: [16, 40],
-            popupAnchor: [0, -40]
+            className: isAssigned ? 'lf-marker-assigned' : '',
+            iconSize: [34, 42],
+            iconAnchor: [16, 42],
+            popupAnchor: [0, -42]
         });
     }
 
