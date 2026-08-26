@@ -16,18 +16,16 @@
 .nav-brand-mark {
     width: 28px;
     height: 28px;
-    background-color: var(--color-accent);
-    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
 }
 
-.nav-brand-mark svg {
-    width: 16px;
-    height: 16px;
-    fill: #ffffff;
+.nav-brand-logo {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
 }
 
 .nav-brand-text {

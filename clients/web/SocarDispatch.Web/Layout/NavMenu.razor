@@ -1,10 +1,7 @@
 <!-- Sidebar brand / logo -->
 <div class="nav-brand">
     <div class="nav-brand-mark">
-        <!-- Dispatch / lightning bolt icon -->
-        <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-        </svg>
+        <img src="socar-logo.png" alt="SOCAR" class="nav-brand-logo" />
     </div>
     <div>
         <div class="nav-brand-text">SOCAR Dispatch</div>
@@ -80,12 +77,3 @@
     </NavLink>
 </div>
 
-@code {
-    private bool collapseNavMenu = true;
-    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
-
-    private void ToggleNavMenu()
-    {
-        collapseNavMenu = !collapseNavMenu;
-    }
-}
