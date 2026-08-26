@@ -15,25 +15,26 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
         _localStorage = localStorage;
     }
 
-    /// <summary>
-    /// Blazor bileşenleri (AuthorizeView vb.) kullanıcı oturum durumunu sorguladığında çalışır.
-    /// </summary>
+    /// It runs when Blazor components (AuthorizeView, etc.) query the user's authentication state.
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
         try
         {
             var token = await _localStorage.GetItemAsync<string>(AuthTokenKey);
 
-            // Token yoksa veya süresi dolmuşsa anonim durum döndür
-            if (string.IsNullOrWhiteSpace(token) || JwtTokenParser.IsTokenExpired(token))
+            if (string.IsNullOrWhiteSpace(token))
             {
                 return new AuthenticationState(_anonymous);
             }
 
-            // Token'dan claim'leri çöz
-            var claims = JwtTokenParser.ParseClaimsFromJwt(token);
+            // Token expiration check
+            if (JwtTokenParser.IsTokenExpired(token))
+            {
+                await _localStorage.RemoveItemAsync(AuthTokenKey);
+                return new AuthenticationState(_anonymous);
+            }
 
-            // Identity ve Principal oluştur (Name claim ve Role claim eşleşmeleri ile)
+            var claims = JwtTokenParser.ParseClaimsFromJwt(token);
             var identity = new ClaimsIdentity(claims, "jwt", ClaimTypes.Name, ClaimTypes.Role);
             var user = new ClaimsPrincipal(identity);
 
@@ -41,14 +42,12 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
         }
         catch
         {
-            // JS Interop veya LocalStorage okuma hatasında güvenli bir şekilde anonim döndür
             return new AuthenticationState(_anonymous);
         }
     }
 
-    /// <summary>
-    /// Başarılı giriş sonrasında çağrılarak Blazor cascading state'ini günceller.
-    /// </summary>
+
+    /// Called after a successful login to update the Blazor cascading state.
     public void NotifyUserAuthentication(string token)
     {
         var claims = JwtTokenParser.ParseClaimsFromJwt(token);
@@ -59,9 +58,7 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
         NotifyAuthenticationStateChanged(authState);
     }
 
-    /// <summary>
-    /// Çıkış yapıldığında çağrılarak Blazor cascading state'ini anonim duruma getirir.
-    /// </summary>
+    /// Called upon logout, it sets the Blazor cascading state to an anonymous state.
     public void NotifyUserLogout()
     {
         var authState = Task.FromResult(new AuthenticationState(_anonymous));

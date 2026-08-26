@@ -23,10 +23,6 @@ public class AuthService : IAuthService
         _authStateProvider = authStateProvider;
     }
 
-    /// <summary>
-    /// Kullanıcı e-posta ve şifre ile giriş talebini işler.
-    /// Yalnızca 'Operator' rolüne izin verir.
-    /// </summary>
     public async Task<ApiResponse<AuthResponseDto>> LoginAsync(LoginModel model)
     {
         try
@@ -37,54 +33,11 @@ public class AuthService : IAuthService
             if (result == null || !result.Success || result.Data == null)
             {
                 return ApiResponse<AuthResponseDto>.FailureResult(
-                    result?.Message ?? "Giriş başarısız. Lütfen bilgilerinizi kontrol ediniz.",
+                    result?.Message ?? "Login failed. Please verify your credentials.",
                     result?.Errors);
             }
 
-            // Operatör Rolü Güvenlik Kontrolü
-            var userRole = result.Data.User.RoleType;
-            if (userRole != RoleType.Operator)
-            {
-                return ApiResponse<AuthResponseDto>.FailureResult(
-                    "Unauthorized role: Only dispatch operators can access this panel.");
-            }
-
-            // Operatör rolü onaylandı: Token'ı LocalStorage'a kaydet
-            await _localStorage.SetItemAsync(AuthTokenKey, result.Data.AccessToken);
-
-            // AuthenticationStateProvider'ı bilgilendir (Phase 3'te tamamlanacak)
-            if (_authStateProvider is CustomAuthStateProvider customAuthStateProvider)
-            {
-                customAuthStateProvider.NotifyUserAuthentication(result.Data.AccessToken);
-            }
-
-            return result;
-        }
-        catch (Exception ex)
-        {
-            return ApiResponse<AuthResponseDto>.FailureResult(
-                $"Sunucu ile iletişim kurulurken bir hata oluştu: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// Google OAuth 2.0 idToken ile giriş yapma işlemi.
-    /// Yalnızca 'Operator' rolüne izin verir.
-    /// </summary>
-    public async Task<ApiResponse<AuthResponseDto>> GoogleLoginAsync(string idToken)
-    {
-        try
-        {
-            var response = await _httpClient.PostAsJsonAsync("api/v1/auth/google-login", new { IdToken = idToken });
-            var result = await response.Content.ReadFromJsonAsync<ApiResponse<AuthResponseDto>>();
-
-            if (result == null || !result.Success || result.Data == null)
-            {
-                return ApiResponse<AuthResponseDto>.FailureResult(
-                    result?.Message ?? "Google ile giriş başarısız.");
-            }
-
-            // Operatör Rolü Güvenlik Kontrolü
+            // Enforce Operator role requirement
             if (result.Data.User.RoleType != RoleType.Operator)
             {
                 return ApiResponse<AuthResponseDto>.FailureResult(
@@ -102,13 +55,45 @@ public class AuthService : IAuthService
         }
         catch (Exception ex)
         {
-            return ApiResponse<AuthResponseDto>.FailureResult($"Google giriş hatası: {ex.Message}");
+            return ApiResponse<AuthResponseDto>.FailureResult(
+                $"An error occurred while communicating with the server: {ex.Message}");
         }
     }
 
-    /// <summary>
-    /// Kullanıcının oturumunu kapatır ve yerel token'ı temizler.
-    /// </summary>
+    public async Task<ApiResponse<AuthResponseDto>> GoogleLoginAsync(string idToken)
+    {
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync("api/v1/auth/google-login", new { IdToken = idToken });
+            var result = await response.Content.ReadFromJsonAsync<ApiResponse<AuthResponseDto>>();
+
+            if (result == null || !result.Success || result.Data == null)
+            {
+                return ApiResponse<AuthResponseDto>.FailureResult(
+                    result?.Message ?? "Google login failed.");
+            }
+
+            if (result.Data.User.RoleType != RoleType.Operator)
+            {
+                return ApiResponse<AuthResponseDto>.FailureResult(
+                    "Unauthorized role: Only dispatch operators can access this panel.");
+            }
+
+            await _localStorage.SetItemAsync(AuthTokenKey, result.Data.AccessToken);
+
+            if (_authStateProvider is CustomAuthStateProvider customAuthStateProvider)
+            {
+                customAuthStateProvider.NotifyUserAuthentication(result.Data.AccessToken);
+            }
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<AuthResponseDto>.FailureResult($"Google sign-in error: {ex.Message}");
+        }
+    }
+
     public async Task LogoutAsync()
     {
         await _localStorage.RemoveItemAsync(AuthTokenKey);
@@ -119,9 +104,16 @@ public class AuthService : IAuthService
         }
     }
 
-    /// <summary>
-    /// Kayıtlı token'ı getirir.
-    /// </summary>
+    public async Task HandleSessionExpiredAsync(string? returnUrl = null)
+    {
+        await _localStorage.RemoveItemAsync(AuthTokenKey);
+
+        if (_authStateProvider is CustomAuthStateProvider customAuthStateProvider)
+        {
+            customAuthStateProvider.NotifyUserLogout();
+        }
+    }
+
     public async Task<string?> GetTokenAsync()
     {
         return await _localStorage.GetItemAsync<string>(AuthTokenKey);

@@ -1,9 +1,12 @@
 @page "/login"
 @layout EmptyLayout
+@using SocarDispatch.Web.Services.SignalR
 @inject IAuthService AuthService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
 @inject IConfiguration Configuration
+@inject IIncidentHubClient IncidentHubClient
+@inject ILocationHubClient LocationHubClient
 @implements IAsyncDisposable
 
 <PageTitle>Sign In — SOCAR Dispatch</PageTitle>
@@ -199,6 +202,9 @@
 </style>
 
 @code {
+    [SupplyParameterFromQuery(Name = "returnUrl")]
+    public string? ReturnUrl { get; set; }
+
     private readonly LoginModel _loginModel = new();
     private string? _errorMessage;
     private bool _isSubmitting;
@@ -236,7 +242,12 @@
             var result = await AuthService.LoginAsync(_loginModel);
             if (result.Success)
             {
-                NavigationManager.NavigateTo("dashboard");
+                // Re-initialize real-time hub connections
+                _ = IncidentHubClient.StartAsync();
+                _ = LocationHubClient.StartAsync();
+
+                var targetUrl = !string.IsNullOrWhiteSpace(ReturnUrl) ? ReturnUrl : "dashboard";
+                NavigationManager.NavigateTo(targetUrl);
             }
             else
             {
@@ -266,7 +277,12 @@
             var result = await AuthService.GoogleLoginAsync(idToken);
             if (result.Success)
             {
-                NavigationManager.NavigateTo("dashboard");
+                // Re-initialize real-time hub connections
+                _ = IncidentHubClient.StartAsync();
+                _ = LocationHubClient.StartAsync();
+
+                var targetUrl = !string.IsNullOrWhiteSpace(ReturnUrl) ? ReturnUrl : "dashboard";
+                NavigationManager.NavigateTo(targetUrl);
             }
             else
             {

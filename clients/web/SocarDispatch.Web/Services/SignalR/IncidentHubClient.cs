@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.SignalR.Client;
 using SocarDispatch.Web.Auth;
 using SocarDispatch.Web.Events;
+using SocarDispatch.Web.Utils;
 
 namespace SocarDispatch.Web.Services.SignalR;
 
@@ -45,7 +46,15 @@ public class IncidentHubClient : IIncidentHubClient
         _hubConnection = new HubConnectionBuilder()
             .WithUrl(hubUrl, options =>
             {
-                options.AccessTokenProvider = async () => await _authService.GetTokenAsync();
+                options.AccessTokenProvider = async () =>
+                {
+                    var token = await _authService.GetTokenAsync();
+                    if (string.IsNullOrWhiteSpace(token) || JwtTokenParser.IsTokenExpired(token))
+                    {
+                        return null; // Return null to prevent unauthorized reconnect loops
+                    }
+                    return token;
+                };
             })
             .WithAutomaticReconnect(new[]
             {

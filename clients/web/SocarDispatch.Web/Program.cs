@@ -17,10 +17,13 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 // 1. Blazored LocalStorage Service
 builder.Services.AddBlazoredLocalStorage();
 
-// 2. HTTP Interceptor (AuthorizationHeaderHandler)
+// 2. Auth Event Bus Service
+builder.Services.AddScoped<IAuthEventService, AuthEventService>();
+
+// 3. HTTP Interceptor (AuthorizationHeaderHandler)
 builder.Services.AddTransient<AuthorizationHeaderHandler>();
 
-// 3. Backend API HttpClient Configuration with Interceptor
+// 4. Backend API HttpClient Configuration with Interceptor
 var backendApiUrl = builder.Configuration["ApiBaseUrl"] ?? "http://localhost:5233";
 
 builder.Services.AddHttpClient("SocarDispatchAPI", client =>
@@ -32,34 +35,33 @@ builder.Services.AddHttpClient("SocarDispatchAPI", client =>
 builder.Services.AddScoped(sp => 
     sp.GetRequiredService<IHttpClientFactory>().CreateClient("SocarDispatchAPI"));
 
-// 4. Custom AuthenticationStateProvider and Auth Services
+// 5. Custom AuthenticationStateProvider and Auth Services
 builder.Services.AddScoped<CustomAuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<CustomAuthStateProvider>());
 builder.Services.AddScoped<IAuthService, AuthService>();
 
-// 5. Blazor Authorization Core
+// 6. Blazor Authorization Core
 builder.Services.AddAuthorizationCore();
 
-// 6. Map Service (Leaflet)
+// 7. Map Service (Leaflet)
 builder.Services.AddScoped<IMapService, MapService>();
 
-// 7. SignalR Hub Client Services
+// 8. SignalR Hub Client Services
 builder.Services.AddScoped<IIncidentHubClient, IncidentHubClient>();
 builder.Services.AddScoped<ILocationHubClient, LocationHubClient>();
 
-// Toast Notification Service
+// 9. Toast Notification Service
 builder.Services.AddScoped<IToastService, ToastService>();
 
-// 8. Incident & Dispatch Domain Services
+// 10. Incident & Dispatch Domain Services
 builder.Services.AddScoped<IIncidentService, IncidentService>();
 builder.Services.AddScoped<IAssignmentService, AssignmentService>();
 builder.Services.AddScoped<ITeamService, TeamService>();
 builder.Services.AddScoped<IUserService, UserService>();
 
-// Settings & Configuration Services
+// 11. Settings & Configuration Services
 builder.Services.AddScoped<ISettingsService, SettingsService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IEmergencyCodeService, EmergencyCodeService>();
-
 
 await builder.Build().RunAsync();
