@@ -1,0 +1,332 @@
+@* Components/Map/MapControlOverlay.razor *@
+
+<div class="map-control-overlay @(_isCollapsed ? "collapsed" : "")">
+    <!-- Overlay Header / Collapse Toggle -->
+    <div class="overlay-header" @onclick="ToggleCollapse">
+        <div class="header-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                <polyline points="2 17 12 22 22 17"></polyline>
+                <polyline points="2 12 12 17 22 12"></polyline>
+            </svg>
+            <span>Map Layers</span>
+        </div>
+        <button type="button" class="btn-toggle" title="@(_isCollapsed ? "Expand panel" : "Collapse panel")">
+            <svg class="toggle-icon @(_isCollapsed ? "rotated" : "")" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+        </button>
+    </div>
+
+    @if (!_isCollapsed)
+    {
+        <div class="overlay-body">
+            <!-- 1. Layer Visibility Toggles -->
+            <div class="control-section">
+                <span class="section-label">Overlays</span>
+                
+                <!-- Incidents Layer Toggle -->
+                <label class="layer-toggle-item">
+                    <div class="layer-info">
+                        <span class="layer-indicator incident-indicator"></span>
+                        <span class="layer-name">Active Incidents</span>
+                    </div>
+                    <div class="toggle-right">
+                        <span class="badge-count incident-badge">@ActiveIncidentCount</span>
+                        <input type="checkbox"
+                               checked="@_showIncidents"
+                               @onchange="HandleIncidentsToggle" />
+                    </div>
+                </label>
+
+                <!-- Teams Layer Toggle -->
+                <label class="layer-toggle-item">
+                    <div class="layer-info">
+                        <span class="layer-indicator team-indicator"></span>
+                        <span class="layer-name">Response Teams</span>
+                    </div>
+                    <div class="toggle-right">
+                        <span class="badge-count team-badge">@ActiveTeamCount</span>
+                        <input type="checkbox"
+                               checked="@_showTeams"
+                               @onchange="HandleTeamsToggle" />
+                    </div>
+                </label>
+            </div>
+
+            <!-- 2. Base Map (Tile Provider) Switcher -->
+            <div class="control-section">
+                <span class="section-label">Base Map</span>
+                <div class="tile-switcher">
+                    <button type="button"
+                            class="tile-btn @(SelectedTileProvider == "OpenStreetMap" ? "active" : "")"
+                            @onclick='() => SetTileProvider("OpenStreetMap")'
+                            title="Standard Street Map">
+                        Street
+                    </button>
+                    <button type="button"
+                            class="tile-btn @(SelectedTileProvider == "CartoDark" ? "active" : "")"
+                            @onclick='() => SetTileProvider("CartoDark")'
+                            title="Dark Industrial View">
+                        Dark
+                    </button>
+                    <button type="button"
+                            class="tile-btn @(SelectedTileProvider == "CartoPositron" ? "active" : "")"
+                            @onclick='() => SetTileProvider("CartoPositron")'
+                            title="Light Positron View">
+                        Light
+                    </button>
+                </div>
+            </div>
+
+            <!-- 3. Quick Map Actions -->
+            <div class="control-section actions-section">
+                <button type="button" class="btn-reset-view" @onclick="HandleResetView">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <span>Reset Center View</span>
+                </button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int ActiveIncidentCount { get; set; } = 0;
+    [Parameter] public int ActiveTeamCount { get; set; } = 0;
+    [Parameter] public string SelectedTileProvider { get; set; } = "OpenStreetMap";
+    [Parameter] public EventCallback<bool> OnToggleIncidents { get; set; }
+    [Parameter] public EventCallback<bool> OnToggleTeams { get; set; }
+    [Parameter] public EventCallback<string> OnTileProviderChanged { get; set; }
+    [Parameter] public EventCallback OnResetView { get; set; }
+
+    private bool _showIncidents = true;
+    private bool _showTeams = true;
+    private bool _isCollapsed = false;
+
+    private async Task HandleIncidentsToggle(ChangeEventArgs e)
+    {
+        _showIncidents = (bool)(e.Value ?? true);
+        await OnToggleIncidents.InvokeAsync(_showIncidents);
+    }
+
+    private async Task HandleTeamsToggle(ChangeEventArgs e)
+    {
+        _showTeams = (bool)(e.Value ?? true);
+        await OnToggleTeams.InvokeAsync(_showTeams);
+    }
+
+    private async Task SetTileProvider(string provider)
+    {
+        if (SelectedTileProvider != provider)
+        {
+            SelectedTileProvider = provider;
+            await OnTileProviderChanged.InvokeAsync(provider);
+        }
+    }
+
+    private async Task HandleResetView()
+    {
+        await OnResetView.InvokeAsync();
+    }
+
+    private void ToggleCollapse()
+    {
+        _isCollapsed = !_isCollapsed;
+    }
+}
+
+<style>
+    .map-control-overlay {
+        width: 220px;
+        background: var(--color-surface, #1c1f26);
+        border: 1px solid var(--color-border, #2e3138);
+        border-radius: 8px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(8px);
+        font-family: inherit;
+        z-index: 1000;
+        transition: all 0.2s ease;
+        overflow: hidden;
+    }
+
+    .overlay-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 12px;
+        cursor: pointer;
+        user-select: none;
+        background: rgba(255, 255, 255, 0.02);
+        border-bottom: 1px solid var(--color-border, #2e3138);
+    }
+
+    .map-control-overlay.collapsed .overlay-header {
+        border-bottom: none;
+    }
+
+    .header-title {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--color-text-primary, #f0f2f5);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+
+    .btn-toggle {
+        background: transparent;
+        border: none;
+        color: var(--color-text-muted, #8b909a);
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .toggle-icon {
+        transition: transform 0.2s ease;
+    }
+
+    .toggle-icon.rotated {
+        transform: rotate(180deg);
+    }
+
+    .overlay-body {
+        padding: 10px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .control-section {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .section-label {
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--color-text-subtle, #5c606a);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .layer-toggle-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        padding: 4px 0;
+    }
+
+    .layer-info {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .layer-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .incident-indicator { background-color: #ef4444; }
+    .team-indicator { background-color: #22c55e; }
+
+    .layer-name {
+        font-size: 12px;
+        color: var(--color-text-primary, #f0f2f5);
+    }
+
+    .toggle-right {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .badge-count {
+        font-size: 10px;
+        font-weight: 700;
+        padding: 1px 5px;
+        border-radius: 4px;
+    }
+
+    .incident-badge {
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+    }
+
+    .team-badge {
+        background: rgba(34, 197, 94, 0.15);
+        color: #22c55e;
+    }
+
+    /* Tile Switcher */
+    .tile-switcher {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 4px;
+        background: var(--color-bg, #111318);
+        padding: 2px;
+        border-radius: 6px;
+        border: 1px solid var(--color-border, #2e3138);
+    }
+
+    .tile-btn {
+        background: transparent;
+        border: none;
+        border-radius: 4px;
+        color: var(--color-text-muted, #8b909a);
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 0;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+
+    .tile-btn.active {
+        background: var(--color-accent, #3b82f6);
+        color: #ffffff;
+    }
+
+    .tile-btn:hover:not(.active) {
+        color: var(--color-text-primary, #f0f2f5);
+    }
+
+    /* Actions Section */
+    .actions-section {
+        padding-top: 4px;
+        border-top: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .btn-reset-view {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid var(--color-border, #2e3138);
+        border-radius: 6px;
+        color: var(--color-text-muted, #8b909a);
+        font-size: 11px;
+        font-weight: 600;
+        padding: 5px 8px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+
+    .btn-reset-view:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--color-text-primary, #f0f2f5);
+        border-color: var(--color-border-light, #383d47);
+    }
+</style>

@@ -56,8 +56,20 @@ public class MapService : IMapService
     public async Task PanToIncidentAsync(Guid incidentId)
         => await _js.InvokeVoidAsync("leafletMap.panToIncident", incidentId.ToString());
 
+    public async Task PanToTeamAsync(Guid teamId)
+        => await _js.InvokeVoidAsync("leafletMap.panToTeam", teamId.ToString());
+
     public async Task PanToLocationAsync(double lat, double lng, int zoom = 15)
         => await _js.InvokeVoidAsync("leafletMap.panToLocation", lat, lng, zoom);
+
+    public async Task ToggleIncidentsLayerAsync(bool visible)
+        => await _js.InvokeVoidAsync("leafletMap.toggleIncidentsLayer", visible);
+
+    public async Task ToggleTeamsLayerAsync(bool visible)
+        => await _js.InvokeVoidAsync("leafletMap.toggleTeamsLayer", visible);
+
+    public async Task InvalidateSizeAsync()
+        => await _js.InvokeVoidAsync("leafletMap.invalidateSize");
 
     public async Task SetDotNetReferenceAsync<T>(DotNetObjectReference<T> dotNetRef) where T : class
         => await _js.InvokeVoidAsync("leafletMap.setDotNetRef", dotNetRef);
@@ -66,7 +78,7 @@ public class MapService : IMapService
         => await _js.InvokeVoidAsync("leafletMap.destroyMap");
 
     public async Task UpdateIncidentStatusAsync(Guid incidentId, string newStatus)
-    => await _js.InvokeVoidAsync("leafletMap.updateIncidentStatus", incidentId.ToString(), newStatus);
+        => await _js.InvokeVoidAsync("leafletMap.updateIncidentStatus", incidentId.ToString(), newStatus);
 
     public async Task AnimateTeamMarkerAsync(Guid teamId, double lat, double lng)
         => await _js.InvokeVoidAsync("leafletMap.animateTeamMarker", teamId.ToString(), lat, lng);
@@ -88,5 +100,4 @@ public class MapService : IMapService
 
     public async Task DestroyPickerMapAsync()
         => await _js.InvokeVoidAsync("leafletMap.destroyPickerMap");
-
 }
