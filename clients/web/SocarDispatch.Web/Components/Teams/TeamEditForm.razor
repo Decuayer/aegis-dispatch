@@ -31,26 +31,25 @@
             <label class="form-label" for="edit-team-leader">
                 Designated Team Leader
             </label>
-            @if (_isLoadingUsers)
+            <select id="edit-team-leader" 
+                    class="form-select" 
+                    @bind="_selectedLeaderId" 
+                    disabled="@(Team.Members.Count == 0)">
+                <option value="">@(Team.Members.Count == 0 ? "-- No Leader (Add members to roster below first) --" : "-- No Leader Assigned --")</option>
+                @foreach (var member in Team.Members)
+                {
+                    <option value="@member.UserId">
+                        @member.FullName (@(string.IsNullOrEmpty(member.Department) ? "Responder" : member.Department))
+                    </option>
+                }
+            </select>
+            @if (Team.Members.Count == 0)
             {
-                <div class="loading-state-mini">
-                    <span class="spinner-sm"></span> Loading available leaders...
-                </div>
-            }
-            else
-            {
-                <select id="edit-team-leader" class="form-select" @bind="_selectedLeaderId">
-                    <option value="">-- No Leader Assigned --</option>
-                    @foreach (var user in _availableUsers)
-                    {
-                        <option value="@user.Id">
-                            @user.FirstName @user.LastName (@(string.IsNullOrEmpty(user.Department) ? "Responder" : user.Department))
-                        </option>
-                    }
-                </select>
+                <span class="form-hint">To designate a team leader, please add responders to the roster below first.</span>
             }
         </div>
     </div>
+
 
     <!-- Section 2: Team Operational Status Transition -->
     <div class="form-section">

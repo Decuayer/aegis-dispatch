@@ -1,0 +1,654 @@
+@* Components/Dispatch/QuickDispatchModal.razor *@
+@using SocarDispatch.Web.Models.Dispatch
+@using SocarDispatch.Web.Services
+@inject IIncidentService IncidentService
+@inject ITeamService TeamService
+@inject IAssignmentService AssignmentService
+@inject IToastService ToastService
+
+@if (IsVisible)
+{
+    <div class="quick-dispatch-backdrop" @onclick="HandleClose">
+        <div class="quick-dispatch-card" @onclick:stopPropagation="true">
+            <!-- Modal Header -->
+            <div class="quick-dispatch-header">
+                <div class="header-title-box">
+                    <div class="modal-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="quick-dispatch-title">Quick Team Dispatch</h3>
+                        <p class="quick-dispatch-subtitle">Directly route response units to the incident</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" @onclick="HandleClose" title="Close"></button>
+            </div>
+
+
+            <!-- Modal Content Body -->
+            <div class="quick-dispatch-body">
+                @if (_isLoading)
+                {
+                    <div class="dispatch-loading">
+                        <span class="spinner-sm"></span>
+                        <p>Loading incident details and available teams...</p>
+                    </div>
+                }
+                else if (_incident == null)
+                {
+                    <div class="dispatch-empty">
+                        <p>Incident information not found.</p>
+                    </div>
+                }
+                else
+                {
+                    <!-- Incident Quick Summary Banner -->
+                    <div class="incident-summary-strip">
+                        <div class="summary-top">
+                            <span class="badge-code @GetEmergencyCodeBadgeClass(_incident.EmergencyCode)">@_incident.EmergencyCode</span>
+                            <span class="badge-status @GetStatusBadgeClass(_incident.Status)">@_incident.Status</span>
+                            <span class="summary-time">@_incident.TimeAgoFormatted</span>
+                        </div>
+                        <h4 class="summary-category">@_incident.Category</h4>
+                        @if (!string.IsNullOrWhiteSpace(_incident.Description))
+                        {
+                            <p class="summary-desc">@_incident.Description</p>
+                        }
+                    </div>
+
+                    @if (_incident.IsAssigned)
+                    {
+                        <div class="already-assigned-banner">
+                            <div class="assigned-alert-icon">⚠️</div>
+                            <div class="assigned-alert-text">
+                                <strong>Already Assigned</strong>
+                                <span>This incident is currently assigned to <strong>@(_incident.AssignedTeamName ?? "Team")</strong>.</span>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Team Selection List -->
+                    <div class="section-heading">
+                        <span>Select Response Team (@_sortedTeams.Count Available)</span>
+                    </div>
+
+                    <div class="teams-quick-list">
+                        @if (_sortedTeams.Count == 0)
+                        {
+                            <div class="empty-teams-box">
+                                <p>No teams available in the system.</p>
+                            </div>
+                        }
+                        else
+                        {
+                            @foreach (var team in _sortedTeams)
+                            {
+                                var isSelected = _selectedTeam?.Id == team.Id;
+                                var isIdle = team.Status == "Idle";
+                                var distance = CalculateDistance(_incident.Latitude, _incident.Longitude, team.CurrentLatitude, team.CurrentLongitude);
+
+                                <div class="team-option-row @(isSelected ? "selected" : "") @(!isIdle ? "busy-team" : "")"
+                                     @onclick="() => SelectTeam(team)">
+                                    <div class="team-option-main">
+                                        <div class="team-option-avatar">
+                                            <span>🚒</span>
+                                        </div>
+                                        <div class="team-option-info">
+                                            <div class="team-name-row">
+                                                <strong class="team-title">@team.TeamName</strong>
+                                                <span class="badge-team-status status-@team.Status.ToLowerInvariant()">@team.Status</span>
+                                            </div>
+                                            <div class="team-meta-row">
+                                                <span class="team-leader">Leader: @(string.IsNullOrWhiteSpace(team.LeaderFullName) ? "Unassigned" : team.LeaderFullName)</span>
+                                                <span class="team-members">(@team.Members.Count members)</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="team-option-right">
+                                        @if (distance.HasValue)
+                                        {
+                                            <div class="distance-badge">
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <circle cx="12" cy="12" r="10"/>
+                                                    <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
+                                                </svg>
+                                                <span>@FormatDistance(distance.Value)</span>
+                                            </div>
+                                        }
+                                        <input type="radio" name="quickSelectedTeam" checked="@isSelected" class="team-radio" />
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+
+                    <!-- Optional Dispatch Notes Input -->
+                    <div class="dispatch-notes-section">
+                        <label class="notes-label">Optional Dispatch Instructions / Notes</label>
+                        <input type="text" 
+                               class="form-control dispatch-input" 
+                               placeholder="e.g. Approach from North gate, caution hazardous material..." 
+                               @bind="_dispatchNotes" />
+                    </div>
+                }
+            </div>
+
+            <!-- Modal Footer Action -->
+            <div class="quick-dispatch-footer">
+                <button type="button" class="btn btn-ghost" @onclick="HandleClose" disabled="@_isDispatching">Cancel</button>
+                @if (_incident != null && !_incident.IsAssigned)
+                {
+                    <button type="button" 
+                            class="btn btn-primary btn-dispatch-submit" 
+                            disabled="@(_selectedTeam == null || _isDispatching)"
+                            @onclick="ExecuteDispatchAsync">
+                        @if (_isDispatching)
+                        {
+                            <span class="spinner-sm"></span>
+                            <span>Dispatching...</span>
+                        }
+                        else
+                        {
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 2L11 13"/>
+                                <path d="M22 2l-7 20-4-9-9-4 20-7z"/>
+                            </svg>
+                            <span>@(_selectedTeam == null ? "Select a Team to Dispatch" : $"Dispatch {_selectedTeam.TeamName}")</span>
+                        }
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public Guid? IncidentId { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<Guid> OnDispatched { get; set; }
+
+    private IncidentDetailViewModel? _incident;
+    private List<TeamDto> _sortedTeams = new();
+    private TeamDto? _selectedTeam;
+    private string _dispatchNotes = string.Empty;
+    private bool _isLoading = false;
+    private bool _isDispatching = false;
+    private Guid? _lastLoadedIncidentId;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && IncidentId.HasValue && IncidentId.Value != _lastLoadedIncidentId)
+        {
+            _lastLoadedIncidentId = IncidentId.Value;
+            _selectedTeam = null;
+            _dispatchNotes = string.Empty;
+            await LoadDataAsync(IncidentId.Value);
+        }
+    }
+
+    private async Task LoadDataAsync(Guid incidentId)
+    {
+        _isLoading = true;
+        try
+        {
+            var incidentTask = IncidentService.GetIncidentByIdAsync(incidentId);
+            var teamsTask = TeamService.GetTeamsAsync();
+
+            await Task.WhenAll(incidentTask, teamsTask);
+
+            var incRes = await incidentTask;
+            var teamsRes = await teamsTask;
+
+            if (incRes?.Success == true && incRes.Data != null)
+            {
+                _incident = incRes.Data;
+            }
+
+            if (teamsRes?.Success == true && teamsRes.Data != null)
+            {
+                var rawTeams = teamsRes.Data;
+                if (_incident != null)
+                {
+                    _sortedTeams = rawTeams
+                        .OrderBy(t => t.Status == "Idle" ? 0 : 1)
+                        .ThenBy(t => CalculateDistance(_incident.Latitude, _incident.Longitude, t.CurrentLatitude, t.CurrentLongitude) ?? double.MaxValue)
+                        .ToList();
+                }
+                else
+                {
+                    _sortedTeams = rawTeams;
+                }
+
+                // Auto-select first available Idle team for quick action
+                _selectedTeam = _sortedTeams.FirstOrDefault(t => t.Status == "Idle");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.Show("Error", $"Failed to load dispatch data: {ex.Message}", ToastLevel.Danger);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void SelectTeam(TeamDto team)
+    {
+        _selectedTeam = team;
+    }
+
+    private async Task ExecuteDispatchAsync()
+    {
+        if (_incident == null || _selectedTeam == null || _isDispatching) return;
+
+        _isDispatching = true;
+        try
+        {
+            var request = new DispatchRequestDto
+            {
+                IncidentId = _incident.Id,
+                TeamId = _selectedTeam.Id,
+                Notes = string.IsNullOrWhiteSpace(_dispatchNotes) ? null : _dispatchNotes
+            };
+
+            var result = await AssignmentService.AssignTeamAsync(request);
+            if (result?.Success == true)
+            {
+                ToastService.Show(
+                    "Team Dispatched",
+                    $"{_selectedTeam.TeamName} successfully dispatched to {_incident.Category}.",
+                    ToastLevel.Success);
+
+                await OnDispatched.InvokeAsync(_incident.Id);
+                await HandleClose();
+            }
+            else
+            {
+                ToastService.Show("Dispatch Failed", result?.Message ?? "Could not assign team.", ToastLevel.Danger);
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.Show("Dispatch Error", ex.Message, ToastLevel.Danger);
+        }
+        finally
+        {
+            _isDispatching = false;
+        }
+    }
+
+    private async Task HandleClose()
+    {
+        _lastLoadedIncidentId = null;
+        if (OnClose.HasDelegate)
+        {
+            await OnClose.InvokeAsync();
+        }
+    }
+
+    private double? CalculateDistance(decimal lat1, decimal lng1, decimal? lat2, decimal? lng2)
+    {
+        if (!lat2.HasValue || !lng2.HasValue) return null;
+        
+        const double R = 6371; // Earth radius in km
+        var dLat = ToRadians((double)(lat2.Value - lat1));
+        var dLon = ToRadians((double)(lng2.Value - lng1));
+        
+        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                Math.Cos(ToRadians((double)lat1)) * Math.Cos(ToRadians((double)lat2.Value)) *
+                Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+                
+        var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+        return R * c;
+    }
+
+    private double ToRadians(double degrees) => degrees * Math.PI / 180.0;
+
+    private string FormatDistance(double distanceKm)
+    {
+        if (distanceKm < 1.0)
+            return $"{(int)(distanceKm * 1000)} m";
+        return $"{distanceKm:F1} km";
+    }
+
+    private string GetEmergencyCodeBadgeClass(string code)
+    {
+        var c = (code ?? string.Empty).ToLowerInvariant();
+        if (c.Contains("1") || c.Contains("red") || c.Contains("kirmizi")) return "badge-code-red";
+        if (c.Contains("2") || c.Contains("orange") || c.Contains("turuncu")) return "badge-code-orange";
+        if (c.Contains("3") || c.Contains("yellow") || c.Contains("sari")) return "badge-code-yellow";
+        if (c.Contains("4") || c.Contains("green") || c.Contains("yesil")) return "badge-code-green";
+        return "badge-code-default";
+    }
+
+    private string GetStatusBadgeClass(string status)
+    {
+        return (status ?? string.Empty).ToLowerInvariant() switch
+        {
+            "open" => "badge-status-open",
+            "assigned" => "badge-status-assigned",
+            "resolved" => "badge-status-resolved",
+            "canceled" => "badge-status-canceled",
+            _ => "badge-status-open"
+        };
+    }
+}
+
+<style>
+    .quick-dispatch-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(8, 14, 26, 0.65);
+        backdrop-filter: blur(4px);
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        animation: qdFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @@keyframes qdFadeIn {
+        from { opacity: 0; transform: scale(0.97); }
+        to { opacity: 1; transform: scale(1); }
+    }
+
+    .quick-dispatch-card {
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: 14px;
+        width: 100%;
+        max-width: 520px;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: var(--shadow-lg);
+        overflow: hidden;
+    }
+
+    .quick-dispatch-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--color-border);
+        background: var(--color-surface-2);
+    }
+
+    .header-title-box {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .quick-dispatch-title {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: var(--color-text-primary);
+    }
+
+    .quick-dispatch-subtitle {
+        margin: 0;
+        font-size: 0.8rem;
+        color: var(--color-text-muted);
+    }
+
+    .quick-dispatch-body {
+        padding: 18px 20px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .incident-summary-strip {
+        background: var(--color-surface-2);
+        border: 1px solid var(--color-border);
+        border-radius: 10px;
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .summary-top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .summary-time {
+        font-size: 0.75rem;
+        color: var(--color-text-muted);
+        margin-left: auto;
+    }
+
+    .summary-category {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--color-text-primary);
+    }
+
+    .summary-desc {
+        margin: 0;
+        font-size: 0.82rem;
+        color: var(--color-text-secondary);
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .already-assigned-banner {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        background: var(--color-warning-muted);
+        border: 1px solid var(--color-warning);
+        border-radius: 8px;
+        color: var(--color-warning);
+        font-size: 0.85rem;
+    }
+
+    .section-heading {
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--color-text-muted);
+    }
+
+    .teams-quick-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 240px;
+        overflow-y: auto;
+        padding-right: 4px;
+    }
+
+    .team-option-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px;
+        background: var(--color-surface-2);
+        border: 1px solid var(--color-border);
+        border-radius: 9px;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+
+    .team-option-row:hover {
+        background: var(--color-surface-3);
+        border-color: var(--color-accent);
+    }
+
+    .team-option-row.selected {
+        background: var(--color-accent-muted);
+        border-color: var(--color-accent);
+    }
+
+    .team-option-row.busy-team {
+        opacity: 0.65;
+    }
+
+    .team-option-main {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .team-option-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: var(--color-surface-3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+    }
+
+    .team-option-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .team-name-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .team-title {
+        font-size: 0.88rem;
+        color: var(--color-text-primary);
+    }
+
+    .badge-team-status {
+        font-size: 0.68rem;
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: 4px;
+        text-transform: uppercase;
+    }
+
+    .status-idle {
+        background: var(--color-success-muted);
+        color: var(--color-success);
+        border: 1px solid var(--color-success);
+    }
+
+    .status-forwarded, .status-onscene {
+        background: var(--color-warning-muted);
+        color: var(--color-warning);
+        border: 1px solid var(--color-warning);
+    }
+
+    .status-busy {
+        background: var(--color-danger-muted);
+        color: var(--color-danger);
+        border: 1px solid var(--color-danger);
+    }
+
+    .team-meta-row {
+        font-size: 0.75rem;
+        color: var(--color-text-muted);
+        display: flex;
+        gap: 6px;
+    }
+
+    .team-option-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .distance-badge {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--color-accent);
+        background: var(--color-accent-muted);
+        padding: 3px 7px;
+        border-radius: 6px;
+    }
+
+    .team-radio {
+        accent-color: var(--color-accent);
+        cursor: pointer;
+    }
+
+    .dispatch-notes-section {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .notes-label {
+        font-size: 0.78rem;
+        color: var(--color-text-muted);
+    }
+
+    .dispatch-input {
+        background: var(--color-surface-2);
+        border: 1px solid var(--color-border);
+        color: var(--color-text-primary);
+        padding: 8px 12px;
+        border-radius: 7px;
+        font-size: 0.85rem;
+    }
+
+    .dispatch-input:focus {
+        border-color: var(--color-accent);
+        outline: none;
+    }
+
+    .quick-dispatch-footer {
+        padding: 14px 20px;
+        border-top: 1px solid var(--color-border);
+        background: var(--color-surface-2);
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .btn-dispatch-submit {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--color-accent);
+        color: #fff;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 7px;
+        font-weight: 500;
+        font-size: 0.88rem;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+
+    .btn-dispatch-submit:hover:not(:disabled) {
+        background: var(--color-accent-hover);
+    }
+
+    .btn-dispatch-submit:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+</style>
+

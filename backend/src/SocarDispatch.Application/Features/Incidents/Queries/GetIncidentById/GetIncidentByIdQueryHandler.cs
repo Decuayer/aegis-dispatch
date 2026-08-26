@@ -61,11 +61,13 @@ public class GetIncidentByIdQueryHandler : IRequestHandler<GetIncidentByIdQuery,
             Latitude = incident.Latitude,
             Longitude = incident.Longitude,
             CreatedAt = incident.CreatedAt,
-            AssignedAt = latestAssignment?.AssignedAt,
-            CompletedAt = latestAssignment?.CompletedAt,
-            AssignedTeamId = latestAssignment?.TeamId,
-            AssignedTeamName = latestAssignment?.Team.TeamName,
-            CompletionNotes = latestAssignment?.CompletionNotes,
+            AssignedAt = incident.Status == SocarDispatch.Domain.Enums.IncidentStatus.Open ? null : latestAssignment?.AssignedAt,
+            CompletedAt = incident.Status == SocarDispatch.Domain.Enums.IncidentStatus.Open ? null : latestAssignment?.CompletedAt,
+            AssignedTeamId = incident.Status == SocarDispatch.Domain.Enums.IncidentStatus.Open ? null : latestAssignment?.TeamId,
+            AssignedTeamName = incident.Status == SocarDispatch.Domain.Enums.IncidentStatus.Open ? null : latestAssignment?.Team?.TeamName,
+            CompletionNotes = (incident.Status == SocarDispatch.Domain.Enums.IncidentStatus.Resolved || incident.Status == SocarDispatch.Domain.Enums.IncidentStatus.Canceled)
+                ? latestAssignment?.CompletionNotes
+                : null,
             Reports = incident.Reports.OrderByDescending(r => r.ReportedAt).Select(r => new IncidentReportDto
             {
                 Id = r.Id,

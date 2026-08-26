@@ -72,4 +72,19 @@ public class UserService : IUserService
             return ApiResponse<UserDto>.FailureResult($"Failed to update profile: {ex.Message}");
         }
     }
+
+    public async Task<ApiResponse<UserDto>?> UpdateUserRoleAsync(Guid userId, UpdateUserRoleRequestDto request, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await _http.PatchAsJsonAsync($"api/v1/users/{userId}/role", request, cancellationToken);
+            var result = await response.Content.ReadFromJsonAsync<ApiResponse<UserDto>>(cancellationToken: cancellationToken);
+            return result ?? ApiResponse<UserDto>.FailureResult("Failed to update user role.");
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<UserDto>.FailureResult($"Failed to update user role: {ex.Message}");
+        }
+    }
 }
+

@@ -118,6 +118,14 @@ public class ChangeIncidentStatusCommandHandler : IRequestHandler<ChangeIncident
                     activeAssignment.CompletionNotes = request.CompletionNotes;
                 }
             }
+            else
+            {
+                var latestAssignment = incident.Assignments.OrderByDescending(a => a.AssignedAt).FirstOrDefault();
+                if (latestAssignment != null && !string.IsNullOrWhiteSpace(request.CompletionNotes))
+                {
+                    latestAssignment.CompletionNotes = request.CompletionNotes;
+                }
+            }
         }
 
         await _context.SaveChangesAsync(cancellationToken);
@@ -133,7 +141,9 @@ public class ChangeIncidentStatusCommandHandler : IRequestHandler<ChangeIncident
             DateTime.UtcNow
         ), cancellationToken);
 
-        // DTO Dönüşü
+        var finalLatestAssignment = incident.Assignments.OrderByDescending(a => a.AssignedAt).FirstOrDefault();
+
+        // DTO Return Mapping according to active status
         var dto = new IncidentDto
         {
             Id = incident.Id,
@@ -158,12 +168,15 @@ public class ChangeIncidentStatusCommandHandler : IRequestHandler<ChangeIncident
             Latitude = incident.Latitude,
             Longitude = incident.Longitude,
             CreatedAt = incident.CreatedAt,
-            AssignedAt = activeAssignment?.AssignedAt,
-            CompletedAt = activeAssignment?.CompletedAt,
-            AssignedTeamId = activeAssignment?.TeamId,
-            AssignedTeamName = activeAssignment?.Team.TeamName,
-            CompletionNotes = activeAssignment?.CompletionNotes
+            AssignedAt = targetStatus == IncidentStatus.Open ? null : finalLatestAssignment?.AssignedAt,
+            CompletedAt = targetStatus == IncidentStatus.Open ? null : finalLatestAssignment?.CompletedAt,
+            AssignedTeamId = targetStatus == IncidentStatus.Open ? null : finalLatestAssignment?.TeamId,
+            AssignedTeamName = targetStatus == IncidentStatus.Open ? null : finalLatestAssignment?.Team?.TeamName,
+            CompletionNotes = (targetStatus == IncidentStatus.Resolved || targetStatus == IncidentStatus.Canceled)
+                ? (request.CompletionNotes ?? finalLatestAssignment?.CompletionNotes)
+                : null
         };
+
 
         return ApiResponse<IncidentDto>.SuccessResult(dto, "Incident status updated successfully.");
     }
