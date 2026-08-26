@@ -158,8 +158,11 @@ public class ChangeIncidentStatusCommandHandler : IRequestHandler<ChangeIncident
             Latitude = incident.Latitude,
             Longitude = incident.Longitude,
             CreatedAt = incident.CreatedAt,
+            AssignedAt = activeAssignment?.AssignedAt,
+            CompletedAt = activeAssignment?.CompletedAt,
             AssignedTeamId = activeAssignment?.TeamId,
-            AssignedTeamName = activeAssignment?.Team.TeamName
+            AssignedTeamName = activeAssignment?.Team.TeamName,
+            CompletionNotes = activeAssignment?.CompletionNotes
         };
 
         return ApiResponse<IncidentDto>.SuccessResult(dto, "Incident status updated successfully.");

@@ -19,6 +19,7 @@ public class IncidentDto
     public decimal Latitude { get; set; }
     public decimal Longitude { get; set; }
     public DateTime CreatedAt { get; set; }
+    public DateTime? AssignedAt { get; set; }
     public DateTime? CompletedAt { get; set; }
     
     // Assigned Team Information

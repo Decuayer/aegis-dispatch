@@ -1,22 +1,52 @@
 @* Components/Map/MapEntityFocusBar.razor *@
+@using System.Globalization
 @using SocarDispatch.Web.Models.Map
 
 <div class="map-focus-bar-container">
     <div class="search-input-wrapper">
-        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="7.5"></circle>
+            <path d="M21 21l-4.65-4.65"></path>
         </svg>
         <input type="text"
                class="search-input"
-               placeholder="Search incident, team, code..."
+               placeholder="Search incident, team, date..."
                value="@_searchQuery"
                @oninput="HandleSearchInput"
                @onfocus="() => _isDropdownOpen = true"
                @onkeydown="HandleKeyDown" />
-        @if (!string.IsNullOrWhiteSpace(_searchQuery))
+
+        @if (_selectedDate.HasValue)
         {
-            <button type="button" class="btn-clear" @onclick="ClearSearch" title="Clear search">
+            <span class="active-date-pill" title="Date filter: @_selectedDate.Value.ToString("dd.MM.yyyy")">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <span>@_selectedDate.Value.ToString("dd.MM")</span>
+                <button type="button" class="btn-clear-pill" @onclick="ClearDateFilter">✕</button>
+            </span>
+        }
+
+        <!-- Date filter calendar button -->
+        <div class="date-picker-btn-wrapper @(_selectedDate.HasValue ? "active" : "")" title="Filter by specific date">
+            <svg class="calendar-btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <input type="date"
+                   class="hidden-native-date-input"
+                   value="@_selectedDateString"
+                   @onchange="HandleDateChanged" />
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(_searchQuery) || _selectedDate.HasValue)
+        {
+            <button type="button" class="btn-clear" @onclick="ClearSearch" title="Clear search & filters">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -25,9 +55,25 @@
         }
     </div>
 
-    @if (_isDropdownOpen && !string.IsNullOrWhiteSpace(_searchQuery))
+    @if (_isDropdownOpen && (!string.IsNullOrWhiteSpace(_searchQuery) || _selectedDate.HasValue))
     {
         <div class="focus-dropdown">
+            @if (_selectedDate.HasValue)
+            {
+                <div class="dropdown-filter-banner">
+                    <div class="banner-text">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        <span>Date: <strong>@_selectedDate.Value.ToString("dd.MM.yyyy")</strong></span>
+                    </div>
+                    <button type="button" class="btn-remove-date" @onclick="ClearDateFilter" title="Clear date filter">✕</button>
+                </div>
+            }
+
             @if (FilteredResults.Any())
             {
                 @foreach (var item in FilteredResults)
@@ -66,59 +112,111 @@
     [Parameter] public EventCallback<Guid> OnTeamFocused { get; set; }
 
     private string _searchQuery = "";
+    private DateTime? _selectedDate;
     private bool _isDropdownOpen = false;
+
+    private string _selectedDateString => _selectedDate?.ToString("yyyy-MM-dd") ?? "";
 
     private IEnumerable<SearchResultItem> FilteredResults
     {
         get
         {
-            if (string.IsNullOrWhiteSpace(_searchQuery))
+            if (string.IsNullOrWhiteSpace(_searchQuery) && !_selectedDate.HasValue)
                 return Enumerable.Empty<SearchResultItem>();
 
             var query = _searchQuery.Trim().ToLowerInvariant();
             var results = new List<SearchResultItem>();
 
-            // Incidents matching
+            var trCulture = new CultureInfo("tr-TR");
+            var invCulture = CultureInfo.InvariantCulture;
+            var today = DateTime.UtcNow.Date;
+
+            // Search across Incidents (Active, Resolved, Canceled)
             foreach (var inc in Incidents)
             {
-                if (inc.Status is "Resolved" or "Canceled") continue;
-
-                if (inc.Category.ToLowerInvariant().Contains(query) ||
-                    inc.EmergencyCode.ToLowerInvariant().Contains(query) ||
-                    inc.ReporterFullName.ToLowerInvariant().Contains(query) ||
-                    (inc.AssignedTeamName?.ToLowerInvariant().Contains(query) ?? false))
+                if (_selectedDate.HasValue && inc.CreatedAt.Date != _selectedDate.Value.Date)
                 {
+                    continue;
+                }
+
+                bool match = false;
+                if (string.IsNullOrWhiteSpace(query))
+                {
+                    match = true;
+                }
+                else
+                {
+                    var createdTr = inc.CreatedAt.ToString("dd.MM.yyyy", trCulture);
+                    var createdIso = inc.CreatedAt.ToString("yyyy-MM-dd", invCulture);
+                    var createdShort = inc.CreatedAt.ToString("dd.MM", invCulture);
+                    var createdTime = inc.CreatedAt.ToString("HH:mm", invCulture);
+                    var createdMonthTr = inc.CreatedAt.ToString("MMMM", trCulture).ToLowerInvariant();
+                    var createdMonthEn = inc.CreatedAt.ToString("MMMM", invCulture).ToLowerInvariant();
+
+                    bool dateQueryMatch = createdTr.Contains(query) ||
+                                          createdIso.Contains(query) ||
+                                          createdShort.Contains(query) ||
+                                          createdTime.Contains(query) ||
+                                          createdMonthTr.Contains(query) ||
+                                          createdMonthEn.Contains(query) ||
+                                          (query is "bugün" or "today" && inc.CreatedAt.Date == today) ||
+                                          (query is "dün" or "yesterday" && inc.CreatedAt.Date == today.AddDays(-1));
+
+                    if (inc.Category.ToLowerInvariant().Contains(query) ||
+                        inc.EmergencyCode.ToLowerInvariant().Contains(query) ||
+                        inc.ReporterFullName.ToLowerInvariant().Contains(query) ||
+                        inc.Status.ToLowerInvariant().Contains(query) ||
+                        (inc.AssignedTeamName?.ToLowerInvariant().Contains(query) ?? false) ||
+                        dateQueryMatch)
+                    {
+                        match = true;
+                    }
+                }
+
+                if (match)
+                {
+                    var statusClass = inc.Status.ToLowerInvariant();
+                    var badgeClass = inc.Status is "Resolved" or "Canceled" 
+                        ? statusClass 
+                        : inc.EmergencyCode.ToLowerInvariant();
+
+                    var dateFormatted = inc.CreatedAt.ToString("dd.MM.yyyy HH:mm");
+                    var teamPart = string.IsNullOrWhiteSpace(inc.AssignedTeamName) ? "" : $" • {inc.AssignedTeamName}";
+
                     results.Add(new SearchResultItem
                     {
                         Id = inc.Id,
                         Type = "Incident",
-                        BadgeText = inc.EmergencyCode,
-                        SeverityClass = inc.EmergencyCode.ToLowerInvariant(),
+                        BadgeText = inc.Status is "Resolved" or "Canceled" ? inc.Status : inc.EmergencyCode,
+                        SeverityClass = badgeClass,
                         Title = inc.Category,
-                        Subtitle = $"{inc.ReporterFullName} • {inc.Status}" + (string.IsNullOrWhiteSpace(inc.AssignedTeamName) ? "" : $" • {inc.AssignedTeamName}")
+                        Subtitle = $"{inc.ReporterFullName} • {inc.Status} • {dateFormatted}{teamPart}"
                     });
                 }
             }
 
-            // Teams matching
-            foreach (var team in Teams)
+            // Search across Teams (if no date filter selected)
+            if (!_selectedDate.HasValue && !string.IsNullOrWhiteSpace(query))
             {
-                if (team.TeamName.ToLowerInvariant().Contains(query) ||
-                    team.Status.ToLowerInvariant().Contains(query))
+                foreach (var team in Teams)
                 {
-                    results.Add(new SearchResultItem
+                    if (team.TeamName.ToLowerInvariant().Contains(query) ||
+                        team.Status.ToLowerInvariant().Contains(query))
                     {
-                        Id = team.Id,
-                        Type = "Team",
-                        BadgeText = team.Status,
-                        SeverityClass = team.Status.ToLowerInvariant(),
-                        Title = team.TeamName,
-                        Subtitle = $"Response Team • Status: {team.Status}"
-                    });
+                        results.Add(new SearchResultItem
+                        {
+                            Id = team.Id,
+                            Type = "Team",
+                            BadgeText = team.Status,
+                            SeverityClass = team.Status.ToLowerInvariant(),
+                            Title = team.TeamName,
+                            Subtitle = $"Response Team • Status: {team.Status}"
+                        });
+                    }
                 }
             }
 
-            return results.Take(8);
+            return results.Take(12);
         }
     }
 
@@ -126,6 +224,24 @@
     {
         _searchQuery = e.Value?.ToString() ?? "";
         _isDropdownOpen = true;
+    }
+
+    private void HandleDateChanged(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var dt))
+        {
+            _selectedDate = dt.Date;
+        }
+        else
+        {
+            _selectedDate = null;
+        }
+        _isDropdownOpen = true;
+    }
+
+    private void ClearDateFilter()
+    {
+        _selectedDate = null;
     }
 
     private async Task SelectEntity(SearchResultItem item)
@@ -144,6 +260,7 @@
     private void ClearSearch()
     {
         _searchQuery = "";
+        _selectedDate = null;
         _isDropdownOpen = false;
     }
 
@@ -174,7 +291,7 @@
 <style>
     .map-focus-bar-container {
         position: relative;
-        width: 320px;
+        width: 360px;
         z-index: 1010;
     }
 
@@ -184,10 +301,13 @@
         background: var(--color-surface, #1c1f26);
         border: 1px solid var(--color-border, #2e3138);
         border-radius: 8px;
-        padding: 6px 12px;
+        padding: 4px 6px 4px 10px;
+        height: 38px;
+        box-sizing: border-box;
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
         backdrop-filter: blur(8px);
         transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        gap: 6px;
     }
 
     .search-input-wrapper:focus-within {
@@ -196,8 +316,8 @@
     }
 
     .search-icon {
+        display: block;
         color: var(--color-text-muted, #8b909a);
-        margin-right: 8px;
         flex-shrink: 0;
     }
 
@@ -209,10 +329,104 @@
         color: var(--color-text-primary, #f0f2f5);
         font-size: 13px;
         font-family: inherit;
+        min-width: 0;
+        padding: 0;
+        line-height: normal;
     }
 
     .search-input::placeholder {
         color: var(--color-text-subtle, #5c606a);
+    }
+
+    .active-date-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: rgba(59, 130, 246, 0.18);
+        border: 1px solid rgba(59, 130, 246, 0.4);
+        color: #93c5fd;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: 4px;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .btn-clear-pill {
+        background: transparent;
+        border: none;
+        color: #93c5fd;
+        cursor: pointer;
+        font-size: 10px;
+        padding: 0 2px;
+        line-height: 1;
+        border-radius: 2px;
+    }
+
+    .btn-clear-pill:hover {
+        background: rgba(59, 130, 246, 0.4);
+        color: #ffffff;
+    }
+
+    .date-picker-btn-wrapper {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid var(--color-border, #2e3138);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+        box-sizing: border-box;
+        padding: 0;
+    }
+
+    .date-picker-btn-wrapper:hover {
+        background: rgba(255, 255, 255, 0.09);
+        border-color: var(--color-accent, #3b82f6);
+    }
+
+    .date-picker-btn-wrapper.active {
+        background: rgba(59, 130, 246, 0.2);
+        border-color: var(--color-accent, #3b82f6);
+    }
+
+    .calendar-btn-icon {
+        display: block;
+        width: 14px;
+        height: 14px;
+        color: var(--color-text-muted, #8b909a);
+        pointer-events: none;
+        transition: color 0.15s ease;
+        flex-shrink: 0;
+        margin: auto;
+    }
+
+    .hidden-native-date-input {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+        border: none;
+        background: transparent;
+    }
+
+    .hidden-native-date-input::-webkit-calendar-picker-indicator {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        cursor: pointer;
+        opacity: 0;
     }
 
     .btn-clear {
@@ -225,6 +439,7 @@
         align-items: center;
         justify-content: center;
         border-radius: 4px;
+        flex-shrink: 0;
         transition: color 0.15s ease;
     }
 
@@ -241,9 +456,42 @@
         border: 1px solid var(--color-border, #2e3138);
         border-radius: 8px;
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-        max-height: 360px;
+        max-height: 380px;
         overflow-y: auto;
         z-index: 1020;
+    }
+
+    .dropdown-filter-banner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 6px 12px;
+        background: rgba(59, 130, 246, 0.12);
+        border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+        font-size: 11px;
+        color: #93c5fd;
+    }
+
+    .banner-text {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .btn-remove-date {
+        background: transparent;
+        border: none;
+        color: #93c5fd;
+        cursor: pointer;
+        font-size: 11px;
+        padding: 2px 4px;
+        line-height: 1;
+        border-radius: 4px;
+    }
+
+    .btn-remove-date:hover {
+        background: rgba(59, 130, 246, 0.25);
+        color: #ffffff;
     }
 
     .focus-item {
@@ -283,9 +531,14 @@
 
     /* Badge Color Variations */
     .badge-incident { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); }
+    .badge-incident.badge-resolved { background: rgba(34, 197, 94, 0.2); color: #22c55e; border-color: rgba(34, 197, 94, 0.4); }
+    .badge-incident.badge-canceled { background: rgba(107, 114, 128, 0.2); color: #9ca3af; border-color: rgba(107, 114, 128, 0.4); }
+    .badge-incident.badge-assigned { background: rgba(245, 158, 11, 0.2); color: #f59e0b; border-color: rgba(245, 158, 11, 0.4); }
+    
     .badge-team { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
     .badge-team.badge-idle { background: rgba(34, 197, 94, 0.2); color: #22c55e; border-color: rgba(34, 197, 94, 0.4); }
     .badge-team.badge-busy { background: rgba(239, 68, 68, 0.2); color: #ef4444; border-color: rgba(239, 68, 68, 0.4); }
+    .badge-team.badge-forwarded { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border-color: rgba(59, 130, 246, 0.4); }
 
     .entity-info {
         display: flex;
@@ -336,3 +589,4 @@
         z-index: 1005;
     }
 </style>
+

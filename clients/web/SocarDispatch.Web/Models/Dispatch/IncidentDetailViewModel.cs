@@ -11,6 +11,7 @@ public class IncidentDetailViewModel
     public decimal Latitude { get; set; }
     public decimal Longitude { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? AssignedAt { get; set; }
     public DateTime? CompletedAt { get; set; }
 
     // Information of the Reporting Person

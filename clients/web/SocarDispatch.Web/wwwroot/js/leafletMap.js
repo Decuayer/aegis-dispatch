@@ -331,9 +331,16 @@ window.leafletMap = (function () {
 
     function panToIncident(incidentId) {
         if (incidentMarkers[incidentId]) {
-            const latlng = incidentMarkers[incidentId].getLatLng();
-            map.flyTo(latlng, 16, { animate: true, duration: 1.5 });
-            incidentMarkers[incidentId].openPopup();
+            const marker = incidentMarkers[incidentId];
+            if (resolvedClusterGroup && resolvedClusterGroup.hasLayer(marker) && !map.hasLayer(resolvedClusterGroup)) {
+                map.addLayer(resolvedClusterGroup);
+            }
+            if (incidentClusterGroup && incidentClusterGroup.hasLayer(marker) && !map.hasLayer(incidentClusterGroup)) {
+                map.addLayer(incidentClusterGroup);
+            }
+            const latlng = marker.getLatLng();
+            map.flyTo(latlng, 16, { animate: true, duration: 1.2 });
+            marker.openPopup();
         }
     }
 

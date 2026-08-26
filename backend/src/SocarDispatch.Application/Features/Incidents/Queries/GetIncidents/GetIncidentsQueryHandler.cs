@@ -73,6 +73,7 @@ public class GetIncidentsQueryHandler : IRequestHandler<GetIncidentsQuery, ApiRe
                 Latitude = i.Latitude,
                 Longitude = i.Longitude,
                 CreatedAt = i.CreatedAt,
+                AssignedAt = i.Assignments.OrderBy(a => a.AssignedAt).Select(a => (DateTime?)a.AssignedAt).FirstOrDefault(),
                 CompletedAt = i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => a.CompletedAt).FirstOrDefault(),
                 AssignedTeamId = i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => (Guid?)a.TeamId).FirstOrDefault(),
                 AssignedTeamName = i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => a.Team.TeamName).FirstOrDefault(),
