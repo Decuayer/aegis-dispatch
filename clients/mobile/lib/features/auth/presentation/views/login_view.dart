@@ -74,23 +74,24 @@ class _LoginViewState extends State<LoginView> {
                       // Header & Branding
                       Center(
                         child: Container(
-                          width: 80,
-                          height: 80,
+                          width: 92,
+                          height: 92,
+                          padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: AppColors.primary,
-                            borderRadius: BorderRadius.circular(20),
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(22),
+                            border: Border.all(color: AppColors.border),
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.primary.withValues(alpha: 0.25),
-                                blurRadius: 16,
+                                color: Colors.black.withValues(alpha: 0.06),
+                                blurRadius: 20,
                                 offset: const Offset(0, 8),
                               ),
                             ],
                           ),
-                          child: const Icon(
-                            Icons.local_fire_department_rounded,
-                            size: 44,
-                            color: Colors.white,
+                          child: Image.asset(
+                            'assets/images/socar_logo.png',
+                            fit: BoxFit.contain,
                           ),
                         ),
                       ),

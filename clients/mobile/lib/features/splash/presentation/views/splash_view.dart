@@ -13,23 +13,23 @@ class SplashView extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 90,
-              height: 90,
+              width: 96,
+              height: 96,
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
-                    blurRadius: 20,
+                    color: Colors.black.withValues(alpha: 0.25),
+                    blurRadius: 24,
                     offset: const Offset(0, 10),
                   ),
                 ],
               ),
-              child: const Icon(
-                Icons.local_fire_department_rounded,
-                size: 54,
-                color: AppColors.primary,
+              child: Image.asset(
+                'assets/images/socar_logo.png',
+                fit: BoxFit.contain,
               ),
             ),
             const SizedBox(height: 28),

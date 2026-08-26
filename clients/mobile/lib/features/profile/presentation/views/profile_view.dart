@@ -67,7 +67,7 @@ class _ProfileViewState extends State<ProfileView> {
     }
   }
 
-  void _showLogoutConfirmation(BuildContext context) {
+    void _showLogoutConfirmation(BuildContext context) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -85,6 +85,7 @@ class _ProfileViewState extends State<ProfileView> {
             ),
             onPressed: () {
               Navigator.pop(ctx);
+              Navigator.of(context).popUntil((route) => route.isFirst); 
               context.read<AuthBloc>().add(const AuthLogoutRequested());
             },
             child: const Text('Sign Out'),
@@ -93,6 +94,7 @@ class _ProfileViewState extends State<ProfileView> {
       ),
     );
   }
+
 
   String _getInitials(UserModel user) {
     final first = user.firstName.isNotEmpty ? user.firstName[0] : '';

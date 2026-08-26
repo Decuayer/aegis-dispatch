@@ -15,6 +15,8 @@ import 'features/profile/data/repositories/profile_repository.dart';
 import 'features/profile/presentation/cubit/profile_cubit.dart';
 import 'features/splash/presentation/views/splash_view.dart';
 
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
+
 class SocarDispatchApp extends StatelessWidget {
   final AuthRepository authRepository;
   final ProfileRepository profileRepository;
@@ -50,6 +52,7 @@ class SocarDispatchApp extends StatelessWidget {
           ),
         ],
         child: MaterialApp(
+          navigatorKey: rootNavigatorKey,
           title: 'SOCAR Dispatch',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,
@@ -65,9 +68,13 @@ class AuthGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AuthBloc, AuthState>(
+    return BlocConsumer<AuthBloc, AuthState>(
+      listenWhen: (previous, current) => current is Unauthenticated,
+      listener: (context, state) {
+        // Pop all stacked screens when session ends
+        rootNavigatorKey.currentState?.popUntil((route) => route.isFirst);
+      },
       buildWhen: (previous, current) {
-        // Only rebuild whole page on major auth transitions
         return current is Authenticated || current is Unauthenticated || current is AuthInitial;
       },
       builder: (context, state) {
