@@ -201,12 +201,16 @@
                 }
             </div>
 
-            <!-- Modal Footer -->
-            <div class="modal-footer">
-                <button type="button" class="btn btn-ghost" @onclick="HandleClose">
-                    Close
-                </button>
-            </div>
+            <!-- Modal Footer (Only shown in View Mode to avoid duplicate buttons) -->
+            @if (!_isEditMode)
+            {
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-ghost" @onclick="HandleClose">
+                        Close
+                    </button>
+                </div>
+            }
         </div>
     </div>
 }
+

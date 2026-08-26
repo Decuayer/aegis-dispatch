@@ -35,12 +35,19 @@
                 OnIncidentDetailRequested="HandleIncidentDetail"
                 OnAssignTeamRequested="HandleAssignTeam" />
 
-    <!-- Operational Incident & Dispatch Sidebar Drawer -->
+    <!-- Operational Incident & Dispatch Sidebar Drawer (View Details) -->
     <IncidentSidebar @bind-IsOpen="_isSidebarOpen"
                      IncidentId="_selectedIncidentId"
                      OnIncidentAssigned="HandleIncidentAssigned"
                      OnIncidentUpdated="HandleIncidentUpdated" />
+
+    <!-- Dedicated Fast Quick-Dispatch Modal (Assign Team) -->
+    <QuickDispatchModal IsVisible="_isQuickDispatchOpen"
+                        IncidentId="_quickDispatchIncidentId"
+                        OnClose="HandleCloseQuickDispatch"
+                        OnDispatched="HandleIncidentAssigned" />
 </div>
+
 
 <style>
     .live-map-page-container {

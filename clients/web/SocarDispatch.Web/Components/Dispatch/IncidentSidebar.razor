@@ -27,38 +27,60 @@
     {
         <!-- Header -->
         <div class="sidebar-header">
-            <div class="header-top">
-                <div class="badges-row">
-                    <span class="badge-code @GetEmergencyCodeBadgeClass(_incident.EmergencyCode)">@_incident.EmergencyCode</span>
-                    <span class="badge-status @GetStatusBadgeClass(_incident.Status)">@_incident.Status</span>
-                </div>
-                <div class="header-actions">
-                    @if (!_isEditMode && _incident.Status != "Canceled" && _incident.Status != "Resolved")
-                    {
-                        <button type="button" class="btn-header-edit" @onclick="() => _isEditMode = true" title="Edit Incident Details">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                            </svg>
-                            <span>Edit</span>
-                        </button>
-                    }
-                    <button type="button" class="btn-close" @onclick="CloseSidebar" title="Close Panel (ESC)">
+            @if (_isEditMode)
+            {
+                <div class="header-top">
+                    <div class="edit-header-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                        <span>Edit Incident Details</span>
+                    </div>
+                    <button type="button" class="btn-close" @onclick="() => _isEditMode = false" title="Cancel Edit">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="18" y1="6" x2="6" y2="18"/>
                             <line x1="6" y1="6" x2="18" y2="18"/>
                         </svg>
                     </button>
                 </div>
-            </div>
-            <h2 class="incident-title">@_incident.Category</h2>
-            <div class="incident-timestamp">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"/>
-                    <polyline points="12 6 12 12 16 14"/>
-                </svg>
-                <span>@_incident.CreatedAt.ToString("MMM dd, yyyy HH:mm") (@_incident.TimeAgoFormatted)</span>
-            </div>
+                <div class="edit-header-sub">Editing category, emergency code, description, and GPS coordinates</div>
+            }
+            else
+            {
+                <div class="header-top">
+                    <div class="badges-row">
+                        <span class="badge-code @GetEmergencyCodeBadgeClass(_incident.EmergencyCode)">@_incident.EmergencyCode</span>
+                        <span class="badge-status @GetStatusBadgeClass(_incident.Status)">@_incident.Status</span>
+                    </div>
+                    <div class="header-actions">
+                        @if (_incident.Status != "Canceled" && _incident.Status != "Resolved")
+                        {
+                            <button type="button" class="btn-header-edit" @onclick="() => _isEditMode = true" title="Edit Incident Details">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                </svg>
+                                <span>Edit</span>
+                            </button>
+                        }
+                        <button type="button" class="btn-close" @onclick="CloseSidebar" title="Close Panel (ESC)">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <h2 class="incident-title">@_incident.Category</h2>
+                <div class="incident-timestamp">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    <span>@_incident.CreatedAt.ToString("MMM dd, yyyy HH:mm") (@_incident.TimeAgoFormatted)</span>
+                </div>
+            }
         </div>
 
         <!-- Scrollable Content Body -->
@@ -162,7 +184,7 @@
                         }
                     </div>
 
-                    @if (!string.IsNullOrWhiteSpace(_incident.CompletionNotes))
+                    @if (!string.IsNullOrWhiteSpace(_incident.CompletionNotes) && (_incident.IsResolved || _incident.IsCanceled))
                     {
                         <div class="completion-notes-box">
                             <div class="notes-header">
@@ -177,23 +199,50 @@
                             <p class="notes-content">@_incident.CompletionNotes</p>
                         </div>
                     }
+                </section>
+
+                <!-- Field Unit Activity Reports / Feedback -->
+                <section class="section-card reports-section-card">
+                    <div class="section-title-row">
+                        <div class="section-title">Field Reports & Feedback</div>
+                        <span class="badge-count-pill">@_incident.Reports.Count</span>
+                    </div>
 
                     @if (_incident.Reports != null && _incident.Reports.Any())
                     {
                         <div class="field-reports-timeline">
-                            <div class="notes-header">
-                                <span>Field Unit Activity Logs (@_incident.Reports.Count):</span>
-                            </div>
                             @foreach (var report in _incident.Reports)
                             {
-                                <div class="report-item">
-                                    <div class="report-meta">
-                                        <strong>@report.TeamName</strong>
-                                        <span>@report.ReportedAt.ToString("HH:mm")</span>
+                                <div class="report-timeline-card">
+                                    <div class="report-timeline-header">
+                                        <div class="report-unit-badge">
+                                            <span>🚒</span>
+                                            <strong>@report.TeamName</strong>
+                                        </div>
+                                        <span class="report-time">@report.ReportedAt.ToString("MMM dd, HH:mm")</span>
                                     </div>
-                                    <p class="report-text">@report.Content</p>
+                                    @if (!string.IsNullOrWhiteSpace(report.ReportedByFullName))
+                                    {
+                                        <div class="report-author">Reported by: @report.ReportedByFullName</div>
+                                    }
+                                    <p class="report-text-content">@report.Content</p>
+                                    @if (!string.IsNullOrWhiteSpace(report.MediaUrl))
+                                    {
+                                        <div class="report-media-wrap">
+                                            <a href="@report.MediaUrl" target="_blank" class="report-media-link">
+                                                <img src="@report.MediaUrl" alt="Report Attachment" class="report-media-thumb" />
+                                            </a>
+                                        </div>
+                                    }
                                 </div>
                             }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-reports-box">
+                            <span class="empty-reports-icon">📋</span>
+                            <p>No field unit reports or feedback logged yet.</p>
                         </div>
                     }
                 </section>
@@ -208,6 +257,7 @@
                 <section class="section-card">
                     <div class="section-title">Response Unit Dispatch</div>
                     @if (_incident.IsAssigned)
+
                     {
                         <div class="assigned-team-banner">
                             <div class="assigned-icon">🚒</div>
@@ -355,11 +405,119 @@
         margin-bottom: 0.5rem;
     }
 
+    .edit-header-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #38bdf8;
+        font-size: 1.05rem;
+        font-weight: 700;
+    }
+
+    .edit-header-sub {
+        font-size: 0.8rem;
+        color: var(--color-text-muted);
+    }
+
+    .section-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.75rem;
+    }
+
+    .badge-count-pill {
+        background: #1e293b;
+        border: 1px solid #334155;
+        color: #38bdf8;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 999px;
+    }
+
+    .field-reports-timeline {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .report-timeline-card {
+        background: #182234;
+        border: 1px solid #233149;
+        border-radius: 8px;
+        padding: 10px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .report-timeline-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .report-unit-badge {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #f8fafc;
+        font-size: 0.82rem;
+    }
+
+    .report-time {
+        font-size: 0.72rem;
+        color: #94a3b8;
+    }
+
+    .report-author {
+        font-size: 0.75rem;
+        color: #94a3b8;
+    }
+
+    .report-text-content {
+        margin: 0;
+        font-size: 0.85rem;
+        color: #cbd5e1;
+        line-height: 1.4;
+    }
+
+    .report-media-wrap {
+        margin-top: 4px;
+    }
+
+    .report-media-thumb {
+        max-width: 100%;
+        max-height: 120px;
+        border-radius: 6px;
+        object-fit: cover;
+        border: 1px solid #334155;
+    }
+
+    .empty-reports-box {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px 12px;
+        color: #64748b;
+        font-size: 0.82rem;
+        gap: 6px;
+        text-align: center;
+    }
+
+    .empty-reports-icon {
+        font-size: 24px;
+        opacity: 0.6;
+    }
+
     .badges-row {
         display: flex;
         gap: 0.5rem;
         align-items: center;
     }
+
 
     .header-actions {
         display: flex;

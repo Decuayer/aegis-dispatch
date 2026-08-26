@@ -22,7 +22,6 @@ public partial class TeamEditForm : ComponentBase
     private string _searchCandidateTerm = string.Empty;
 
     private bool _isSubmitting;
-    private bool _isLoadingUsers;
     private bool _isUpdatingStatus;
     private bool _isRosterProcessing;
     private Guid? _confirmDeleteUserId;
@@ -42,7 +41,9 @@ public partial class TeamEditForm : ComponentBase
         if (Team != null)
         {
             _teamName = Team.TeamName;
-            _selectedLeaderId = Team.LeaderId?.ToString() ?? string.Empty;
+            _selectedLeaderId = Team.LeaderId.HasValue && Team.Members.Any(m => m.UserId == Team.LeaderId.Value)
+                ? Team.LeaderId.Value.ToString()
+                : string.Empty;
             _selectedStatus = Team.Status;
 
             if (_availableUsers.Count == 0)
@@ -50,11 +51,11 @@ public partial class TeamEditForm : ComponentBase
                 await LoadAvailableUsers();
             }
         }
+
     }
 
     private async Task LoadAvailableUsers()
     {
-        _isLoadingUsers = true;
         try
         {
             var response = await UserService.GetUsersAsync(role: RoleType.Team);
@@ -67,11 +68,8 @@ public partial class TeamEditForm : ComponentBase
         {
             ToastService.ShowError($"Failed to load personnel: {ex.Message}");
         }
-        finally
-        {
-            _isLoadingUsers = false;
-        }
     }
+
 
     private async Task HandleSaveTeam()
     {
@@ -207,6 +205,10 @@ public partial class TeamEditForm : ComponentBase
                 Team.Members = response.Data.Members;
                 Team.UpdatedAt = response.Data.UpdatedAt;
                 _confirmDeleteUserId = null;
+                if (_selectedLeaderId == userId.ToString())
+                {
+                    _selectedLeaderId = string.Empty;
+                }
                 ToastService.ShowSuccess("Member removed from team roster.");
             }
             else

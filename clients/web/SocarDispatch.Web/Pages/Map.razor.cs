@@ -24,6 +24,8 @@ public partial class Map : ComponentBase, IDisposable
 
     private Guid? _selectedIncidentId;
     private bool _isSidebarOpen = false;
+    private Guid? _quickDispatchIncidentId;
+    private bool _isQuickDispatchOpen = false;
     private string _selectedTileProvider = "OpenStreetMap";
 
     private int _activeIncidentsCount => _incidents.Count(i => i.Status is not ("Resolved" or "Canceled"));
@@ -190,8 +192,14 @@ public partial class Map : ComponentBase, IDisposable
 
     private void HandleAssignTeam(Guid incidentId)
     {
-        _selectedIncidentId = incidentId;
-        _isSidebarOpen = true;
+        _quickDispatchIncidentId = incidentId;
+        _isQuickDispatchOpen = true;
+    }
+
+    private void HandleCloseQuickDispatch()
+    {
+        _isQuickDispatchOpen = false;
+        _quickDispatchIncidentId = null;
     }
 
     private async Task HandleIncidentFocused(Guid incidentId)

@@ -2945,13 +2945,13 @@ code {
 .team-edit-form-container {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 18px;
 }
 
 .form-section {
-    background-color: var(--color-surface-2);
-    border: 1px solid var(--color-border);
-    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 10px;
     padding: 16px;
     display: flex;
     flex-direction: column;
@@ -2959,13 +2959,14 @@ code {
 }
 
 .form-section-title {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.6px;
-    color: var(--color-text-muted);
+    letter-spacing: 0.8px;
+    color: var(--color-accent);
     margin: 0;
 }
+
 
 .status-buttons-grid {
     display: grid;
