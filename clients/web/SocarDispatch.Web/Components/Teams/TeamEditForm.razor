@@ -1,0 +1,226 @@
+@* Components/Teams/TeamEditForm.razor *@
+@using SocarDispatch.Web.Models.Auth
+@using SocarDispatch.Web.Models.Dispatch
+@using SocarDispatch.Web.Services
+@inject ITeamService TeamService
+@inject IUserService UserService
+@inject IToastService ToastService
+
+<div class="team-edit-form-container">
+    <!-- Section 1: General Metadata (Name & Leader) -->
+    <div class="form-section">
+        <h4 class="form-section-title">Team Information</h4>
+        
+        <div class="form-group">
+            <label class="form-label" for="edit-team-name">
+                Team Name <span class="required-star">*</span>
+            </label>
+            <input id="edit-team-name"
+                   type="text" 
+                   class="form-control @(string.IsNullOrWhiteSpace(_teamName) ? "is-invalid" : "")" 
+                   placeholder="e.g. Alpha Rescue Unit"
+                   @bind="_teamName" 
+                   maxlength="100" />
+            @if (string.IsNullOrWhiteSpace(_teamName))
+            {
+                <span class="form-error">Team name is required.</span>
+            }
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="edit-team-leader">
+                Designated Team Leader
+            </label>
+            @if (_isLoadingUsers)
+            {
+                <div class="loading-state-mini">
+                    <span class="spinner-sm"></span> Loading available leaders...
+                </div>
+            }
+            else
+            {
+                <select id="edit-team-leader" class="form-select" @bind="_selectedLeaderId">
+                    <option value="">-- No Leader Assigned --</option>
+                    @foreach (var user in _availableUsers)
+                    {
+                        <option value="@user.Id">
+                            @user.FirstName @user.LastName (@(string.IsNullOrEmpty(user.Department) ? "Responder" : user.Department))
+                        </option>
+                    }
+                </select>
+            }
+        </div>
+    </div>
+
+    <!-- Section 2: Team Operational Status Transition -->
+    <div class="form-section">
+        <h4 class="form-section-title">Team Operational Status</h4>
+        <div class="status-buttons-grid">
+            <button type="button" 
+                    class="status-btn status-btn-idle @(_selectedStatus == "Idle" ? "active" : "")"
+                    @onclick='() => ChangeTeamStatus("Idle")'
+                    disabled="@_isUpdatingStatus">
+                <span class="status-dot dot-idle"></span>
+                <span>Idle (Available)</span>
+            </button>
+            <button type="button" 
+                    class="status-btn status-btn-forwarded @(_selectedStatus == "Forwarded" ? "active" : "")"
+                    @onclick='() => ChangeTeamStatus("Forwarded")'
+                    disabled="@_isUpdatingStatus">
+                <span class="status-dot dot-forwarded"></span>
+                <span>Forwarded</span>
+            </button>
+            <button type="button" 
+                    class="status-btn status-btn-onscene @(_selectedStatus == "OnScene" ? "active" : "")"
+                    @onclick='() => ChangeTeamStatus("OnScene")'
+                    disabled="@_isUpdatingStatus">
+                <span class="status-dot dot-onscene"></span>
+                <span>On Scene</span>
+            </button>
+            <button type="button" 
+                    class="status-btn status-btn-busy @(_selectedStatus == "Busy" ? "active" : "")"
+                    @onclick='() => ChangeTeamStatus("Busy")'
+                    disabled="@_isUpdatingStatus">
+                <span class="status-dot dot-busy"></span>
+                <span>Busy (Unavailable)</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Section 3: Member Roster & Provisioning -->
+    <div class="form-section">
+        <div class="section-header-flex">
+            <h4 class="form-section-title">Personnel Roster (@Team.Members.Count)</h4>
+        </div>
+
+        <!-- Searchable User Autocomplete to Add Members -->
+        <div class="roster-search-box">
+            <label class="form-label">Add Responder to Roster</label>
+            <div class="search-input-wrapper">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input type="text" 
+                       class="form-control search-input" 
+                       placeholder="Search candidate responders by name or department..." 
+                       @bind="_searchCandidateTerm" 
+                       @bind:event="oninput" />
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(_searchCandidateTerm) && CandidateUsers.Count > 0)
+            {
+                <div class="candidate-dropdown-list">
+                    @foreach (var candidate in CandidateUsers)
+                    {
+                        <div class="candidate-row" @key="candidate.Id">
+                            <div class="candidate-meta">
+                                <strong>@candidate.FirstName @candidate.LastName</strong>
+                                <span class="candidate-dept">@(string.IsNullOrEmpty(candidate.Department) ? "Team Member" : candidate.Department)</span>
+                            </div>
+                            <button type="button" 
+                                    class="btn btn-sm btn-outline-primary"
+                                    @onclick="() => AddMember(candidate.Id)"
+                                    disabled="@_isRosterProcessing">
+                                + Add
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- Current Members List with Individual Status & Removal -->
+        <div class="roster-grid">
+            @if (Team.Members.Count == 0)
+            {
+                <div class="empty-roster-note">No personnel assigned to this team yet.</div>
+            }
+            else
+            {
+                @foreach (var member in Team.Members)
+                {
+                    var isLeader = member.UserId == Team.LeaderId;
+                    <div class="roster-card" @key="member.UserId">
+                        <div class="roster-card-header">
+                            <div class="member-profile">
+                                <div class="member-avatar">@GetInitials(member.FullName)</div>
+                                <div class="member-info">
+                                    <div class="member-name-row">
+                                        <span class="member-name">@member.FullName</span>
+                                        @if (isLeader)
+                                        {
+                                            <span class="badge-leader-tag">Leader</span>
+                                        }
+                                    </div>
+                                    <span class="member-dept">@(string.IsNullOrEmpty(member.Department) ? "Field Responder" : member.Department)</span>
+                                </div>
+                            </div>
+
+                            <!-- Remove Member Action -->
+                            <div class="member-delete-action">
+                                @if (isLeader)
+                                {
+                                    <span class="leader-lock-badge" title="Reassign leadership before removing">Leader</span>
+                                }
+                                else if (_confirmDeleteUserId == member.UserId)
+                                {
+                                    <div class="confirm-delete-box">
+                                        <span>Confirm?</span>
+                                        <button type="button" class="btn btn-xs btn-danger" @onclick="() => ConfirmRemoveMember(member.UserId)" disabled="@_isRosterProcessing">Yes</button>
+                                        <button type="button" class="btn btn-xs btn-ghost" @onclick="CancelRemoveMember">No</button>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <button type="button" 
+                                            class="btn-delete-member" 
+                                            title="Remove member"
+                                            @onclick="() => PromptRemoveMember(member.UserId)"
+                                            disabled="@_isRosterProcessing">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="18" y1="6" x2="6" y2="18"/>
+                                            <line x1="6" y1="6" x2="18" y2="18"/>
+                                        </svg>
+                                    </button>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Individual Member Status Selector -->
+                        <div class="roster-card-footer">
+                            <label class="member-status-label">Status:</label>
+                            <select class="form-select form-select-sm member-status-select" 
+                                    value="@member.MemberStatus" 
+                                    @onchange="e => HandleMemberStatusChange(member.UserId, e)"
+                                    disabled="@_isRosterProcessing">
+                                <option value="Available">Available</option>
+                                <option value="EnRoute">En Route</option>
+                                <option value="OnScene">On Scene</option>
+                                <option value="Unavailable">Unavailable</option>
+                            </select>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <!-- Form Footer Actions -->
+    <div class="form-actions-row">
+        <button type="button" class="btn btn-ghost" @onclick="HandleCancel" disabled="@_isSubmitting">
+            Cancel
+        </button>
+        <button type="button" class="btn btn-primary" @onclick="HandleSaveTeam" disabled="@(_isSubmitting || string.IsNullOrWhiteSpace(_teamName))">
+            @if (_isSubmitting)
+            {
+                <span class="spinner-sm"></span>
+                <span>Saving...</span>
+            }
+            else
+            {
+                <span>Save Changes</span>
+            }
+        </button>
+    </div>
+</div>

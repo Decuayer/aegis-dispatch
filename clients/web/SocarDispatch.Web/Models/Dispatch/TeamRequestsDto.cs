@@ -21,3 +21,8 @@ public class AddTeamMemberRequestDto
 {
     public Guid UserId { get; set; }
 }
+
+public class UpdateMemberStatusRequestDto
+{
+    public string Status { get; set; } = string.Empty;
+}

@@ -73,7 +73,7 @@ public class CreateAssignmentCommandHandler : IRequestHandler<CreateAssignmentCo
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        // 3. Publish AssignmentCreatedEvent for downstream workflows (SDDC-16)
+        // 3. Publish AssignmentCreatedEvent for downstream workflows
         await _publisher.Publish(new AssignmentCreatedEvent(
             assignment.Id,
             assignment.IncidentId,

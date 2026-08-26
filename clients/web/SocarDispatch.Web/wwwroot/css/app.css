@@ -641,7 +641,7 @@ code {
 
 
 /* =========================================================
-   Incident Sidebar & Dispatch Drawer Styles (SDDC-20)
+   Incident Sidebar & Dispatch Drawer Styles
    ========================================================= */
 
 /* --- Drawer Backdrop --- */
@@ -785,7 +785,7 @@ code {
 
 
 /* =========================================================
-   Incidents Management Page & Grid Stilleri (SDDC-54)
+    Incidents Management Page & Grid Styles
    ========================================================= */
 
 .incidents-page {
@@ -1294,7 +1294,7 @@ code {
 }
 
 /* =========================================================
-   Response Teams Management Styles (SDDC-55)
+   Response Teams Management Styles
    ========================================================= */
 
 /* --- Teams Page Layout --- */
@@ -2023,7 +2023,7 @@ code {
 }
 
 /* =========================================================
-   System Settings Hub Styles (SDDC-57)
+   System Settings Hub Styles
    ========================================================= */
 
 .settings-page {
@@ -2684,4 +2684,524 @@ code {
 .avatar-url-input {
     flex: 1;
     min-width: 220px;
+}
+
+/* ==========================================================================
+   Team Detail Modal & Team Edit Form Styles
+   ========================================================================== */
+
+.team-detail-modal {
+    max-width: 840px;
+    width: 95vw;
+}
+
+.team-detail-body {
+    padding: 20px;
+    overflow-y: auto;
+    max-height: 75vh;
+}
+
+.modal-header-top-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.modal-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Inspection Layout (View Mode) */
+.team-inspection-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 16px;
+}
+
+@media (max-width: 768px) {
+    .team-inspection-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+.inspection-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.inspection-main {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.inspection-card {
+    background-color: var(--color-surface-2);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.card-section-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--color-text-muted);
+}
+
+.status-select-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.leader-profile-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.leader-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background-color: var(--color-accent-muted);
+    color: var(--color-accent);
+    font-weight: 700;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.leader-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.leader-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.leader-meta,
+.leader-contact {
+    font-size: 11px;
+    color: var(--color-text-muted);
+}
+
+.telemetry-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.coord-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+}
+
+.coord-tag {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background-color: var(--color-surface-3);
+    color: var(--color-text-muted);
+}
+
+.roster-full-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.roster-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.roster-view-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-y: auto;
+    max-height: 380px;
+    padding-right: 4px;
+}
+
+.roster-view-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background-color: var(--color-surface-3);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    gap: 12px;
+}
+
+.member-view-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+}
+
+.member-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    font-weight: 700;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.member-view-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.member-name-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.badge-leader-tag {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    background-color: rgba(234, 179, 8, 0.2);
+    color: #facc15;
+    border: 1px solid rgba(234, 179, 8, 0.4);
+    padding: 1px 5px;
+    border-radius: 4px;
+}
+
+.member-view-dept {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.member-view-phone {
+    font-size: 11px;
+    color: var(--color-text-muted);
+}
+
+.empty-roster-placeholder {
+    padding: 30px 20px;
+    text-align: center;
+    color: var(--color-text-muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Edit Mode Form Styles */
+.team-edit-form-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.form-section {
+    background-color: var(--color-surface-2);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.form-section-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
+.status-buttons-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 8px;
+}
+
+.status-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-surface-3);
+    color: var(--color-text-muted);
+    transition: all 0.15s ease;
+}
+
+.status-btn:hover {
+    background-color: var(--color-surface-1);
+    color: var(--color-text-primary);
+}
+
+.status-btn.active {
+    font-weight: 700;
+}
+
+.status-btn-idle.active {
+    background-color: rgba(34, 197, 94, 0.15);
+    border-color: #22c55e;
+    color: #4ade80;
+}
+
+.status-btn-forwarded.active {
+    background-color: rgba(59, 130, 246, 0.15);
+    border-color: #3b82f6;
+    color: #60a5fa;
+}
+
+.status-btn-onscene.active {
+    background-color: rgba(234, 179, 8, 0.15);
+    border-color: #eab308;
+    color: #facc15;
+}
+
+.status-btn-busy.active {
+    background-color: rgba(239, 68, 68, 0.15);
+    border-color: #ef4444;
+    color: #f87171;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.dot-idle { background-color: #22c55e; }
+.dot-forwarded { background-color: #3b82f6; }
+.dot-onscene { background-color: #eab308; }
+.dot-busy { background-color: #ef4444; }
+
+/* Roster Search & Autocomplete Dropdown */
+.roster-search-box {
+    position: relative;
+}
+
+.candidate-dropdown-list {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background-color: var(--color-surface-2);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    box-shadow: var(--shadow-lg);
+    z-index: 1060;
+    max-height: 200px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.candidate-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--color-border);
+    gap: 10px;
+}
+
+.candidate-row:last-child {
+    border-bottom: none;
+}
+
+.candidate-row:hover {
+    background-color: var(--color-surface-3);
+}
+
+.candidate-meta {
+    display: flex;
+    flex-direction: column;
+    font-size: 12px;
+    color: var(--color-text-primary);
+}
+
+.candidate-dept {
+    font-size: 10px;
+    color: var(--color-text-muted);
+}
+
+/* Roster Grid & Card Items in Edit Form */
+.roster-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 10px;
+    max-height: 280px;
+    overflow-y: auto;
+    padding: 2px;
+}
+
+.roster-card {
+    background-color: var(--color-surface-3);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.roster-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.member-profile {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.member-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.member-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.member-dept {
+    font-size: 10px;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.member-delete-action {
+    display: flex;
+    align-items: center;
+}
+
+.leader-lock-badge {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    background-color: rgba(234, 179, 8, 0.15);
+    color: #facc15;
+    border: 1px solid rgba(234, 179, 8, 0.3);
+    padding: 1px 5px;
+    border-radius: 4px;
+}
+
+.btn-delete-member {
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.btn-delete-member:hover {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: var(--color-danger);
+}
+
+.confirm-delete-box {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--color-danger);
+}
+
+.roster-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.member-status-label {
+    font-size: 11px;
+    color: var(--color-text-muted);
+}
+
+.member-status-select {
+    font-size: 11px;
+    padding: 2px 6px;
+    height: 26px;
+    width: auto;
+    min-width: 110px;
+}
+
+.form-actions-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.btn-xs {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
 }
