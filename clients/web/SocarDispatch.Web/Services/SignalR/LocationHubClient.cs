@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.SignalR.Client;
 using SocarDispatch.Web.Auth;
 using SocarDispatch.Web.Events;
+using SocarDispatch.Web.Utils; 
 
 namespace SocarDispatch.Web.Services.SignalR;
 
@@ -29,7 +30,6 @@ public class LocationHubClient : ILocationHubClient
 
     public async Task StartAsync()
     {
-        // Halihazırda bağlıysa veya bağlanıyorsa tekrar başlatma
         if (_hubConnection != null && _hubConnection.State != HubConnectionState.Disconnected)
         {
             return;
@@ -41,20 +41,27 @@ public class LocationHubClient : ILocationHubClient
         _hubConnection = new HubConnectionBuilder()
             .WithUrl(hubUrl, options =>
             {
-                // JWT Token'ı WebSocket el sıkışmasında (Handshake) query parameter olarak güvenle ilet
-                options.AccessTokenProvider = async () => await _authService.GetTokenAsync();
+                options.AccessTokenProvider = async () =>
+                {
+                    var token = await _authService.GetTokenAsync();
+                    if (string.IsNullOrWhiteSpace(token) || JwtTokenParser.IsTokenExpired(token))
+                    {
+                        return null; // Return null to prevent unauthorized reconnect loops
+                    }
+                    return token;
+                };
             })
             .WithAutomaticReconnect(new[]
             {
-                TimeSpan.Zero,                // 1. deneme: Hemen
-                TimeSpan.FromSeconds(2),      // 2. deneme: 2 sn sonra
-                TimeSpan.FromSeconds(5),      // 3. deneme: 5 sn sonra
-                TimeSpan.FromSeconds(10),     // 4. deneme: 10 sn sonra
-                TimeSpan.FromSeconds(30)      // 5. deneme: 30 sn sonra
+                TimeSpan.Zero,                
+                TimeSpan.FromSeconds(2),
+                TimeSpan.FromSeconds(5),
+                TimeSpan.FromSeconds(10),
+                TimeSpan.FromSeconds(30)
             })
             .Build();
 
-        // 1. Backend'den gelen 'TeamLocationUpdated' event dinleyicisi
+        // 1. 'TeamLocationUpdated' event listener from the backend
         _hubConnection.On<TeamLocationPayload>("TeamLocationUpdated", payload =>
         {
             _logger.LogDebug("[LocationHub] Team location received for TeamId: {TeamId}", payload.TeamId);
@@ -68,7 +75,7 @@ public class LocationHubClient : ILocationHubClient
             });
         });
 
-        // 2. Bağlantı yaşam döngüsü event'leri
+        // 2. Connection lifecycle events
         _hubConnection.Reconnecting += ex =>
         {
             _logger.LogWarning("[LocationHub] Connection lost. Reconnecting... Reason: {Message}", ex?.Message);
@@ -122,7 +129,7 @@ public class LocationHubClient : ILocationHubClient
         GC.SuppressFinalize(this);
     }
 
-    // Backend payload esnekliği için dahili DTO
+    // Internal DTO for backend payload flexibility
     private record TeamLocationPayload(
         [property: JsonPropertyName("teamId")] Guid TeamId,
         [property: JsonPropertyName("lat")] double Lat,

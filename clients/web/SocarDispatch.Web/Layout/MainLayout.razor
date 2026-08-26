@@ -1,6 +1,17 @@
 @inherits LayoutComponentBase
+@implements IDisposable
+@using SocarDispatch.Web.Auth
 @using SocarDispatch.Web.Components.Common
+@using SocarDispatch.Web.Services
+@using SocarDispatch.Web.Services.SignalR
+
 @inject IJSRuntime JS
+@inject IAuthEventService AuthEventService
+@inject IAuthService AuthService
+@inject IToastService ToastService
+@inject NavigationManager NavigationManager
+@inject IIncidentHubClient IncidentHubClient
+@inject ILocationHubClient LocationHubClient
 
 <div class="page">
     <div class="sidebar">
@@ -51,13 +62,19 @@
             @Body
         </article>
             
-        <!-- 🍞 Global Toast Bildirim Konteyneri -->
+        <!-- Global Toast Notification Container -->
         <ToastContainer />
     </main>
 </div>
 
 @code {
     private bool _isDark = true;
+    private bool _isHandlingExpiry = false;
+
+    protected override void OnInitialized()
+    {
+        AuthEventService.OnSessionExpired += HandleSessionExpiredAsync;
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -75,5 +92,45 @@
         var theme = _isDark ? "dark" : "light";
         await JS.InvokeVoidAsync("localStorage.setItem", "socar-theme", theme);
         await JS.InvokeVoidAsync("document.documentElement.setAttribute", "data-theme", theme);
+    }
+
+        private async Task HandleSessionExpiredAsync(string? explicitReturnUrl)
+    {
+        await InvokeAsync(async () =>
+        {
+            if (_isHandlingExpiry) return;
+            _isHandlingExpiry = true;
+
+            try
+            {
+                // 1. Gracefully stop SignalR connections
+                await IncidentHubClient.StopAsync();
+                await LocationHubClient.StopAsync();
+
+                // 2. Display expiration toast alert
+                ToastService.ShowWarning("Your session has expired. Please sign in again.", "Session Expired");
+
+                // 3. Capture current route and purge invalid session
+                var currentUri = explicitReturnUrl ?? NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+                await AuthService.HandleSessionExpiredAsync(currentUri);
+
+                // 4. Redirect to login page preserving return URL
+                var redirectUrl = string.IsNullOrWhiteSpace(currentUri) || currentUri.StartsWith("login", StringComparison.OrdinalIgnoreCase)
+                    ? "login"
+                    : $"login?returnUrl={Uri.EscapeDataString(currentUri)}";
+
+                NavigationManager.NavigateTo(redirectUrl, forceLoad: false);
+            }   
+            finally
+            {
+                _isHandlingExpiry = false;
+            }
+        });
+    }
+
+
+    public void Dispose()
+    {
+        AuthEventService.OnSessionExpired -= HandleSessionExpiredAsync;
     }
 }
