@@ -1,0 +1,499 @@
+@* clients/web/SocarDispatch.Web/Components/Dashboard/RecentIncidentsFeed.razor *@
+@namespace SocarDispatch.Web.Components.Dashboard
+
+<div class="recent-feed-container @Class">
+    <!-- Header Section -->
+    <div class="feed-header">
+        <div class="feed-title-wrapper">
+            <h2 class="feed-title">Recent Incidents</h2>
+
+        </div>
+        <button type="button" class="btn-view-all" @onclick="NavigateToIncidents" title="View all incidents in detail">
+            <span>View All</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Feed Content Body -->
+    <div class="feed-body">
+        @if (_isLoading)
+        {
+            <!-- Skeleton Loading State -->
+            <div class="feed-skeletons">
+                @for (int i = 0; i < 3; i++)
+                {
+                    <div class="feed-skeleton-card">
+                        <div class="skeleton-line skeleton-header"></div>
+                        <div class="skeleton-line skeleton-title"></div>
+                        <div class="skeleton-line skeleton-desc"></div>
+                        <div class="skeleton-line skeleton-footer"></div>
+                    </div>
+                }
+            </div>
+        }
+        else if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <!-- Error State -->
+            <div class="feed-error-state">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <p>@_errorMessage</p>
+                <button type="button" class="btn-retry" @onclick="LoadRecentIncidentsAsync">Retry</button>
+            </div>
+        }
+        else if (_recentIncidents.Count == 0)
+        {
+            <!-- Empty State -->
+            <div class="feed-empty-state">
+                <div class="empty-icon-wrapper">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        <polyline points="9 12 11 14 15 10"></polyline>
+                    </svg>
+                </div>
+                <h3>No recent incidents reported</h3>
+                <p>All systems nominal across facility.</p>
+            </div>
+        }
+        else
+        {
+            <!-- Chronological Incident Feed List -->
+            <div class="feed-list">
+                @foreach (var incident in _recentIncidents)
+                {
+                    <div @key="incident.Id"
+                         class="feed-item @GetSeverityBorderClass(incident.EmergencyCode) @(_animatingIncidentIds.Contains(incident.Id) ? "is-new-arrival" : "")"
+                         @onclick="() => HandleCardClick(incident.Id)"
+                         role="button"
+                         tabindex="0"
+                         title="Click to view details and dispatch options">
+
+                        <!-- Item Header: Badges & Time -->
+                        <div class="feed-item-header">
+                            <div class="feed-badges">
+                                <span class="badge-code @GetEmergencyCodeBadgeClass(incident.EmergencyCode)">
+                                    @incident.EmergencyCode
+                                </span>
+                                <span class="badge-status @GetStatusBadgeClass(incident.Status)">
+                                    @incident.Status
+                                </span>
+                            </div>
+                            <div class="feed-time" title="@incident.CreatedAt.ToString("g")">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                                <span>@incident.TimeAgoFormatted</span>
+                            </div>
+                        </div>
+
+                        <!-- Item Body: Category & Description -->
+                        <div class="feed-item-body">
+                            <h4 class="feed-category">@incident.Category</h4>
+                            <p class="feed-desc">
+                                @(!string.IsNullOrWhiteSpace(incident.Description) ? incident.Description : "No additional description provided.")
+                            </p>
+                        </div>
+
+                        <!-- Item Footer: Reporter & Attachments -->
+                        <div class="feed-item-footer">
+                            <div class="feed-reporter">
+                                <div class="feed-avatar">
+                                    @if (!string.IsNullOrWhiteSpace(incident.ReporterAvatarUrl))
+                                    {
+                                        <img src="@incident.ReporterAvatarUrl" alt="@incident.ReporterFullName" />
+                                    }
+                                    else
+                                    {
+                                        <span>@GetInitials(incident.ReporterFullName)</span>
+                                    }
+                                </div>
+                                <span class="feed-reporter-name">
+                                    @(!string.IsNullOrWhiteSpace(incident.ReporterFullName) ? incident.ReporterFullName : "Unknown Reporter")
+                                </span>
+                            </div>
+
+                            <div class="feed-indicators">
+                                @if (incident.IsAssigned && !string.IsNullOrEmpty(incident.AssignedTeamName))
+                                {
+                                    <span class="feed-team-badge" title="Assigned Team: @incident.AssignedTeamName">
+                                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                            <circle cx="9" cy="7" r="4"></circle>
+                                        </svg>
+                                        <span>@incident.AssignedTeamName</span>
+                                    </span>
+                                }
+                                @if (incident.HasMedia)
+                                {
+                                    <span class="feed-media-badge" title="@incident.MediaAttachments.Count attachment(s)">
+                                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                            <polyline points="21 15 16 10 5 21"></polyline>
+                                        </svg>
+                                        <span>@incident.MediaAttachments.Count</span>
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .recent-feed-container {
+        background-color: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 580px;
+        max-height: 648px;
+        overflow: hidden;
+    }
+
+    .feed-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--color-border);
+        background-color: var(--color-surface);
+        z-index: 2;
+    }
+
+    .feed-title-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .feed-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--color-text-primary);
+        margin: 0;
+        letter-spacing: -0.2px;
+    }
+
+    .live-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background-color: rgba(16, 185, 129, 0.12);
+        border: 1px solid rgba(16, 185, 129, 0.25);
+        padding: 2px 7px;
+        border-radius: 12px;
+    }
+
+    .live-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background-color: var(--color-success);
+        box-shadow: 0 0 6px var(--color-success);
+        animation: pulseLive 2s infinite ease-in-out;
+    }
+
+    .live-text {
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--color-success);
+        letter-spacing: 0.5px;
+    }
+
+    .btn-view-all {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--color-accent);
+        background: transparent;
+        border: none;
+        padding: 4px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .btn-view-all:hover {
+        background-color: var(--color-accent-muted);
+        color: var(--color-accent-hover);
+    }
+
+    .feed-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 12px;
+        scrollbar-width: thin;
+        scrollbar-color: var(--color-border) transparent;
+    }
+
+    .feed-body::-webkit-scrollbar {
+        width: 5px;
+    }
+
+    .feed-body::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .feed-body::-webkit-scrollbar-thumb {
+        background-color: var(--color-border);
+        border-radius: 4px;
+    }
+
+    .feed-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .feed-item {
+        background-color: var(--color-bg-secondary, rgba(255, 255, 255, 0.02));
+        border: 1px solid var(--color-border);
+        border-left-width: 4px;
+        border-radius: 6px;
+        padding: 12px;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+        position: relative;
+    }
+
+    .feed-item:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-sm);
+        border-color: var(--color-border-hover, #475569);
+        background-color: var(--color-surface-hover, rgba(255, 255, 255, 0.04));
+    }
+
+    /* Severity Left Borders */
+    .feed-item.severity-red { border-left-color: var(--color-danger); }
+    .feed-item.severity-orange { border-left-color: #f97316; }
+    .feed-item.severity-yellow { border-left-color: var(--color-warning); }
+    .feed-item.severity-green { border-left-color: var(--color-success); }
+
+    /* New Arrival Animation */
+    .feed-item.is-new-arrival {
+        animation: pulseHighlight 3s ease-out;
+    }
+
+    .feed-item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .feed-badges {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .feed-time {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        color: var(--color-text-muted);
+    }
+
+    .feed-item-body {
+        margin-bottom: 10px;
+    }
+
+    .feed-category {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--color-text-primary);
+        margin: 0 0 4px 0;
+        line-height: 1.3;
+    }
+
+    .feed-desc {
+        font-size: 12px;
+        color: var(--color-text-muted);
+        line-height: 1.4;
+        margin: 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .feed-item-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 8px;
+        border-top: 1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.05));
+    }
+
+    .feed-reporter {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .feed-avatar {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background-color: var(--color-accent-muted);
+        color: var(--color-accent);
+        font-size: 9px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .feed-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .feed-reporter-name {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--color-text-secondary, #cbd5e1);
+        max-width: 130px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .feed-indicators {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .feed-team-badge,
+    .feed-media-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        font-size: 10px;
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background-color: var(--color-bg-tertiary, rgba(255, 255, 255, 0.06));
+        color: var(--color-text-muted);
+    }
+
+    .feed-team-badge {
+        color: var(--color-accent);
+        background-color: var(--color-accent-muted);
+    }
+
+    /* Skeleton Loading */
+    .feed-skeletons {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .feed-skeleton-card {
+        background-color: var(--color-bg-secondary, rgba(255, 255, 255, 0.02));
+        border: 1px solid var(--color-border);
+        border-radius: 6px;
+        padding: 12px;
+    }
+
+    .skeleton-line {
+        background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 25%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.03) 75%);
+        background-size: 200% 100%;
+        border-radius: 4px;
+        animation: shimmer 1.5s infinite;
+    }
+
+    .skeleton-header { height: 16px; width: 60%; margin-bottom: 10px; }
+    .skeleton-title  { height: 14px; width: 85%; margin-bottom: 6px; }
+    .skeleton-desc   { height: 12px; width: 100%; margin-bottom: 10px; }
+    .skeleton-footer { height: 12px; width: 40%; }
+
+    /* Empty & Error States */
+    .feed-empty-state,
+    .feed-error-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 40px 16px;
+        color: var(--color-text-muted);
+        height: 100%;
+    }
+
+    .empty-icon-wrapper {
+        color: var(--color-success);
+        margin-bottom: 12px;
+        opacity: 0.8;
+    }
+
+    .feed-empty-state h3 {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--color-text-primary);
+        margin: 0 0 4px 0;
+    }
+
+    .feed-empty-state p {
+        font-size: 12px;
+        margin: 0;
+    }
+
+    .feed-error-state {
+        color: var(--color-danger);
+    }
+
+    .btn-retry {
+        margin-top: 10px;
+        font-size: 12px;
+        padding: 4px 12px;
+        background-color: var(--color-surface);
+        border: 1px solid var(--color-border);
+        color: var(--color-text-primary);
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    /* Keyframe Animations */
+    @@keyframes pulseLive {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    @@keyframes pulseHighlight {
+        0% {
+            background-color: rgba(59, 130, 246, 0.25);
+            border-color: var(--color-accent);
+            box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
+        }
+        100% {
+            background-color: var(--color-bg-secondary, rgba(255, 255, 255, 0.02));
+            border-color: var(--color-border);
+            box-shadow: none;
+        }
+    }
+
+    @@keyframes shimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+</style>

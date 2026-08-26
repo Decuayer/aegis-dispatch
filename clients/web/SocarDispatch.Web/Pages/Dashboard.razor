@@ -4,6 +4,7 @@
 @using SocarDispatch.Web.Services.SignalR
 @using SocarDispatch.Web.Events
 @using SocarDispatch.Web.Components.Dispatch
+@using SocarDispatch.Web.Components.Dashboard
 
 @inject IIncidentHubClient IncidentHub
 @inject HttpClient Http
@@ -24,7 +25,6 @@
         <span>Report Incident</span>
     </button>
 </div>
-
 
 <!-- Dynamic Key Metrics -->
 <div class="dash-stats">
@@ -84,17 +84,25 @@
     </div>
 </div>
 
-<!-- ——— Live Operational Map ——— -->
-<div class="dash-map-section">
-    <div class="dash-map-header">
-        <h2 class="dash-section-title">Live Operational Map</h2>
-        <p class="dash-section-sub">Active incidents and field team positions in real-time</p>
+<!-- ——— Live Operations Grid (Map + Recent Incidents Feed) ——— -->
+<div class="dash-operations-grid">
+    <div class="dash-map-section">
+        <div class="dash-map-header">
+            <h2 class="dash-section-title">Live Operational Map</h2>
+            <p class="dash-section-sub">Active incidents and field team positions in real-time</p>
+        </div>
+        <LeafletMap
+            @ref="_leafletMapRef"
+            Height="580px"
+            OnIncidentDetailRequested="HandleIncidentDetail"
+            OnAssignTeamRequested="HandleAssignTeam" />
     </div>
-    <LeafletMap
-        @ref="_leafletMapRef"
-        Height="580px"
-        OnIncidentDetailRequested="HandleIncidentDetail"
-        OnAssignTeamRequested="HandleAssignTeam" />
+
+    <div class="dash-feed-section">
+        <RecentIncidentsFeed
+            MaxItems="15"
+            OnIncidentSelected="HandleIncidentDetail" />
+    </div>
 </div>
 
 <!-- Operational Incident & Dispatch Sidebar Drawer -->
@@ -186,7 +194,7 @@
         InvokeAsync(StateHasChanged);
     }
 
-    // Map & Modal Callbacks
+    // Map & Feed & Modal Callbacks
     private void HandleIncidentDetail(Guid incidentId)
     {
         _selectedIncidentId = incidentId;
@@ -232,7 +240,6 @@
         IncidentHub.OnTeamDispatched -= HandleTeamDispatched;
     }
 }
-
 
 <style>
     .dash-header {
@@ -307,12 +314,27 @@
         color: var(--color-text-subtle);
     }
 
+    /* Operations Grid (Map + Feed) */
+    .dash-operations-grid {
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        gap: 20px;
+        align-items: stretch;
+    }
+
     .dash-map-section {
         background-color: var(--color-surface);
         border: 1px solid var(--color-border);
         border-radius: 8px;
         padding: 20px;
         box-shadow: var(--shadow-sm);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .dash-feed-section {
+        display: flex;
+        flex-direction: column;
     }
 
     .dash-map-header {
@@ -352,4 +374,16 @@
         box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
     }
 
+    @@media (max-width: 1280px) {
+        .dash-operations-grid {
+            grid-template-columns: 1fr 340px;
+            gap: 16px;
+        }
+    }
+
+    @@media (max-width: 1024px) {
+        .dash-operations-grid {
+            grid-template-columns: 1fr;
+        }
+    }
 </style>
