@@ -24,8 +24,12 @@
             <p class="page-subtitle">Monitor, filter, and inspect emergency incident logs across the facility.</p>
         </div>
         <div class="header-stats">
-            <span class="stat-pill">Total: <strong>@_allIncidents.Count</strong></span>
-            <span class="stat-pill open">Open: <strong>@_statusCounts.GetValueOrDefault("Open", 0)</strong></span>
+            <span class="stat-pill">
+                Showing: <strong>@FilteredIncidents.Count</strong> @(_selectedStatus == "All" ? "total" : _selectedStatus.ToLower()) incidents
+            </span>
+            <span class="stat-pill open">
+                Active Open: <strong>@_statusCounts.GetValueOrDefault("Open", 0)</strong>
+            </span>
         </div>
     </div>
 
@@ -222,12 +226,13 @@
             query = _selectedTimeRange switch
             {
                 "1h" => query.Where(i => i.CreatedAt >= now.AddHours(-1)),
+                "6h" => query.Where(i => i.CreatedAt >= now.AddHours(-6)),
                 "24h" => query.Where(i => i.CreatedAt >= now.AddHours(-24)),
                 "7d" => query.Where(i => i.CreatedAt >= now.AddDays(-7)),
                 "30d" => query.Where(i => i.CreatedAt >= now.AddDays(-30)),
                 "Custom" => query.Where(i => 
-                    (!_customFromDate.HasValue || i.CreatedAt.Date >= _customFromDate.Value.Date) &&
-                    (!_customToDate.HasValue || i.CreatedAt.Date <= _customToDate.Value.Date)),
+                    (!_customFromDate.HasValue || i.CreatedAt >= _customFromDate.Value) &&
+                    (!_customToDate.HasValue || i.CreatedAt <= _customToDate.Value)),
                 _ => query
             };
 
@@ -265,6 +270,7 @@
         CurrentPage = 1; 
     }
     private void HandleSortChanged(string sort) { _selectedSort = sort; }
+    
     private void OnPageSizeChanged(ChangeEventArgs e)
     {
         if (int.TryParse(e.Value?.ToString(), out var size))
@@ -394,5 +400,3 @@
         IncidentHub.OnIncidentUpdated -= HandleIncidentUpdatedRealtime;
     }
 }
-
-

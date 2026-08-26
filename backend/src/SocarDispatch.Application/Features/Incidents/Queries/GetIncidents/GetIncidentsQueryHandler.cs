@@ -26,14 +26,25 @@ public class GetIncidentsQueryHandler : IRequestHandler<GetIncidentsQuery, ApiRe
             .AsNoTracking()
             .AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(request.Status) && Enum.TryParse<IncidentStatus>(request.Status, true, out var parsedStatus))
+        if (!string.IsNullOrWhiteSpace(request.Status) && !request.Status.Equals("All", StringComparison.OrdinalIgnoreCase) && Enum.TryParse<IncidentStatus>(request.Status, true, out var parsedStatus))
         {
             query = query.Where(i => i.Status == parsedStatus);
         }
 
-        if (!string.IsNullOrWhiteSpace(request.Category))
+        if (!string.IsNullOrWhiteSpace(request.Category) && !request.Category.Equals("All", StringComparison.OrdinalIgnoreCase))
         {
             query = query.Where(i => i.Category.ToLower() == request.Category.ToLower());
+        }
+
+        // Apply temporal time-range boundaries
+        if (request.From.HasValue)
+        {
+            query = query.Where(i => i.CreatedAt >= request.From.Value);
+        }
+
+        if (request.To.HasValue)
+        {
+            query = query.Where(i => i.CreatedAt <= request.To.Value);
         }
 
         var list = await query
@@ -62,8 +73,10 @@ public class GetIncidentsQueryHandler : IRequestHandler<GetIncidentsQuery, ApiRe
                 Latitude = i.Latitude,
                 Longitude = i.Longitude,
                 CreatedAt = i.CreatedAt,
+                CompletedAt = i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => a.CompletedAt).FirstOrDefault(),
                 AssignedTeamId = i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => (Guid?)a.TeamId).FirstOrDefault(),
-                AssignedTeamName = i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => a.Team.TeamName).FirstOrDefault()
+                AssignedTeamName = i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => a.Team.TeamName).FirstOrDefault(),
+                CompletionNotes = i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => a.CompletionNotes).FirstOrDefault()
             })
             .ToListAsync(cancellationToken);
 

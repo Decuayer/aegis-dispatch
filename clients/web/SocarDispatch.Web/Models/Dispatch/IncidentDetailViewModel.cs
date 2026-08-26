@@ -11,6 +11,7 @@ public class IncidentDetailViewModel
     public decimal Latitude { get; set; }
     public decimal Longitude { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? CompletedAt { get; set; }
 
     // Information of the Reporting Person
     public Guid ReporterId { get; set; }
@@ -33,9 +34,11 @@ public class IncidentDetailViewModel
     // UI Facilitator Helper Features
     public bool IsAssigned => AssignedTeamId.HasValue || Status == "Assigned";
     public bool IsOpen => Status == "Open";
+    public bool IsResolved => Status == "Resolved";
+    public bool IsCanceled => Status == "Canceled";
+    public bool IsHistorical => IsResolved || IsCanceled;
     public bool HasMedia => MediaAttachments != null && MediaAttachments.Count > 0;
 
-    
     /// Formats the time elapsed since the event was reported (e.g., "5 min ago", "2 hours ago")
     public string TimeAgoFormatted
     {

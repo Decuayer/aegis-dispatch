@@ -18,6 +18,9 @@ public class MapService : IMapService
     public async Task UpdateMainTileLayerAsync(string tileProvider)
         => await _js.InvokeVoidAsync("leafletMap.updateMainTileLayer", tileProvider);
 
+    public async Task ToggleResolvedIncidentsLayerAsync(bool visible)
+        => await _js.InvokeVoidAsync("leafletMap.toggleResolvedIncidentsLayer", visible);
+
     public async Task AddIncidentMarkerAsync(MapIncidentDto incident)
         => await _js.InvokeVoidAsync("leafletMap.addIncidentMarker", new
         {
