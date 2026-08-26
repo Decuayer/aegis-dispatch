@@ -68,6 +68,9 @@
     public async Task ToggleIncidentsLayerAsync(bool visible)
         => await MapService.ToggleIncidentsLayerAsync(visible);
 
+    public async Task ToggleResolvedIncidentsLayerAsync(bool visible)
+        => await MapService.ToggleResolvedIncidentsLayerAsync(visible);
+
     public async Task ToggleTeamsLayerAsync(bool visible)
         => await MapService.ToggleTeamsLayerAsync(visible);
 
@@ -92,10 +95,9 @@
         try
         {
             var response = await Http.GetFromJsonAsync<ApiResponse<List<MapIncidentDto>>>("api/v1/incidents");
-
             if (response?.Data != null)
             {
-                foreach (var incident in response.Data.Where(i => i.Status != "Resolved" && i.Status != "Canceled"))
+                foreach (var incident in response.Data)
                 {
                     await MapService.AddIncidentMarkerAsync(incident);
                 }
@@ -248,9 +250,11 @@
 
 <style>
     .leaflet-map-wrapper {
+        height: 100%;
         min-height: 100%;
         width: 100%;
         background-color: var(--color-bg, #111318);
         border-radius: inherit;
+        overflow: hidden;
     }
 </style>

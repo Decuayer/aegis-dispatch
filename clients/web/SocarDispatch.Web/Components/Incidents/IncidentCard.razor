@@ -25,6 +25,17 @@
         <p class="incident-desc">
             @(!string.IsNullOrWhiteSpace(Incident.Description) ? Incident.Description : "No additional description provided.")
         </p>
+
+        @* Historical Completion / Resolution Notes *@
+        @if (!string.IsNullOrWhiteSpace(Incident.CompletionNotes))
+        {
+            <div class="card-completion-note" title="@Incident.CompletionNotes">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                <span class="note-text">@Incident.CompletionNotes</span>
+            </div>
+        }
     </div>
 
     <div class="card-footer">
@@ -46,6 +57,17 @@
         </div>
 
         <div class="team-assignment">
+            @if (Incident.CompletedAt.HasValue && (Incident.Status == "Resolved" || Incident.Status == "Canceled"))
+            {
+                <span class="resolution-time-badge" title="Closed at @Incident.CompletedAt.Value.ToString("g")">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    <span>Closed: @Incident.CompletedAt.Value.ToString("MMM dd, HH:mm")</span>
+                </span>
+            }
+
             @if (Incident.IsAssigned && !string.IsNullOrEmpty(Incident.AssignedTeamName))
             {
                 <span class="team-badge assigned" title="Assigned Team">
@@ -56,7 +78,7 @@
                     @Incident.AssignedTeamName
                 </span>
             }
-            else
+            else if (!Incident.IsHistorical)
             {
                 <span class="team-badge unassigned">Unassigned</span>
             }
@@ -181,5 +203,42 @@
         font-size: 10px;
         color: var(--color-text-muted);
         line-height: 1.2;
+    }
+
+    .card-completion-note {
+        margin-top: 8px;
+        padding: 5px 8px;
+        background: var(--color-surface-3, rgba(255, 255, 255, 0.04));
+        border-left: 2px solid var(--color-success, #22c55e);
+        border-radius: 4px;
+        font-size: 11px;
+        color: var(--color-text-secondary, #cbd5e1);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .card-completion-note svg {
+        color: var(--color-success, #22c55e);
+        flex-shrink: 0;
+    }
+
+    .note-text {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .resolution-time-badge {
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--color-text-muted, #8b909a);
+        background: var(--color-surface-3, rgba(255, 255, 255, 0.05));
+        border: 1px solid var(--color-border, #2e3138);
+        padding: 2px 6px;
+        border-radius: 4px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
     }
 </style>

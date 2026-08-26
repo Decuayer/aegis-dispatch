@@ -19,6 +19,8 @@ public interface IMapService
     Task InvalidateSizeAsync();
     Task SetDotNetReferenceAsync<T>(DotNetObjectReference<T> dotNetRef) where T : class;
     Task DestroyMapAsync();
+    Task ToggleResolvedIncidentsLayerAsync(bool visible);
+
     
     Task UpdateIncidentStatusAsync(Guid incidentId, string newStatus);
     Task AnimateTeamMarkerAsync(Guid teamId, double lat, double lng);

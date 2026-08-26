@@ -28,6 +28,16 @@ public partial class Map : ComponentBase, IDisposable
 
     private int _activeIncidentsCount => _incidents.Count(i => i.Status is not ("Resolved" or "Canceled"));
     private int _activeTeamsCount => _teams.Count(t => t.Status == "Idle");
+    private int _resolvedIncidentsCount => _incidents.Count(i => i.Status is "Resolved" or "Canceled");
+    
+    private async Task HandleToggleResolvedIncidents(bool visible)
+    {
+        if (_mapRef != null)
+        {
+            await _mapRef.ToggleResolvedIncidentsLayerAsync(visible);
+        }
+    }
+
 
     protected override async Task OnInitializedAsync()
     {

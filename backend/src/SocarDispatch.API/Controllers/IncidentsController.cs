@@ -51,11 +51,15 @@ public class IncidentsController : ControllerBase
     }
 
     // GET /api/v1/incidents
-    // Retrieves the list and details of all events (Operator Map Panel & Mobile Feed).
+    // Retrieves the list and details of all events with optional temporal and category filters.
     [HttpGet]
-    public async Task<ActionResult<ApiResponse<List<IncidentDto>>>> GetAll([FromQuery] string? status, [FromQuery] string? category)
+    public async Task<ActionResult<ApiResponse<List<IncidentDto>>>> GetAll(
+        [FromQuery] string? status, 
+        [FromQuery] string? category,
+        [FromQuery] DateTime? from,
+        [FromQuery] DateTime? to)
     {
-        var query = new GetIncidentsQuery(status, category);
+        var query = new GetIncidentsQuery(status, category, from, to);
         var result = await _sender.Send(query);
         return Ok(result);
     }

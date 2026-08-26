@@ -5,7 +5,7 @@
     <div class="overlay-header" @onclick="ToggleCollapse">
         <div class="header-title">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                <polygon points="12 2 2 7 12 12 22 7 12 12 22 7 12 2"></polygon>
                 <polyline points="2 17 12 22 22 17"></polyline>
                 <polyline points="2 12 12 17 22 12"></polyline>
             </svg>
@@ -25,7 +25,7 @@
             <div class="control-section">
                 <span class="section-label">Overlays</span>
                 
-                <!-- Incidents Layer Toggle -->
+                <!-- Active Incidents Layer Toggle -->
                 <label class="layer-toggle-item">
                     <div class="layer-info">
                         <span class="layer-indicator incident-indicator"></span>
@@ -36,6 +36,20 @@
                         <input type="checkbox"
                                checked="@_showIncidents"
                                @onchange="HandleIncidentsToggle" />
+                    </div>
+                </label>
+
+                <!-- Resolved Incidents Layer Toggle -->
+                <label class="layer-toggle-item">
+                    <div class="layer-info">
+                        <span class="layer-indicator resolved-indicator"></span>
+                        <span class="layer-name">Resolved Incidents</span>
+                    </div>
+                    <div class="toggle-right">
+                        <span class="badge-count resolved-badge">@ResolvedIncidentCount</span>
+                        <input type="checkbox"
+                               checked="@_showResolved"
+                               @onchange="HandleResolvedToggle" />
                     </div>
                 </label>
 
@@ -95,14 +109,17 @@
 
 @code {
     [Parameter] public int ActiveIncidentCount { get; set; } = 0;
+    [Parameter] public int ResolvedIncidentCount { get; set; } = 0;
     [Parameter] public int ActiveTeamCount { get; set; } = 0;
     [Parameter] public string SelectedTileProvider { get; set; } = "OpenStreetMap";
     [Parameter] public EventCallback<bool> OnToggleIncidents { get; set; }
+    [Parameter] public EventCallback<bool> OnToggleResolvedIncidents { get; set; }
     [Parameter] public EventCallback<bool> OnToggleTeams { get; set; }
     [Parameter] public EventCallback<string> OnTileProviderChanged { get; set; }
     [Parameter] public EventCallback OnResetView { get; set; }
 
     private bool _showIncidents = true;
+    private bool _showResolved = false;
     private bool _showTeams = true;
     private bool _isCollapsed = false;
 
@@ -110,6 +127,12 @@
     {
         _showIncidents = (bool)(e.Value ?? true);
         await OnToggleIncidents.InvokeAsync(_showIncidents);
+    }
+
+    private async Task HandleResolvedToggle(ChangeEventArgs e)
+    {
+        _showResolved = (bool)(e.Value ?? false);
+        await OnToggleResolvedIncidents.InvokeAsync(_showResolved);
     }
 
     private async Task HandleTeamsToggle(ChangeEventArgs e)
@@ -239,7 +262,8 @@
     }
 
     .incident-indicator { background-color: #ef4444; }
-    .team-indicator { background-color: #22c55e; }
+    .resolved-indicator { background-color: #22c55e; }
+    .team-indicator { background-color: #3b82f6; }
 
     .layer-name {
         font-size: 12px;
@@ -264,9 +288,14 @@
         color: #ef4444;
     }
 
-    .team-badge {
+    .resolved-badge {
         background: rgba(34, 197, 94, 0.15);
         color: #22c55e;
+    }
+
+    .team-badge {
+        background: rgba(59, 130, 246, 0.15);
+        color: #3b82f6;
     }
 
     /* Tile Switcher */

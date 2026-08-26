@@ -18,13 +18,16 @@
     <!-- Floating Top-Right Layer & Tile Controls -->
     <div class="map-floating-controls">
         <MapControlOverlay ActiveIncidentCount="_activeIncidentsCount"
-                           ActiveTeamCount="_activeTeamsCount"
-                           SelectedTileProvider="@_selectedTileProvider"
-                           OnToggleIncidents="HandleToggleIncidents"
-                           OnToggleTeams="HandleToggleTeams"
-                           OnTileProviderChanged="HandleTileProviderChanged"
-                           OnResetView="HandleResetView" />
+                       ResolvedIncidentCount="_resolvedIncidentsCount"
+                       ActiveTeamCount="_activeTeamsCount"
+                       SelectedTileProvider="@_selectedTileProvider"
+                       OnToggleIncidents="HandleToggleIncidents"
+                       OnToggleResolvedIncidents="HandleToggleResolvedIncidents"
+                       OnToggleTeams="HandleToggleTeams"
+                       OnTileProviderChanged="HandleTileProviderChanged"
+                       OnResetView="HandleResetView" />
     </div>
+
 
     <!-- Full-Height Interactive GIS Leaflet Map Canvas -->
     <LeafletMap @ref="_mapRef"

@@ -55,6 +55,7 @@
             <select class="form-select" value="@SelectedTimeRange" @onchange="OnTimeRangeChange">
                 <option value="All">All Time</option>
                 <option value="1h">Last 1 Hour</option>
+                <option value="6h">Last 6 Hours</option>
                 <option value="24h">Last 24 Hours</option>
                 <option value="7d">Last 7 Days</option>
                 <option value="30d">Last 30 Days</option>
@@ -66,9 +67,17 @@
         @if (SelectedTimeRange == "Custom")
         {
             <div class="custom-date-range">
-                <input type="date" class="form-control form-control-sm" value="@CustomFromDate?.ToString("yyyy-MM-dd")" @onchange="OnFromDateChange" />
+                <input type="datetime-local" 
+                       class="form-control form-control-sm" 
+                       value="@CustomFromDate?.ToString("yyyy-MM-ddTHH:mm")" 
+                       @onchange="OnFromDateChange" 
+                       title="From Date & Time" />
                 <span class="range-sep">to</span>
-                <input type="date" class="form-control form-control-sm" value="@CustomToDate?.ToString("yyyy-MM-dd")" @onchange="OnToDateChange" />
+                <input type="datetime-local" 
+                       class="form-control form-control-sm" 
+                       value="@CustomToDate?.ToString("yyyy-MM-ddTHH:mm")" 
+                       @onchange="OnToDateChange" 
+                       title="To Date & Time" />
             </div>
         }
 
@@ -197,6 +206,30 @@
 
     .btn-clear-search:hover {
         color: var(--color-text-primary);
+    }
+
+    .custom-date-range {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--color-surface-2);
+        padding: 2px 6px;
+        border-radius: 6px;
+        border: 1px solid var(--color-border);
+    }
+
+    .custom-date-range input {
+        background-color: var(--color-surface) !important;
+        color: var(--color-text-primary) !important;
+        border: 1px solid var(--color-border) !important;
+        font-size: 12px;
+        height: 32px;
+    }
+
+    .range-sep {
+        font-size: 12px;
+        color: var(--color-text-muted);
+        font-weight: 500;
     }
 
     .form-select {

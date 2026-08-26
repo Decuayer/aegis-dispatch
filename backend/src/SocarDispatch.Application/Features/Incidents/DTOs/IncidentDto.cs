@@ -5,7 +5,6 @@ public class IncidentDto
     public Guid Id { get; set; }
     public Guid ReporterId { get; set; }
     public string ReporterFullName { get; set; } = string.Empty;
-    // Detailed Reporter Information
     public string ReporterPhone { get; set; } = string.Empty;
     public string ReporterDepartment { get; set; } = string.Empty;
     public string ReporterEmail { get; set; } = string.Empty;
@@ -20,8 +19,9 @@ public class IncidentDto
     public decimal Latitude { get; set; }
     public decimal Longitude { get; set; }
     public DateTime CreatedAt { get; set; }
+    public DateTime? CompletedAt { get; set; }
     
-    // Assigned Team Information (if any)
+    // Assigned Team Information
     public Guid? AssignedTeamId { get; set; }
     public string? AssignedTeamName { get; set; }
     public string? CompletionNotes { get; set; }

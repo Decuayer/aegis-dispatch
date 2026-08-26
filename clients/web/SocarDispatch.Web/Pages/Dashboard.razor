@@ -91,11 +91,13 @@
             <h2 class="dash-section-title">Live Operational Map</h2>
             <p class="dash-section-sub">Active incidents and field team positions in real-time</p>
         </div>
-        <LeafletMap
-            @ref="_leafletMapRef"
-            Height="580px"
-            OnIncidentDetailRequested="HandleIncidentDetail"
-            OnAssignTeamRequested="HandleAssignTeam" />
+        <div class="dash-map-canvas-wrapper">
+            <LeafletMap
+                @ref="_leafletMapRef"
+                Height="100%"
+                OnIncidentDetailRequested="HandleIncidentDetail"
+                OnAssignTeamRequested="HandleAssignTeam" />
+        </div>
     </div>
 
     <div class="dash-feed-section">
@@ -330,6 +332,17 @@
         box-shadow: var(--shadow-sm);
         display: flex;
         flex-direction: column;
+        min-height: 640px;
+    }
+
+    .dash-map-canvas-wrapper {
+        flex: 1;
+        min-height: 520px;
+        height: 100%;
+        border-radius: 6px;
+        overflow: hidden;
+        position: relative;
+        border: 1px solid var(--color-border);
     }
 
     .dash-feed-section {

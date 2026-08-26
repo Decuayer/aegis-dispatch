@@ -1,7 +1,8 @@
 // wwwroot/js/leafletMap.js
 window.leafletMap = (function () {
     let map = null;
-    let incidentClusterGroup = null;
+    let incidentClusterGroup = null;      // Layer for active incidents
+    let resolvedClusterGroup = null;      // Layer for resolved/canceled incidents
     let teamLayerGroup = null;
     let incidentMarkers = {}; // { [incidentId]: marker }
     let teamMarkers = {};     // { [teamId]: marker }
@@ -12,8 +13,10 @@ window.leafletMap = (function () {
     let _pickerDotNetRef = null;
     let pickerTileLayer = null;
 
-    // Get the color from EmergencyCode according to the Severity color
-    function getIncidentColor(emergencyCode) {
+    // Get color according to EmergencyCode or Status
+    function getIncidentColor(emergencyCode, status) {
+        if (status === 'Resolved') return '#22c55e'; // Green
+        if (status === 'Canceled') return '#6b7280'; // Gray
         const code = (emergencyCode || '').toLowerCase();
         if (code.includes('kirmizi') || code.includes('red') || code.includes('1'))
             return '#ef4444';
@@ -21,29 +24,19 @@ window.leafletMap = (function () {
             return '#f97316';
         if (code.includes('sari') || code.includes('yellow') || code.includes('3'))
             return '#f59e0b';
-        return '#3b82f6'; // varsayılan: mavi
-    }
-
-    // Color according to team status
-    function getTeamColor(status) {
-        switch (status) {
-            case 'Idle':      return '#22c55e';   // yeşil
-            case 'Forwarded': return '#3b82f6';   // mavi
-            case 'OnScene':   return '#f59e0b';   // sarı
-            case 'Busy':      return '#ef4444';   // kırmızı
-            default:          return '#6b7280';
-        }
+        return '#3b82f6';
     }
 
     // Custom SVG-based incident marker icon
-    function createIncidentIcon(emergencyCode) {
-        const color = getIncidentColor(emergencyCode);
+    function createIncidentIcon(emergencyCode, status) {
+        const color = getIncidentColor(emergencyCode, status);
+        const iconSymbol = (status === 'Resolved') ? '✓' : (status === 'Canceled' ? '✕' : '!');
         const svg = `
           <svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">
             <path d="M16 0C7.16 0 0 7.16 0 16c0 10 16 24 16 24S32 26 32 16C32 7.16 24.84 0 16 0z"
                   fill="${color}" stroke="white" stroke-width="2"/>
             <text x="16" y="21" text-anchor="middle" font-size="14" fill="white" font-weight="bold"
-                  font-family="Inter,sans-serif">!</text>
+                  font-family="Inter,sans-serif">${iconSymbol}</text>
           </svg>`;
         return L.divIcon({
             html: svg,
@@ -52,6 +45,17 @@ window.leafletMap = (function () {
             iconAnchor: [16, 40],
             popupAnchor: [0, -40]
         });
+    }
+
+    // Color according to team status
+    function getTeamColor(status) {
+        switch (status) {
+            case 'Idle':      return '#22c55e';
+            case 'Forwarded': return '#3b82f6';
+            case 'OnScene':   return '#f59e0b';
+            case 'Busy':      return '#ef4444';
+            default:          return '#6b7280';
+        }
     }
 
     // SVG-based custom team marker icon
@@ -96,7 +100,7 @@ window.leafletMap = (function () {
             maxZoom: 19
         }).addTo(map);
 
-        // Cluster group — for incidents
+        // Active incidents cluster group
         incidentClusterGroup = L.markerClusterGroup({
             maxClusterRadius: 60,
             spiderfyOnMaxZoom: true,
@@ -104,9 +108,15 @@ window.leafletMap = (function () {
         });
         map.addLayer(incidentClusterGroup);
 
+        // Resolved incidents cluster group (hidden by default)
+        resolvedClusterGroup = L.markerClusterGroup({
+            maxClusterRadius: 60,
+            spiderfyOnMaxZoom: true,
+            showCoverageOnHover: false
+        });
+
         // Normal layer group — for teams
         teamLayerGroup = L.layerGroup().addTo(map);
-
     }
 
     function updateMainTileLayer(tileProvider) {
@@ -120,7 +130,7 @@ window.leafletMap = (function () {
     function createIncidentPopupHtml(data) {
         const { id, category, emergencyCode, reporterFullName, status, createdAt, assignedTeamName } = data;
         const formattedDate = new Date(createdAt).toLocaleString('tr-TR');
-        const color = getIncidentColor(emergencyCode);
+        const color = getIncidentColor(emergencyCode, status);
 
         const teamInfo = assignedTeamName
             ? `<div class="lf-popup-row"><span class="lf-label">Assigned Team:</span> <span class="lf-value">${assignedTeamName}</span></div>`
@@ -149,20 +159,32 @@ window.leafletMap = (function () {
     // Add or update incident marker
     function addIncidentMarker(incident) {
         if (!map) return;
-        const { id, lat, lng, category, emergencyCode } = incident;
+        const { id, lat, lng, category, emergencyCode, status } = incident;
 
-        // If marker already exists, update position, icon and popup
+        const isResolved = status === 'Resolved' || status === 'Canceled';
+        const targetGroup = isResolved ? resolvedClusterGroup : incidentClusterGroup;
+
+        // If marker already exists, clean up from groups and update
         if (incidentMarkers[id]) {
             const existingMarker = incidentMarkers[id];
+            if (incidentClusterGroup && incidentClusterGroup.hasLayer(existingMarker)) {
+                incidentClusterGroup.removeLayer(existingMarker);
+            }
+            if (resolvedClusterGroup && resolvedClusterGroup.hasLayer(existingMarker)) {
+                resolvedClusterGroup.removeLayer(existingMarker);
+            }
+
             existingMarker.setLatLng([lat, lng]);
-            existingMarker.setIcon(createIncidentIcon(emergencyCode));
+            existingMarker.setIcon(createIncidentIcon(emergencyCode, status));
             existingMarker._incidentData = { ...existingMarker._incidentData, ...incident };
             existingMarker.setPopupContent(createIncidentPopupHtml(existingMarker._incidentData));
+            
+            if (targetGroup) targetGroup.addLayer(existingMarker);
             return;
         }
 
         const marker = L.marker([lat, lng], {
-            icon: createIncidentIcon(emergencyCode),
+            icon: createIncidentIcon(emergencyCode, status),
             title: `${category} — ${emergencyCode}`
         });
 
@@ -173,12 +195,11 @@ window.leafletMap = (function () {
             className: 'lf-custom-popup' 
         });
 
-        incidentClusterGroup.addLayer(marker);
+        if (targetGroup) targetGroup.addLayer(marker);
         incidentMarkers[id] = marker;
     }
 
-
-    // Add / update team marker (Restored Function)
+    // Add / update team marker
     function addTeamMarker(team) {
         if (!map) return;
         const { id, teamName, status, lat, lng, updatedAt } = team;
@@ -217,9 +238,6 @@ window.leafletMap = (function () {
         teamMarkers[id] = marker;
     }
 
-    // ──────────────────────────────────────────────
-    // Smooth Team Marker Animation (GPS Transition)
-    // ──────────────────────────────────────────────
     function animateTeamMarker(teamId, targetLat, targetLng) {
         const marker = teamMarkers[teamId];
         if (!marker) return;
@@ -235,9 +253,7 @@ window.leafletMap = (function () {
         function animate(currentTime) {
             const elapsed = currentTime - startTime;
             const progress = Math.min(elapsed / duration, 1);
-
             const easeOut = 1 - Math.pow(1 - progress, 3);
-
             const currentLat = start.lat + (targetLat - start.lat) * easeOut;
             const currentLng = start.lng + (targetLng - start.lng) * easeOut;
 
@@ -256,7 +272,9 @@ window.leafletMap = (function () {
     // Remove marker
     function removeIncidentMarker(incidentId) {
         if (incidentMarkers[incidentId]) {
-            incidentClusterGroup.removeLayer(incidentMarkers[incidentId]);
+            const m = incidentMarkers[incidentId];
+            if (incidentClusterGroup && incidentClusterGroup.hasLayer(m)) incidentClusterGroup.removeLayer(m);
+            if (resolvedClusterGroup && resolvedClusterGroup.hasLayer(m)) resolvedClusterGroup.removeLayer(m);
             delete incidentMarkers[incidentId];
         }
     }
@@ -268,23 +286,16 @@ window.leafletMap = (function () {
         }
     }
 
-    // Incident Status Update
     function updateIncidentStatus(incidentId, newStatus) {
         const marker = incidentMarkers[incidentId];
         if (!marker) return;
 
-        if (newStatus === 'Resolved' || newStatus === 'Canceled') {
-            removeIncidentMarker(incidentId);
-            return;
-        }
-
         if (marker._incidentData) {
             marker._incidentData.status = newStatus;
-            marker.setPopupContent(createIncidentPopupHtml(marker._incidentData));
+            addIncidentMarker(marker._incidentData); // Re-adds to appropriate active/resolved group
         }
     }
 
-    // Team Status Update
     function updateTeamStatus(teamId, newStatus) {
         const marker = teamMarkers[teamId];
         if (!marker) return;
@@ -305,7 +316,6 @@ window.leafletMap = (function () {
         }
     }
 
-    // Incident Assigned Team Update
     function updateIncidentAssignment(incidentId, teamId, teamName) {
         const marker = incidentMarkers[incidentId];
         if (marker && marker._incidentData) {
@@ -319,7 +329,6 @@ window.leafletMap = (function () {
         }
     }
 
-    // Pan & Zoom
     function panToIncident(incidentId) {
         if (incidentMarkers[incidentId]) {
             const latlng = incidentMarkers[incidentId].getLatLng();
@@ -340,29 +349,32 @@ window.leafletMap = (function () {
         }
     }
 
+    // Toggle Active Incidents Layer
     function toggleIncidentsLayer(visible) {
         if (!map || !incidentClusterGroup) return;
         if (visible) {
-            if (!map.hasLayer(incidentClusterGroup)) {
-                map.addLayer(incidentClusterGroup);
-            }
+            if (!map.hasLayer(incidentClusterGroup)) map.addLayer(incidentClusterGroup);
         } else {
-            if (map.hasLayer(incidentClusterGroup)) {
-                map.removeLayer(incidentClusterGroup);
-            }
+            if (map.hasLayer(incidentClusterGroup)) map.removeLayer(incidentClusterGroup);
+        }
+    }
+
+    // Toggle Resolved Incidents Layer
+    function toggleResolvedIncidentsLayer(visible) {
+        if (!map || !resolvedClusterGroup) return;
+        if (visible) {
+            if (!map.hasLayer(resolvedClusterGroup)) map.addLayer(resolvedClusterGroup);
+        } else {
+            if (map.hasLayer(resolvedClusterGroup)) map.removeLayer(resolvedClusterGroup);
         }
     }
 
     function toggleTeamsLayer(visible) {
         if (!map || !teamLayerGroup) return;
         if (visible) {
-            if (!map.hasLayer(teamLayerGroup)) {
-                map.addLayer(teamLayerGroup);
-            }
+            if (!map.hasLayer(teamLayerGroup)) map.addLayer(teamLayerGroup);
         } else {
-            if (map.hasLayer(teamLayerGroup)) {
-                map.removeLayer(teamLayerGroup);
-            }
+            if (map.hasLayer(teamLayerGroup)) map.removeLayer(teamLayerGroup);
         }
     }
 
@@ -372,8 +384,6 @@ window.leafletMap = (function () {
         }
     }
 
-
-    // Callback hooks for Blazor (DotNet reference)
     let _dotNetRef = null;
 
     function setDotNetRef(dotNetRef) {
@@ -388,17 +398,18 @@ window.leafletMap = (function () {
         if (_dotNetRef) _dotNetRef.invokeMethodAsync('NotifyAssignTeam', incidentId);
     }
 
-    // Clear/destroy map
     function destroyMap() {
         if (map) {
             map.remove();
             map = null;
             incidentMarkers = {};
             teamMarkers = {};
+            incidentClusterGroup = null;
+            resolvedClusterGroup = null;
+            teamLayerGroup = null;
         }
     }
 
-    // Interactive Mini-Map Coordinate Picker
     function initPickerMap(containerId, initialLat, initialLng, initialZoom, dotNetRef, tileProvider) {
         if (pickerMap) {
             pickerMap.remove();
@@ -417,14 +428,12 @@ window.leafletMap = (function () {
             attributionControl: true
         });
 
-        // Tile layer provider selection
         const tileUrl = getTileUrl(tileProvider);
         pickerTileLayer = L.tileLayer(tileUrl, {
             maxZoom: 19,
             attribution: '© OpenStreetMap contributors'
         }).addTo(pickerMap);
 
-        // Draggable location pin
         const pickerIcon = L.divIcon({
             html: `
               <svg xmlns="http://www.w3.org/2000/svg" width="34" height="42" viewBox="0 0 34 42">
@@ -441,7 +450,6 @@ window.leafletMap = (function () {
             icon: pickerIcon
         }).addTo(pickerMap);
 
-        // Click event on map to reposition marker
         pickerMap.on('click', function (e) {
             const clickedLat = e.latlng.lat;
             const clickedLng = e.latlng.lng;
@@ -449,13 +457,11 @@ window.leafletMap = (function () {
             notifyPickerLocation(clickedLat, clickedLng);
         });
 
-        // Dragend event on marker
         pickerMarker.on('dragend', function () {
             const position = pickerMarker.getLatLng();
             notifyPickerLocation(position.lat, position.lng);
         });
 
-        // Force map resize recalculation after modal/tab transition
         setTimeout(() => {
             if (pickerMap) pickerMap.invalidateSize();
         }, 200);
@@ -482,13 +488,10 @@ window.leafletMap = (function () {
     function getTileUrl(provider) {
         switch (provider) {
             case 'CartoDark':
-                // Free Esri Dark Gray Canvas (No API key required)
                 return 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}';
             case 'CartoPositron':
-                // Free Esri Light Gray Canvas (No API key required)
                 return 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}';
             default:
-                // Standard OpenStreetMap (No API key required)
                 return 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
         }
     }
@@ -503,7 +506,6 @@ window.leafletMap = (function () {
         }
     }
 
-    // Browser Geolocation API Bridge
     function getCurrentBrowserLocation() {
         return new Promise((resolve, reject) => {
             if (!navigator.geolocation) {
@@ -551,6 +553,7 @@ window.leafletMap = (function () {
         panToTeam,
         panToLocation,
         toggleIncidentsLayer,
+        toggleResolvedIncidentsLayer, // EKLENDİ
         toggleTeamsLayer,
         invalidateSize,
         setDotNetRef,

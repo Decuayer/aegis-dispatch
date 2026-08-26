@@ -44,6 +44,8 @@ public class IncidentService : IIncidentService
     public async Task<ApiResponse<List<IncidentDetailViewModel>>?> GetAllIncidentsAsync(
         string? status = null, 
         string? category = null, 
+        DateTime? from = null,
+        DateTime? to = null,
         CancellationToken cancellationToken = default)
     {
         try
@@ -53,6 +55,11 @@ public class IncidentService : IIncidentService
                 queryParams.Add($"status={Uri.EscapeDataString(status)}");
             if (!string.IsNullOrWhiteSpace(category) && category != "All")
                 queryParams.Add($"category={Uri.EscapeDataString(category)}");
+            if (from.HasValue)
+                queryParams.Add($"from={Uri.EscapeDataString(from.Value.ToString("o"))}");
+            if (to.HasValue)
+                queryParams.Add($"to={Uri.EscapeDataString(to.Value.ToString("o"))}");
+
             var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : string.Empty;
             var url = $"api/v1/incidents{queryString}";
             return await _http.GetFromJsonAsync<ApiResponse<List<IncidentDetailViewModel>>>(url, cancellationToken);
