@@ -2,10 +2,10 @@
   <img src="socar-logo.png" alt="SOCAR Dispatch Logo" width="220" />
 </p>
 
-<h1 align="center">SOCAR Dispatch — Real-Time Emergency Response & Fleet Dispatch System</h1>
+<h1 align="center">SOCAR Dispatch — Real-Time Emergency Response & Fleet Dispatch Ecosystem</h1>
 
 <p align="center">
-  <strong>Endüstriyel tesisler, rafineriler ve yüksek riskli saha operasyonları için yeni nesil acil durum yönetimi, telemetri ve sevk ekosistemi.</strong>
+  <strong>An enterprise-grade emergency management, geospatial telemetry, and rapid incident dispatch system tailored for oil refineries, chemical plants, and high-risk industrial facilities.</strong>
 </p>
 
 <p align="center">
@@ -24,55 +24,55 @@
 
 ---
 
-## 📌 Problem & Çözüm Özeti (Executive Summary)
+## 📌 Executive Summary
 
-### Karşılaşılan Zorluklar
-SOCAR rafineri sahaları (ör. STAR Rafinerisi, Petkim yerleşkeleri) gibi yüksek riskli endüstriyel alanlarda kimyasal sızıntı, yangın veya iş kazası gibi acil durumlarda:
-* Geleneksel telsiz/telefon anonslarının konum hassasiyetinden yoksun olması,
-* Müdahale ekiplerinin sahadaki anlık konumlarının ve uygunluk durumlarının merkezden izlenememesi,
-* Olay yeri görsel/video verilerinin koordinasyon merkezine dakikalar sonra ulaşması,
-* Müdahale süresini uzatarak iş sağlığı ve güvenliği (İSG) risklerini artırmaktadır.
+### The Challenge
+In high-consequence industrial facilities (such as the STAR Refinery and Petkim petrochemical complexes), every second counts during critical incidents like hazardous gas leaks, industrial fires, structural failures, or personal injury:
+* Conventional radio dispatch and phone calls lack geospatial precision and real-time telemetry.
+* Incident dispatchers struggle to identify field unit proximity and live operational status.
+* Visual proof and damage documentation reach crisis command centers with significant latency.
+* These inefficiencies amplify response times and elevate occupational health and safety (OHS) risks.
 
-### SOCAR Dispatch Çözümü
-**SOCAR Dispatch**, saha personeli, acil müdahale ekipleri ve koordinasyon operatörleri arasındaki operasyonel halkayı milisaniyeler seviyesine indiren uçtan uca kurumsal bir yönetim platformudur:
-* **Hızlı Müdahale (1-Click SOS):** Çalışanlar tek tuşla GPS koordinatlı, kategori kodlu acil durum çağrısı ve kanıt medyası gönderir.
-* **Canlı Durumsal Farkındalık:** Operatörler interaktif GIS harita üzerinden olay koordinatlarını ve sahadaki timlerin telemetri verilerini gerçek zamanlı izler.
-* **Dinamik Sevk ve Takip:** Operatörler olaylara en yakın ve uygun ekibi yönlendirir; saha ekibi rota rehberliği alırken durumunu (Yönlendi, Olay Yerinde, Çözüldü) tek tuşla günceller.
+### The SOCAR Dispatch Solution
+**SOCAR Dispatch** unifies field workers, emergency response units (ERT), and central dispatch operators into a synchronized, sub-second telemetry network:
+* **1-Click SOS Reporting:** Field workers trigger immediate, GPS-tagged emergency dispatches with categorized emergency codes and multimedia proof in a single tap.
+* **Real-Time Situational Awareness:** Dispatchers monitor live incident coordinates and responder telemetry pins on an interactive GIS map.
+* **Dynamic Fleet Dispatch & Telemetry:** Dispatchers assign the nearest available response unit; responders receive route intelligence and update their tactical status (`En Route`, `On Scene`, `Resolved`) seamlessly.
 
 ---
 
-## 🏛️ Mimari Şema ve Veri Akışı (System Architecture)
+## 🏛️ System Architecture & Data Flow
 
-Sistem; mikroservis hazırlığında Clean Architecture ve CQRS prensiplerine göre yapılandırılmış bir **.NET 8 Web API**, gerçek zamanlı iki yönlü iletişim sağlayan **SignalR WebSockets**, jeouzamsal indeksleme ve sorgulama yetenekli **PostgreSQL / PostGIS** altyapısı üzerine inşa edilmiştir.
+The platform is designed following Clean Architecture and CQRS principles atop **.NET 8 Core**, real-time bidirectional **SignalR WebSockets**, and a geospatial **PostgreSQL / PostGIS** database cluster.
 
 ```mermaid
 flowchart TB
-    subgraph Clients["İstemci Katmanı (Clients Layer)"]
+    subgraph Clients["Clients Layer"]
         direction TB
-        Mobile["📱 Flutter Mobile App<br/><i>(Saha Çalışanları & Ekipler)</i>"]
-        WebPanel["🖥️ Blazor Web GIS Paneli<br/><i>(Dispatch Operatörleri & İSG)</i>"]
+        Mobile["📱 Flutter Mobile Client<br/><i>(Field Employees & Response Units)</i>"]
+        WebPanel["🖥️ Blazor Web GIS Dashboard<br/><i>(Dispatch Operators & HSE Officers)</i>"]
     end
 
-    subgraph GatewayAPI["Uygulama & API Katmanı (.NET 8 Core)"]
+    subgraph GatewayAPI["Application & API Layer (.NET 8 Core)"]
         direction TB
         API["🌐 REST API Engine<br/><i>(Clean Architecture / CQRS MediatR)</i>"]
         HubIncident["⚡ SignalR Incident Hub<br/><i>(/hubs/incidents)</i>"]
         HubLocation["🛰️ SignalR Telemetry Hub<br/><i>(/hubs/location)</i>"]
     end
 
-    subgraph DataStorage["Veri & Mesajlaşma Katmanı (Data & Infrastructure)"]
+    subgraph DataStorage["Data & Infrastructure Layer"]
         direction TB
-        Postgres[("🐘 PostgreSQL + PostGIS<br/><i>(İlişkisel Veri & Mekansal İndeksler)</i>")]
-        Redis[("⚡ Redis Cache & Pub/Sub<br/><i>(Geçici Telemetri & State)</i>")]
-        MinIO[("🪣 MinIO Object Storage<br/><i>(Olay Fotoğraf/Video Kanıtları)</i>")]
+        Postgres[("🐘 PostgreSQL + PostGIS<br/><i>(Relational Data & Geospatial Spatial Indexes)</i>")]
+        Redis[("⚡ Redis Cache & Pub/Sub<br/><i>(Live Telemetry & Ephemeral State)</i>")]
+        MinIO[("🪣 MinIO S3 Object Storage<br/><i>(Incident Photo & Video Evidence)</i>")]
     end
 
     %% Client to API interactions
-    Mobile -- "1. 1-Click SOS / Olay Bildirimi (REST)" --> API
-    Mobile -- "2. Anlık GPS Konumu (WebSocket)" --> HubLocation
-    WebPanel -- "3. Ekip Atama / Yönetim (REST)" --> API
-    WebPanel -- "4. Canlı Dinleme (WebSocket)" --> HubIncident
-    WebPanel -- "5. Canlı Ekip Takibi (WebSocket)" --> HubLocation
+    Mobile -- "1. 1-Click SOS / Incident Report (REST)" --> API
+    Mobile -- "2. Continuous GPS Telemetry (WebSocket)" --> HubLocation
+    WebPanel -- "3. Fleet Assignment & Control (REST)" --> API
+    WebPanel -- "4. Real-Time Incident Stream (WebSocket)" --> HubIncident
+    WebPanel -- "5. Live Fleet Tracking Stream (WebSocket)" --> HubLocation
 
     %% API to Infrastructure
     API --> Postgres
@@ -84,35 +84,35 @@ flowchart TB
 
 ---
 
-## 🚀 Öne Çıkan Özellikler (Core Features)
+## 🚀 Core Features
 
-* 🛡️ **Role-Based Access Control (RBAC):** `Employee`, `Team`, `Operator` rolleri ve departman bazlı yetki matrisi (JWT & Refresh Token).
-* 🚨 **1-Click Rapid Emergency Dispatch:** Panik anında tek dokunuşla arka planda GPS konum sabitleme ve olay kodu iletimi.
-* 📍 **Geofencing & Facility Boundary Lock:** Operatör ve mobil haritalarının rafineri sınırlarına kilitlenmesi, sınır aşımı engeli.
-* 📡 **Sub-Second SignalR Telemetry:** Ekiplerin hareket halinde gönderdiği koordinatların operatör ekranına < 1s gecikmeyle yansıması.
-* 👥 **Team Discovery & Leadership Succession:** Boştaki timleri keşfetme, kendi isteğiyle katılma/ayrılma ve boşalan liderliği devralma mekanizmaları.
-* 📸 **Kanıt Medya Boru Hattı:** MinIO entegrasyonuyla çoklu fotoğraf ve video ekleme, küçük resim (thumbnail) önizleme desteği.
+* 🛡️ **Role-Based Access Control (RBAC):** Strict isolation and role hierarchies (`Employee`, `Team`, `Operator`) backed by secure JWT & Refresh Token lifecycle.
+* 🚨 **1-Click Rapid Emergency Dispatch:** Rapid incident triggers that capture background GPS location and broadcast priority alarms immediately.
+* 📍 **Geofencing & Facility Boundary Lock:** Boundary-locked Leaflet and mobile maps ensuring operator and responder focus stays within refinery coordinates.
+* 📡 **Sub-Second SignalR Telemetry:** Low-latency GPS broadcast pipeline updating responder coordinates across web dispatch consoles in under 1 second.
+* 👥 **Team Discovery & Succession Hierarchy:** Discovery of idle response teams, self-join/leave workflows, and vacant leadership succession protocols.
+* 📸 **Multimedia Evidence Pipeline:** High-throughput photo and video attachments stored on S3-compatible MinIO storage with thumbnail generation.
 
 ---
 
-## 🛠️ Teknoloji Yığını (Tech Stack)
+## 🛠️ Technology Stack
 
-| Katman | Teknoloji | Açıklama |
+| Component | Technology | Description |
 | :--- | :--- | :--- |
-| **Backend Core** | .NET 8 (C#) | Clean Architecture, CQRS (MediatR), FluentValidation |
-| **Real-Time Hub** | ASP.NET Core SignalR | Düşük gecikmeli olay ve telemetri yayını (WebSocket) |
-| **Veritabanı & GIS** | PostgreSQL 16 + PostGIS | Coğrafi sorgular (`ST_DWithin`, `ST_Distance`), B-Tree dizinleri |
-| **Önbellek / Dağıtık Durum** | Redis | Canlı oturum ve telemetri durum önbelleği |
-| **Nesne Depolama** | MinIO (S3-Compatible) | Saha olay fotoğrafları ve operasyonel video kayıtları |
-| **Mobil İstemci** | Flutter (Dart) | iOS & Android, Arka Plan Konum Servisi, Offline Fallback |
-| **Web Operatör Paneli** | Blazor Web (.NET 8) + Leaflet | Interaktif GIS harita paneli, olay ve filo yönetim masası |
-| **Konteynerizasyon** | Docker & Docker Compose | İzole, tekrarlanabilir çoklu servis geliştirme ortamı |
+| **Backend Core** | .NET 8 (C#) | Clean Architecture, CQRS (MediatR), FluentValidation, EF Core |
+| **Real-Time Hubs** | ASP.NET Core SignalR | High-throughput, sub-second WebSocket telemetry & broadcast |
+| **Database & GIS** | PostgreSQL 16 + PostGIS | Spatial queries (`ST_DWithin`, `ST_Distance`), composite B-Tree indexes |
+| **Cache & Distributed State** | Redis | Ephemeral telemetry caching and Pub/Sub communication |
+| **Object Storage** | MinIO (S3-Compatible) | High-durability incident evidence attachments (Photos & Videos) |
+| **Mobile Client** | Flutter (Dart) | iOS & Android, background location telemetry, offline resilience |
+| **Web Operator Console** | Blazor Web (.NET 8) + Leaflet | Interactive GIS mapping console, incident queue, and fleet telemetry |
+| **Containerization** | Docker & Docker Compose | Isolated multi-service production & development environments |
 
 ---
 
-## ⚡ Hızlı Başlatma (Quick Start)
+## ⚡ Quick Start
 
-### 1. Ön Koşullar (Prerequisites)
+### 1. Prerequisites
 * [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 * [Flutter SDK (v3.22+)](https://flutter.dev/docs/get-started/install)
 * [Docker Desktop](https://www.docker.com/products/docker-desktop)
@@ -120,85 +120,85 @@ flowchart TB
 
 ---
 
-### 2. Altyapı Servislerini Ayağa Kaldırma (Docker)
-PostgreSQL/PostGIS, Redis ve MinIO servislerini başlatmak için:
+### 2. Launch Infrastructure Services (Docker)
+Spin up PostgreSQL/PostGIS, Redis, and MinIO with a single command:
 
 ```bash
-# Repoyu klonlayın
+# Clone the repository
 git clone https://github.com/Decuayer/socar-dispatch.git
 cd socar-dispatch
 
-# Ortam değişkenlerini hazırlayın
+# Copy the environment file
 cp .env.example .env
 
-# Veritabanı ve altyapı konteynerlerini başlatın
+# Start infrastructure containers
 docker compose -f docker/docker-compose.yml up -d
 ```
 
 ---
 
-### 3. Backend API'yi Başlatma
+### 3. Run Backend API
 
 ```bash
-# Backend dizinine geçin
+# Navigate to backend directory
 cd backend
 
-# Bağımlılıkları geri yükleyin ve veritabanı migrasyonlarını uygulayın
+# Restore packages and apply EF Core database migrations
 dotnet restore
 dotnet ef database update --project src/SocarDispatch.Infrastructure --startup-project src/SocarDispatch.API
 
-# Web API'yi başlatın
+# Run the API
 dotnet run --project src/SocarDispatch.API
 ```
-> API Varsayılan Adresi: `https://localhost:7001` veya `http://localhost:5001`  
-> Swagger UI Dokümantasyonu: `https://localhost:7001/swagger`
+> API Default URL: `https://localhost:7001` or `http://localhost:5001`  
+> Swagger Documentation: `https://localhost:7001/swagger`
 
 ---
 
-### 4. Flutter Mobil Uygulamasını Başlatma
+### 4. Run Flutter Mobile App
 
 ```bash
-# Mobil dizinine geçin
+# Navigate to mobile client directory
 cd clients/mobile
 
-# Paketleri yükleyin
+# Get dependencies
 flutter pub get
 
-# Cihaz veya simülatörde çalıştırın
+# Run on connected device or simulator
 flutter run
 ```
 
 ---
 
-### 5. Web Operatör Panelini Başlatma
+### 5. Run Web Dispatch Operator Console
 
 ```bash
-# Web dizinine geçin
+# Navigate to web client directory
 cd clients/web/SocarDispatch.Web
 
-# Blazor uygulamasını başlatın
+# Launch Blazor application
 dotnet run
 ```
-> Web Paneli Varsayılan Adresi: `https://localhost:7100`
+> Web Console Default URL: `https://localhost:7100`
 
 ---
 
-## 🧪 Testlerin Çalıştırılması
+## 🧪 Running Automated Tests
 
 ```bash
-# Backend birim ve entegrasyon testleri
+# Run backend unit and integration test suite
 cd backend
 dotnet test --verbosity normal
 
-# Flutter mobil birim testleri
+# Run Flutter mobile unit and widget tests
 cd ../clients/mobile
 flutter test
 ```
 
 ---
 
-## 🔒 Güvenlik & KVKK Uyumluluğu
-Bu proje endüstriyel tesis güvenlik standartlarına (ISO 27001 / IEC 62443 hedefleri) ve KVKK yönetmeliklerine uygun olarak geliştirilmektedir. Konum takibi yalnızca aktif görev ve açık rıza onay mekanizması çerçevesinde gerçekleştirilir.
+## 🔒 Security & Compliance
+This solution is engineered to align with industrial facility safety benchmarks (ISO 27001 / IEC 62443 principles) and local data privacy standards (KVKK / GDPR). Continuous location tracking is activated strictly upon explicit consent and during active emergency duty states.
 
 ---
 
