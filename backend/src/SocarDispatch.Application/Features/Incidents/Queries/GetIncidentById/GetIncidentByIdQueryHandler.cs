@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using SocarDispatch.Application.Common.Interfaces;
 using SocarDispatch.Application.Common.Models;
 using SocarDispatch.Application.Features.Incidents.DTOs;
+using SocarDispatch.Application.Features.Reports.DTOs;
 using SocarDispatch.Domain.Exceptions;
 
 namespace SocarDispatch.Application.Features.Incidents.Queries.GetIncidentById;

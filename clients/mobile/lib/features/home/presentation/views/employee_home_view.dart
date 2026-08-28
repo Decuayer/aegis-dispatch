@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../incident_reporting/presentation/views/incident_report_wizard_view.dart';
 import '../../../profile/data/models/user_model.dart';
 import '../../../profile/presentation/views/profile_view.dart';
 
@@ -87,8 +88,11 @@ class EmployeeHomeView extends StatelessWidget {
                   subtitle: const Text('Notify emergency dispatch center immediately'),
                   trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Incident reporting module will be activated.')),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (ctx) => const IncidentReportWizardView(),
+                      ),
                     );
                   },
                 ),

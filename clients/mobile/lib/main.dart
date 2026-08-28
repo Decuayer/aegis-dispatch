@@ -3,6 +3,9 @@ import 'app.dart';
 import 'core/network/api_client.dart';
 import 'core/storage/secure_storage_service.dart';
 import 'features/auth/data/repositories/auth_repository.dart';
+import 'features/incident_reporting/data/repositories/incident_repository.dart';
+import 'features/incident_reporting/services/location_service.dart';
+import 'features/incident_reporting/services/media_picker_service.dart';
 import 'features/profile/data/repositories/media_repository.dart';
 import 'features/profile/data/repositories/profile_repository.dart';
 
@@ -12,6 +15,8 @@ void main() async {
   // Core Services
   final secureStorage = SecureStorageService();
   final apiClient = ApiClient(storageService: secureStorage);
+  const locationService = LocationService();
+  final mediaPickerService = MediaPickerService();
 
   // Repositories
   final authRepository = AuthRepository(
@@ -25,12 +30,18 @@ void main() async {
   final mediaRepository = MediaRepository(
     apiClient: apiClient,
   );
+  final incidentRepository = IncidentRepository(
+    apiClient: apiClient,
+  );
 
   runApp(
     SocarDispatchApp(
       authRepository: authRepository,
       profileRepository: profileRepository,
       mediaRepository: mediaRepository,
+      incidentRepository: incidentRepository,
+      locationService: locationService,
+      mediaPickerService: mediaPickerService,
     ),
   );
 }
