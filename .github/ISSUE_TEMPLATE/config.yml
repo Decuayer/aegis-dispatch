@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
-  - name: "📖 Technical Documentation & Jira Epics"
-    url: "https://github.com/Decuayer/socar-dispatch/blob/main/task.md"
-    about: "Review the SOCAR Dispatch technical requirements and Jira sprint backlog."
+  - name: "📖 Technical Documentation & Architecture"
+    url: "https://github.com/Decuayer/socar-dispatch#readme"
+    about: "Review the SOCAR Dispatch technical documentation and system architecture."
