@@ -5,16 +5,25 @@
 	<!-- Permission strings for Camera and Photo Library -->
 	<key>NSCameraUsageDescription</key>
 	<string>SOCAR Dispatch requires access to your camera to take incident photos and upload profile avatars.</string>
+	
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>SOCAR Dispatch requires access to your photo library to select incident attachments and profile avatars.</string>
+	
 	<key>NSMicrophoneUsageDescription</key>
 	<string>SOCAR Dispatch requires access to your microphone when recording incident videos.</string>
+	
 	<!-- Local HTTP connection support for development -->
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>SOCAR Dispatch requires access to your GPS location to accurately pinpoint incident reports for emergency dispatch.</string>
+	
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>SOCAR Dispatch requires access to your GPS location to accurately pinpoint incident reports for emergency dispatch.</string>
 
 	
 	<key>CADisableMinimumFrameDurationOnPhone</key>

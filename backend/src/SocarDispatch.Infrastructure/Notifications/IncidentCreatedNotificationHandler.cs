@@ -27,6 +27,7 @@ public class IncidentCreatedNotificationHandler : INotificationHandler<IncidentC
             {
                 id = notification.IncidentId,
                 reporterId = notification.ReporterId,
+                reporterFullName = notification.ReporterFullName,
                 category = notification.Category,
                 emergencyCode = notification.EmergencyCode,
                 description = notification.Description,

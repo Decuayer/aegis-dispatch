@@ -28,13 +28,22 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, ApiRespon
     {
         var emailNormalized = request.Email.Trim().ToLowerInvariant();
 
-        // 1. Check if the email is already registered in the database
-        var existingUser = await _context.Users
+        // 1. Check if the email or phone is already registered in the database
+        var existingEmail = await _context.Users
             .AnyAsync(u => u.Email.ToLower() == emailNormalized, cancellationToken);
         
-        if (existingUser)
+        if (existingEmail)
         {
             throw new DomainException("A user registered with this email address already exists.");
+        }
+
+        var phoneTrimmed = request.Phone.Trim();
+        var existingPhone = await _context.Users
+            .AnyAsync(u => u.Phone == phoneTrimmed, cancellationToken);
+
+        if (existingPhone)
+        {
+            throw new DomainException("A user with this phone number already exists.");
         }
 
         // 2. Hashing the password with BCrypt

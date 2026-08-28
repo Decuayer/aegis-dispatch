@@ -31,16 +31,16 @@ public class CreateIncidentCommandHandler : IRequestHandler<CreateIncidentComman
         }
 
         // EmergencyCode validation check against DB
-        var codeExists = await _context.EmergencyCodes
-            .AnyAsync(c => c.Code == request.EmergencyCode && c.IsActive, cancellationToken);
-        if (!codeExists)
+        var emergencyCodeDef = await _context.EmergencyCodes
+            .FirstOrDefaultAsync(c => c.Code.ToLower() == request.EmergencyCode.ToLower() && c.IsActive, cancellationToken);
+        if (emergencyCodeDef == null)
         {
             throw new DomainException($"Invalid emergency code: '{request.EmergencyCode}'");
         }
 
-        var categoryExists = await _context.IncidentCategories
-            .AnyAsync(c => c.Code == request.Category && c.IsActive, cancellationToken);
-        if (!categoryExists)
+        var incidentCategoryDef = await _context.IncidentCategories
+            .FirstOrDefaultAsync(c => c.Code.ToLower() == request.Category.ToLower() && c.IsActive, cancellationToken);
+        if (incidentCategoryDef == null)
         {
             throw new DomainException($"Invalid incident category: '{request.Category}'");
         }
@@ -48,8 +48,8 @@ public class CreateIncidentCommandHandler : IRequestHandler<CreateIncidentComman
         var incident = new Incident
         {
             ReporterId = request.ReporterId,
-            Category = request.Category,
-            EmergencyCode = request.EmergencyCode,
+            Category = incidentCategoryDef.Code,
+            EmergencyCode = emergencyCodeDef.Code,
             Description = request.Description,
             Status = IncidentStatus.Open,
             Latitude = request.Latitude,
@@ -67,9 +67,12 @@ public class CreateIncidentCommandHandler : IRequestHandler<CreateIncidentComman
         _context.Incidents.Add(incident);
         await _context.SaveChangesAsync(cancellationToken);
 
+        var reporterFullName = $"{reporter.FirstName} {reporter.LastName}".Trim();
+
         await _publisher.Publish(new IncidentCreatedEvent(
             incident.Id,
             incident.ReporterId,
+            reporterFullName,
             incident.Category,
             incident.EmergencyCode,
             incident.Description ?? string.Empty,
@@ -82,7 +85,7 @@ public class CreateIncidentCommandHandler : IRequestHandler<CreateIncidentComman
         {
             Id = incident.Id,
             ReporterId = reporter.Id,
-            ReporterFullName = $"{reporter.FirstName} {reporter.LastName}".Trim(),
+            ReporterFullName = reporterFullName,
             ReporterPhone = reporter.Phone ?? string.Empty,
             ReporterDepartment = reporter.Department ?? string.Empty,
             ReporterEmail = reporter.Email ?? string.Empty,

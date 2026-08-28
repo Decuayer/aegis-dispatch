@@ -106,6 +106,7 @@ builder.Services.AddSwaggerGen(options =>
         Type = SecuritySchemeType.ApiKey
     });
 
+    options.CustomSchemaIds(type => type.FullName ?? type.Name);
     options.OperationFilter<SecurityRequirementsOperationFilter>();
 });
 

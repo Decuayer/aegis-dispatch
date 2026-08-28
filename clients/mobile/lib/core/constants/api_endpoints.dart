@@ -27,4 +27,8 @@ class ApiEndpoints {
 
   // Media endpoints
   static const String uploadMedia = '/api/v1/media/upload';
+
+  // Incident & Emergency Endpoints
+  static const String emergencyCodes = '/api/v1/emergency-codes';
+  static const String incidents = '/api/v1/incidents';
 }
