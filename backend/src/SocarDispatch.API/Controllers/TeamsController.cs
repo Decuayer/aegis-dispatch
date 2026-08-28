@@ -113,8 +113,8 @@ public class TeamsController : ControllerBase
     [HttpPatch("{teamId:guid}/members/{userId:guid}/status")]
     [Authorize(Roles = "Operator,Team")]
     public async Task<ActionResult<ApiResponse<TeamMemberDto>>> UpdateMemberStatus(
-        Guid teamId, 
-        Guid userId, 
+        Guid teamId,
+        Guid userId,
         [FromBody] UpdateTeamMemberStatusRequestDto request)
     {
         var requesterId = GetRequesterId();

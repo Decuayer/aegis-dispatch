@@ -1,6 +1,7 @@
 using MediatR;
 
 namespace SocarDispatch.Domain.Events;
+
 public record IncidentCreatedEvent(
     Guid IncidentId,
     Guid ReporterId,

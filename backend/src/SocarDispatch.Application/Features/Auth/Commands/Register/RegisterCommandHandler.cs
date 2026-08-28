@@ -31,7 +31,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, ApiRespon
         // 1. Check if the email or phone is already registered in the database
         var existingEmail = await _context.Users
             .AnyAsync(u => u.Email.ToLower() == emailNormalized, cancellationToken);
-        
+
         if (existingEmail)
         {
             throw new DomainException("A user registered with this email address already exists.");

@@ -45,7 +45,7 @@ public class IncidentsController : ControllerBase
             request.Latitude,
             request.Longitude
         );
-        
+
         var result = await _sender.Send(command);
         return CreatedAtAction(nameof(GetById), new { id = result.Data.Id }, result);
     }
@@ -54,7 +54,7 @@ public class IncidentsController : ControllerBase
     // Retrieves the list and details of all events with optional temporal and category filters.
     [HttpGet]
     public async Task<ActionResult<ApiResponse<List<IncidentDto>>>> GetAll(
-        [FromQuery] string? status, 
+        [FromQuery] string? status,
         [FromQuery] string? category,
         [FromQuery] DateTime? from,
         [FromQuery] DateTime? to)
@@ -79,7 +79,7 @@ public class IncidentsController : ControllerBase
     [HttpPut("{id:guid}")]
     [Authorize]
     public async Task<ActionResult<ApiResponse<IncidentDto>>> Update(Guid id, [FromBody] UpdateIncidentRequestDto request)
-    {   
+    {
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
         if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var requesterId))
         {

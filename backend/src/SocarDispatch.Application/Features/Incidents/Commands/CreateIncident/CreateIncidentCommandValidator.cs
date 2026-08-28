@@ -8,11 +8,11 @@ public class CreateIncidentCommandValidator : AbstractValidator<CreateIncidentCo
     {
         RuleFor(x => x.ReporterId)
             .NotEmpty().WithMessage("ReporterId is required.");
-        
+
         RuleFor(x => x.Category)
             .NotEmpty().WithMessage("Incident category is required.")
             .MaximumLength(50).WithMessage("Category cannot exceed 50 characters.");
-        
+
         RuleFor(x => x.EmergencyCode)
             .NotEmpty().WithMessage("Emergency code is required.")
             .MaximumLength(20).WithMessage("Emergency code cannot exceed 20 characters.");

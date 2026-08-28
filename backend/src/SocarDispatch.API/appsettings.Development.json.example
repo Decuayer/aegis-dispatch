@@ -1,0 +1,30 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=localhost;Port=5432;Database=socar_dispatch;Username=postgres;Password=postgrespassword"
+  },
+  "Redis": {
+    "ConnectionString": "localhost:6379"
+  },
+  "Minio": {
+    "Endpoint": "localhost:9000",
+    "AccessKey": "minioadmin",
+    "SecretKey": "miniopassword",
+    "BucketName": "socar-dispatch-media",
+    "WithSSL": false
+  },
+  "Jwt": {
+    "Secret": "your_secure_random_jwt_secret_key_minimum_32_bytes_long!",
+    "Issuer": "SocarDispatchAPI",
+    "Audience": "SocarDispatchUsers",
+    "ExpiryMinutes": 1440
+  },
+  "Firebase": {
+    "CredentialsPath": "secrets/firebase-service-account.json"
+  }
+}

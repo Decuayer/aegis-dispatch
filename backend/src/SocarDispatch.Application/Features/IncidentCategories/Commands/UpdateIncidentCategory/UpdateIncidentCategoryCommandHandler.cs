@@ -28,7 +28,7 @@ public class UpdateIncidentCategoryCommandHandler : IRequestHandler<UpdateIncide
 
         var codeExists = await _context.IncidentCategories
             .AnyAsync(c => c.Code == request.Code && c.Id != request.Id, cancellationToken);
-            
+
         if (codeExists)
         {
             throw new DomainException($"Incident category code '{request.Code}' is already in use by another category.");

@@ -15,7 +15,7 @@ public class EmergencyCodeConfiguration : IEntityTypeConfiguration<EmergencyCode
         builder.Property(c => c.Code)
             .HasMaxLength(20)
             .IsRequired();
-            
+
         builder.HasIndex(c => c.Code)
             .IsUnique();
 

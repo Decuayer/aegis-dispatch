@@ -22,16 +22,16 @@ builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
 // 1. JWT Authentication & Authorization
-var jwtSecretKey = builder.Configuration["JWT_SECRET_KEY"] 
-    ?? builder.Configuration["JwtSettings:SecretKey"] 
+var jwtSecretKey = builder.Configuration["JWT_SECRET_KEY"]
+    ?? builder.Configuration["JwtSettings:SecretKey"]
     ?? "SOCAR_Super_Secret_Key_For_Emergency_Dispatch_System_2026";
 
-var jwtIssuer = builder.Configuration["JWT_ISSUER"] 
-    ?? builder.Configuration["JwtSettings:Issuer"] 
+var jwtIssuer = builder.Configuration["JWT_ISSUER"]
+    ?? builder.Configuration["JwtSettings:Issuer"]
     ?? "socar-dispatch-api";
 
-var jwtAudience = builder.Configuration["JWT_AUDIENCE"] 
-    ?? builder.Configuration["JwtSettings:Audience"] 
+var jwtAudience = builder.Configuration["JWT_AUDIENCE"]
+    ?? builder.Configuration["JwtSettings:Audience"]
     ?? "socar-dispatch-clients";
 
 builder.Services.AddAuthentication(options =>
@@ -91,9 +91,9 @@ builder.Services.AddEndpointsApiExplorer();
 // 2. Swagger & Bearer Auth Configuration (Filter-based)
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new OpenApiInfo 
-    { 
-        Title = "SOCAR Dispatch API", 
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "SOCAR Dispatch API",
         Version = "v1",
         Description = "Real-Time Emergency Dispatch and Response System API"
     });

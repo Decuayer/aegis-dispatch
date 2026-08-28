@@ -27,7 +27,7 @@ public class UpdateIncidentCommandHandler : IRequestHandler<UpdateIncidentComman
         var incident = await _context.Incidents
             .Include(i => i.Reporter)
             .Include(i => i.Assignments).ThenInclude(a => a.Team)
-            .Include(i => i.MediaAttachments) 
+            .Include(i => i.MediaAttachments)
             .FirstOrDefaultAsync(i => i.Id == request.Id, cancellationToken);
 
         if (incident == null)

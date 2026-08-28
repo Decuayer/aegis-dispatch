@@ -1,0 +1,108 @@
+name: "🐛 Bug Report"
+description: "File an issue for a defect or unexpected behavior in SOCAR Dispatch"
+title: "[BUG] <Component>: <Brief description>"
+labels: ["bug", "triage"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting an issue in **SOCAR Dispatch**. Please provide sufficient technical details to help diagnose and reproduce the bug efficiently.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected Component
+      description: Select the platform component where the issue occurred.
+      options:
+        - "Backend API (.NET 8 Core)"
+        - "SignalR Real-Time Telemetry Hubs"
+        - "Mobile App (Flutter / Android)"
+        - "Mobile App (Flutter / iOS)"
+        - "Web GIS Console (Blazor / Leaflet)"
+        - "Database & Geospatial (PostGIS)"
+        - "DevOps & Infrastructure (Docker / CI-CD)"
+    validations:
+      required: true
+
+  - type: input
+    id: jira-key
+    attributes:
+      label: Jira Issue Key
+      description: Associated Jira issue key if tracked in corporate backlog (e.g., SDDC-71).
+      placeholder: "SDDC-"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity / Operational Impact
+      description: Assess how critical this defect is to refinery/field operations.
+      options:
+        - "P1 - Blocker / Critical (Emergency dispatch failure or production outage)"
+        - "P2 - High (Key operational feature degraded, telemetry interrupted)"
+        - "P3 - Medium (Feature usable with workaround, minor data mismatch)"
+        - "P4 - Low (Cosmetic, minor UI alignment, typo)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: "When triggering 1-click SOS during low GPS signal..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Step-by-step instructions to reproduce the behavior.
+      value: |
+        1. Log in as 'Response Team' role.
+        2. Navigate to '...'
+        3. Click on '...'
+        4. Observe error...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What should have happened according to business/safety logic?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior & Error Logs
+      description: Paste relevant stack traces, console logs, or HTTP 500 payloads.
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots or Screen Recordings
+      description: Drag and drop screenshots, screen recordings, or diagrams showing the problem.
+    validations:
+      required: false
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment & Runtime Details
+      description: Provide device, OS, browser, or Docker container versions.
+      value: |
+        - OS: [e.g. macOS 14.5 / Ubuntu 22.04 / Android 14 / iOS 17]
+        - Browser (if Web): [e.g. Chrome 126]
+        - .NET SDK Version: [e.g. 8.0.300]
+        - Flutter Version: [e.g. 3.22.2]
+    validations:
+      required: false

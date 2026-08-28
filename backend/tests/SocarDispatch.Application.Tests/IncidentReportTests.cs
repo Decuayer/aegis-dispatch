@@ -151,12 +151,12 @@ public class IncidentReportTests
         var team = new Team { TeamName = "Arama Kurtarma", LeaderId = user.Id };
         context.Teams.Add(team);
 
-        var incident = new Incident 
-        { 
-            ReporterId = user.Id, 
-            Category = "Deprem", 
-            EmergencyCode = "RED-3", 
-            Latitude = 40.4m, 
+        var incident = new Incident
+        {
+            ReporterId = user.Id,
+            Category = "Deprem",
+            EmergencyCode = "RED-3",
+            Latitude = 40.4m,
             Longitude = 49.8m,
             Location = new Point(49.8, 40.4) { SRID = 4326 }
         };

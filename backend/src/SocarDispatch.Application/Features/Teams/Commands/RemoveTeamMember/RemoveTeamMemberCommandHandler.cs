@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using SocarDispatch.Application.Common.Interfaces;
 using SocarDispatch.Application.Common.Models;
 using SocarDispatch.Application.Features.Teams.DTOs;
-using SocarDispatch.Domain.Entities; 
+using SocarDispatch.Domain.Entities;
 using SocarDispatch.Domain.Enums;
 using SocarDispatch.Domain.Exceptions;
 
