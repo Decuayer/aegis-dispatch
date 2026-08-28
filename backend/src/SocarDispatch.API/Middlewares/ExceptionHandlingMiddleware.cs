@@ -51,7 +51,7 @@ public class ExceptionHandlingMiddleware
                 context,
                 HttpStatusCode.NotFound,
                 keyNotFoundEx.Message),
-            
+
             ForbiddenAccessException forbiddenEx => CreateResponse(
                 context,
                 HttpStatusCode.Forbidden,

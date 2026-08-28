@@ -23,7 +23,7 @@ public class IncidentDto
     public DateTime CreatedAt { get; set; }
     public DateTime? AssignedAt { get; set; }
     public DateTime? CompletedAt { get; set; }
-    
+
     // Assigned Team Information
     public Guid? AssignedTeamId { get; set; }
     public string? AssignedTeamName { get; set; }

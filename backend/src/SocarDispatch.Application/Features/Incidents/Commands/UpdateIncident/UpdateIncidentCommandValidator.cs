@@ -4,7 +4,7 @@ namespace SocarDispatch.Application.Features.Incidents.Commands.UpdateIncident;
 
 public class UpdateIncidentCommandValidator : AbstractValidator<UpdateIncidentCommand>
 {
-    private static readonly string[] AllowedCategories = 
+    private static readonly string[] AllowedCategories =
     {
         "Fire",
         "Medical",

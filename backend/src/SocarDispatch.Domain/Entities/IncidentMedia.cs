@@ -5,7 +5,7 @@ namespace SocarDispatch.Domain.Entities;
 public class IncidentMedia
 {
     public Guid Id { get; set; } = Guid.NewGuid();
-    
+
     public Guid IncidentId { get; set; }
     public Incident Incident { get; set; } = null!;
 

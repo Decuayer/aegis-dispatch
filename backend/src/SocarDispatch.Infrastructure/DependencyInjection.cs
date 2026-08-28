@@ -14,23 +14,23 @@ namespace SocarDispatch.Infrastructure;
 public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructureServices(
-        this IServiceCollection services, 
+        this IServiceCollection services,
         IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("DefaultConnection") 
+        var connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? configuration["DB_CONNECTION_STRING"]
             ?? Environment.GetEnvironmentVariable("DB_CONNECTION_STRING");
 
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseNpgsql(connectionString, o => o.UseNetTopologySuite()));
 
-        services.AddScoped<IApplicationDbContext>(provider => 
+        services.AddScoped<IApplicationDbContext>(provider =>
             provider.GetRequiredService<ApplicationDbContext>());
 
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped<IGoogleAuthService, GoogleAuthService>();
-        
+
         // MinIO Settings & Storage Service Registration
         var minioSettings = new MinioSettings
         {

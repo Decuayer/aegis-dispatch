@@ -22,7 +22,7 @@ public class CreateIncidentCategoryCommandHandler : IRequestHandler<CreateIncide
     {
         var exists = await _context.IncidentCategories
             .AnyAsync(c => c.Code == request.Code, cancellationToken);
-            
+
         if (exists)
         {
             throw new DomainException($"Incident category code '{request.Code}' already exists.");

@@ -19,16 +19,16 @@ public class JwtTokenGenerator : IJwtTokenGenerator
 
     public (string Token, DateTime ExpiresAt) GenerateToken(User user)
     {
-        var secretKey = _configuration["JWT_SECRET_KEY"] 
-            ?? _configuration["JwtSettings:SecretKey"] 
+        var secretKey = _configuration["JWT_SECRET_KEY"]
+            ?? _configuration["JwtSettings:SecretKey"]
             ?? "SOCAR_Super_Secret_Key_For_Emergency_Dispatch_System_2026";
 
-        var issuer = _configuration["JWT_ISSUER"] 
-            ?? _configuration["JwtSettings:Issuer"] 
+        var issuer = _configuration["JWT_ISSUER"]
+            ?? _configuration["JwtSettings:Issuer"]
             ?? "socar-dispatch-api";
 
-        var audience = _configuration["JWT_AUDIENCE"] 
-            ?? _configuration["JwtSettings:Audience"] 
+        var audience = _configuration["JWT_AUDIENCE"]
+            ?? _configuration["JwtSettings:Audience"]
             ?? "socar-dispatch-clients";
 
         var expiryHours = int.TryParse(_configuration["JWT_EXPIRY_HOURS"], out var hours) ? hours : 24;

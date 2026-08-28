@@ -52,7 +52,7 @@ public class AssignmentCreatedNotificationHandlerTests
         hubContextMock.Setup(h => h.Clients).Returns(clientsMock.Object);
         var handler = new AssignmentCreatedNotificationHandler(context, fakePushService, hubContextMock.Object, logger);
 
-        
+
         // 1. Kullanıcılar ve Ekip Üyeleri Hazırla
         var userWithToken1 = new User
         {

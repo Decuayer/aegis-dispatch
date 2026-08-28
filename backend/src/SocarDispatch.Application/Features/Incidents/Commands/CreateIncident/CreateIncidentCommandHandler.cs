@@ -17,7 +17,8 @@ public class CreateIncidentCommandHandler : IRequestHandler<CreateIncidentComman
     private readonly IApplicationDbContext _context;
     private readonly IPublisher _publisher;
 
-    public CreateIncidentCommandHandler(IApplicationDbContext context, IPublisher publisher)    {
+    public CreateIncidentCommandHandler(IApplicationDbContext context, IPublisher publisher)
+    {
         _context = context;
         _publisher = publisher;
     }

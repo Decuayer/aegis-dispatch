@@ -10,7 +10,7 @@ public class Team
     public string TeamName { get; set; } = string.Empty;
     public TeamStatus Status { get; set; } = TeamStatus.Idle;
 
-    
+
     // Team Leader (The main user publishing their location)
     public Guid? LeaderId { get; set; }
     public User? Leader { get; set; }

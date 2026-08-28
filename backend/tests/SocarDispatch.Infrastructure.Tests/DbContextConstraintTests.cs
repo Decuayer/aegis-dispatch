@@ -119,7 +119,7 @@ public class DbContextConstraintTests
 
     // 3. COMPOSITE KEY TESTS (TeamMember)
 
-   [Fact]
+    [Fact]
     public async Task AddTeamMember_CompositeKey_ShouldSucceed()
     {
         // Arrange

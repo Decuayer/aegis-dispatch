@@ -22,7 +22,7 @@ public class GetIncidentsQueryHandler : IRequestHandler<GetIncidentsQuery, ApiRe
             .Include(i => i.Reporter)
             .Include(i => i.Assignments)
                 .ThenInclude(a => a.Team)
-            .Include(i => i.MediaAttachments) 
+            .Include(i => i.MediaAttachments)
             .AsNoTracking()
             .AsQueryable();
 
@@ -97,8 +97,8 @@ public class GetIncidentsQueryHandler : IRequestHandler<GetIncidentsQuery, ApiRe
                 CompletedAt = i.Status == IncidentStatus.Open ? null : i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => a.CompletedAt).FirstOrDefault(),
                 AssignedTeamId = i.Status == IncidentStatus.Open ? null : i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => (Guid?)a.TeamId).FirstOrDefault(),
                 AssignedTeamName = i.Status == IncidentStatus.Open ? null : i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => a.Team.TeamName).FirstOrDefault(),
-                CompletionNotes = (i.Status == IncidentStatus.Resolved || i.Status == IncidentStatus.Canceled) 
-                    ? i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => a.CompletionNotes).FirstOrDefault() 
+                CompletionNotes = (i.Status == IncidentStatus.Resolved || i.Status == IncidentStatus.Canceled)
+                    ? i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => a.CompletionNotes).FirstOrDefault()
                     : null
             })
             .ToListAsync(cancellationToken);

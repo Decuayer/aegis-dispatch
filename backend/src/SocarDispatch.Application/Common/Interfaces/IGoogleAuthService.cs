@@ -1,9 +1,9 @@
 namespace SocarDispatch.Application.Common.Interfaces;
 
 public record GoogleUserInfo(
-    string Email, 
-    string FirstName, 
-    string LastName, 
+    string Email,
+    string FirstName,
+    string LastName,
     string? PictureUrl);
 
 public interface IGoogleAuthService

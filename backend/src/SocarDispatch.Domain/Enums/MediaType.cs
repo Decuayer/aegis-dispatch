@@ -1,4 +1,5 @@
 namespace SocarDispatch.Domain.Enums;
+
 public enum MediaType
 {
     Photo = 1,

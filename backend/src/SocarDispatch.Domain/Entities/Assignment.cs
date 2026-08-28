@@ -3,7 +3,7 @@ namespace SocarDispatch.Domain.Entities;
 public class Assignment
 {
     public Guid Id { get; set; } = Guid.NewGuid();
-    
+
     public Guid IncidentId { get; set; }
     public Incident Incident { get; set; } = null!;
 

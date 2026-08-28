@@ -22,7 +22,7 @@ public class GoogleAuthService : IGoogleAuthService
         try
         {
             var clientId = _configuration["GOOGLE_CLIENT_ID"] ?? _configuration["GoogleAuth:ClientId"];
-            
+
             var settings = new GoogleJsonWebSignature.ValidationSettings();
             if (!string.IsNullOrEmpty(clientId))
             {

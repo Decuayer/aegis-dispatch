@@ -163,16 +163,16 @@ public class AssignmentAndStatusLogicTests
         var team = new Team { TeamName = "Kurtarma Ekibi", Status = TeamStatus.Forwarded };
         context.Teams.Add(team);
 
-        var incident = new Incident 
-        { 
-            ReporterId = reporter.Id, 
-            Category = "Yaralanma", 
-            EmergencyCode = "Sarı Kod", 
-            Latitude = 40.0m, 
-            Longitude = 29.0m, 
+        var incident = new Incident
+        {
+            ReporterId = reporter.Id,
+            Category = "Yaralanma",
+            EmergencyCode = "Sarı Kod",
+            Latitude = 40.0m,
+            Longitude = 29.0m,
             Location = new NetTopologySuite.Geometries.Point(29.0, 40.0) { SRID = 4326 },
-            Status = IncidentStatus.Assigned 
-        };        
+            Status = IncidentStatus.Assigned
+        };
         context.Incidents.Add(incident);
         await context.SaveChangesAsync();
 

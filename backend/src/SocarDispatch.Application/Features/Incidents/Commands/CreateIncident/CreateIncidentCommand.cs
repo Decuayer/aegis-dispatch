@@ -4,6 +4,7 @@ using SocarDispatch.Application.Features.Incidents.DTOs;
 
 
 namespace SocarDispatch.Application.Features.Incidents.Commands.CreateIncident;
+
 public record CreateIncidentCommand(
     Guid ReporterId,
     string Category,
