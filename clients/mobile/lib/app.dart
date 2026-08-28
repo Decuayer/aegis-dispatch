@@ -18,6 +18,9 @@ import 'features/profile/data/repositories/media_repository.dart';
 import 'features/profile/data/repositories/profile_repository.dart';
 import 'features/profile/presentation/cubit/profile_cubit.dart';
 import 'features/splash/presentation/views/splash_view.dart';
+import 'features/team_tasks/data/repositories/task_repository.dart';
+import 'features/team_tasks/presentation/bloc/task_bloc.dart';
+import 'features/team_tasks/services/route_service.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -26,8 +29,10 @@ class SocarDispatchApp extends StatelessWidget {
   final ProfileRepository profileRepository;
   final MediaRepository mediaRepository;
   final IncidentRepository incidentRepository;
+  final TaskRepository taskRepository;
   final LocationService locationService;
   final MediaPickerService mediaPickerService;
+  final RouteService routeService;
 
   const SocarDispatchApp({
     super.key,
@@ -35,8 +40,10 @@ class SocarDispatchApp extends StatelessWidget {
     required this.profileRepository,
     required this.mediaRepository,
     required this.incidentRepository,
+    required this.taskRepository,
     required this.locationService,
     required this.mediaPickerService,
+    required this.routeService,
   });
 
   @override
@@ -47,8 +54,10 @@ class SocarDispatchApp extends StatelessWidget {
         RepositoryProvider.value(value: profileRepository),
         RepositoryProvider.value(value: mediaRepository),
         RepositoryProvider.value(value: incidentRepository),
+        RepositoryProvider.value(value: taskRepository),
         RepositoryProvider.value(value: locationService),
         RepositoryProvider.value(value: mediaPickerService),
+        RepositoryProvider.value(value: routeService),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -66,6 +75,13 @@ class SocarDispatchApp extends StatelessWidget {
           BlocProvider(
             create: (ctx) => IncidentReportBloc(
               incidentRepository: incidentRepository,
+              locationService: locationService,
+            ),
+          ),
+          BlocProvider(
+            create: (ctx) => TaskBloc(
+              taskRepository: taskRepository,
+              routeService: routeService,
               locationService: locationService,
             ),
           ),
@@ -90,7 +106,6 @@ class AuthGate extends StatelessWidget {
     return BlocConsumer<AuthBloc, AuthState>(
       listenWhen: (previous, current) => current is Unauthenticated,
       listener: (context, state) {
-        // Pop all stacked screens when session ends
         rootNavigatorKey.currentState?.popUntil((route) => route.isFirst);
       },
       buildWhen: (previous, current) {

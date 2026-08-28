@@ -8,6 +8,8 @@ import 'features/incident_reporting/services/location_service.dart';
 import 'features/incident_reporting/services/media_picker_service.dart';
 import 'features/profile/data/repositories/media_repository.dart';
 import 'features/profile/data/repositories/profile_repository.dart';
+import 'features/team_tasks/data/repositories/task_repository.dart';
+import 'features/team_tasks/services/route_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,6 +19,7 @@ void main() async {
   final apiClient = ApiClient(storageService: secureStorage);
   const locationService = LocationService();
   final mediaPickerService = MediaPickerService();
+  final routeService = RouteService();
 
   // Repositories
   final authRepository = AuthRepository(
@@ -33,6 +36,9 @@ void main() async {
   final incidentRepository = IncidentRepository(
     apiClient: apiClient,
   );
+  final taskRepository = TaskRepository(
+    apiClient: apiClient,
+  );
 
   runApp(
     SocarDispatchApp(
@@ -40,8 +46,10 @@ void main() async {
       profileRepository: profileRepository,
       mediaRepository: mediaRepository,
       incidentRepository: incidentRepository,
+      taskRepository: taskRepository,
       locationService: locationService,
       mediaPickerService: mediaPickerService,
+      routeService: routeService,
     ),
   );
 }
