@@ -1,0 +1,78 @@
+name: "✨ Feature Request / RFC"
+description: "Propose a new feature, operational capability, or technical architectural enhancement"
+title: "[FEAT] <Component>: <Brief feature title>"
+labels: ["enhancement", "proposal"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template to suggest new functional capabilities, OHS workflow enhancements, or architectural improvements for **SOCAR Dispatch**.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Target Component
+      description: Where will this capability be implemented?
+      options:
+        - "Backend API (.NET 8 Core)"
+        - "SignalR Real-Time Telemetry Hubs"
+        - "Mobile App (Flutter)"
+        - "Web GIS Console (Blazor / Leaflet)"
+        - "Database & Geospatial (PostGIS)"
+        - "DevOps & Infrastructure (Docker / CI-CD)"
+        - "Cross-Platform / Full-Stack"
+    validations:
+      required: true
+
+  - type: input
+    id: jira-epic
+    attributes:
+      label: Related Jira Epic / Goal
+      description: Parent Jira Epic reference (e.g. SDDC-2: Backend API, SDDC-4: Mobile Application).
+      placeholder: "SDDC-"
+    validations:
+      required: false
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Operational Problem or Motivation
+      description: What operational gap, OHS safety requirement, or refinery workflow does this address?
+      placeholder: "Field responders currently lack..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution & Technical Design
+      description: Provide a technical breakdown of the proposed behavior, endpoints, UI views, or schema changes.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: personas
+    attributes:
+      label: Primary Beneficiaries / Personas
+      options:
+        - label: "Saha Çalışanları (Field Employees)"
+        - label: "Acil Müdahale Ekipleri (Emergency Response Teams)"
+        - label: "Dispatch / Kriz Masası Operatörleri (Console Operators)"
+        - label: "İSG ve Tesis Yöneticileri (HSE Officers & Plant Directors)"
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any alternative libraries, architectural patterns, or workarounds considered?
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: UI Mockups / Additional Context
+      description: Add any wireframes, Figma links, or system flow references.
+    validations:
+      required: false
