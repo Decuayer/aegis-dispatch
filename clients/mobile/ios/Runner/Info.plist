@@ -25,6 +25,14 @@
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>SOCAR Dispatch requires access to your GPS location to accurately pinpoint incident reports for emergency dispatch.</string>
 
+	<!-- URL Schemes for url_launcher -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>tel</string>
+		<string>sms</string>
+		<string>mailto</string>
+	</array>
+
 	
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
