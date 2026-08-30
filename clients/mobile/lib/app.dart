@@ -13,6 +13,8 @@ import 'features/home/presentation/views/operator_notice_view.dart';
 import 'features/home/presentation/views/team_home_view.dart';
 import 'features/incident_reporting/data/repositories/incident_repository.dart';
 import 'features/incident_reporting/presentation/bloc/incident_report_bloc.dart';
+import 'features/incident_reporting/presentation/bloc/rapid_incident_cubit.dart';
+import 'features/incident_reporting/services/rapid_dispatch_service.dart';
 import 'features/incident_reporting/services/location_service.dart';
 import 'features/incident_reporting/services/media_picker_service.dart';
 import 'features/profile/data/models/user_model.dart';
@@ -103,6 +105,15 @@ class SocarDispatchApp extends StatelessWidget {
               locationService: locationService,
             ),
           ),
+          BlocProvider(
+            create: (ctx) => RapidIncidentCubit(
+              dispatchService: RapidDispatchService(
+                incidentRepository: incidentRepository,
+                locationService: locationService,
+              ),
+            ),
+          ),
+
           BlocProvider(
             create: (ctx) => TaskBloc(
               taskRepository: taskRepository,
