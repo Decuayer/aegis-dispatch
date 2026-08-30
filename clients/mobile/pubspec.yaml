@@ -30,6 +30,20 @@ dependencies:
   
   # External App Actions (Phone call, SMS, Mail)
   url_launcher: ^6.3.1
+  
+  # Background Telemetry & Service
+  flutter_background_service: ^5.0.10
+
+  # Real-Time SignalR WebSockets
+  signalr_netcore: ^1.4.1
+
+  # Push & Local Notifications
+  firebase_core: ^3.12.1
+  firebase_messaging: ^15.2.4
+  flutter_local_notifications: ^18.0.1
+
+  # Device Permissions
+  permission_handler: ^11.4.0
 
   # UI, Fonts & SVG
   google_fonts: ^6.2.1

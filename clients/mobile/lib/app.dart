@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'core/permissions/permission_handler_service.dart';
+import 'core/services/fcm_notification_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/data/repositories/auth_repository.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
@@ -20,7 +22,9 @@ import 'features/profile/presentation/cubit/profile_cubit.dart';
 import 'features/splash/presentation/views/splash_view.dart';
 import 'features/team_tasks/data/repositories/task_repository.dart';
 import 'features/team_tasks/presentation/bloc/task_bloc.dart';
+import 'features/team_tasks/presentation/bloc/task_event.dart';
 import 'features/team_tasks/services/route_service.dart';
+import 'features/tracking/data/location_stream_repository.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -31,8 +35,11 @@ class SocarDispatchApp extends StatelessWidget {
   final IncidentRepository incidentRepository;
   final TaskRepository taskRepository;
   final LocationService locationService;
+  final PermissionHandlerService permissionService;
   final MediaPickerService mediaPickerService;
   final RouteService routeService;
+  final FcmNotificationService fcmNotificationService;
+  final LocationStreamRepository locationStreamRepository;
 
   const SocarDispatchApp({
     super.key,
@@ -42,8 +49,11 @@ class SocarDispatchApp extends StatelessWidget {
     required this.incidentRepository,
     required this.taskRepository,
     required this.locationService,
+    required this.permissionService,
     required this.mediaPickerService,
     required this.routeService,
+    required this.fcmNotificationService,
+    required this.locationStreamRepository,
   });
 
   @override
@@ -56,8 +66,11 @@ class SocarDispatchApp extends StatelessWidget {
         RepositoryProvider.value(value: incidentRepository),
         RepositoryProvider.value(value: taskRepository),
         RepositoryProvider.value(value: locationService),
+        RepositoryProvider.value(value: permissionService),
         RepositoryProvider.value(value: mediaPickerService),
         RepositoryProvider.value(value: routeService),
+        RepositoryProvider.value(value: fcmNotificationService),
+        RepositoryProvider.value(value: locationStreamRepository),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -83,6 +96,7 @@ class SocarDispatchApp extends StatelessWidget {
               taskRepository: taskRepository,
               routeService: routeService,
               locationService: locationService,
+              locationStreamRepository: locationStreamRepository,
             ),
           ),
         ],
@@ -91,22 +105,53 @@ class SocarDispatchApp extends StatelessWidget {
           title: 'SOCAR Dispatch',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,
-          home: const AuthGate(),
+          home: AuthGate(fcmService: fcmNotificationService),
         ),
       ),
     );
   }
 }
 
-class AuthGate extends StatelessWidget {
-  const AuthGate({super.key});
+class AuthGate extends StatefulWidget {
+  final FcmNotificationService fcmService;
+
+  const AuthGate({super.key, required this.fcmService});
+
+  @override
+  State<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<AuthGate> {
+  bool _fcmInitialized = false;
+
+  void _setupNotifications(BuildContext context, UserModel user) {
+    if (_fcmInitialized) return;
+    _fcmInitialized = true;
+
+    widget.fcmService.initialize(
+      onNotificationAction: (incidentId, data) {
+        if (user.roleType == RoleType.team) {
+          final teamId = data['teamId']?.toString();
+          if (teamId != null) {
+            context.read<TaskBloc>().add(LoadActiveTask(teamId, isRefresh: true));
+          }
+        }
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<AuthBloc, AuthState>(
-      listenWhen: (previous, current) => current is Unauthenticated,
+      listenWhen: (previous, current) => current is Unauthenticated || current is Authenticated,
       listener: (context, state) {
-        rootNavigatorKey.currentState?.popUntil((route) => route.isFirst);
+        if (state is Unauthenticated) {
+          _fcmInitialized = false;
+          context.read<LocationStreamRepository>().stopTracking();
+          rootNavigatorKey.currentState?.popUntil((route) => route.isFirst);
+        } else if (state is Authenticated) {
+          _setupNotifications(context, state.user);
+        }
       },
       buildWhen: (previous, current) {
         return current is Authenticated || current is Unauthenticated || current is AuthInitial;

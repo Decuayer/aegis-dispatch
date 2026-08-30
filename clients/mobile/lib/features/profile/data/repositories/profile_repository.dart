@@ -56,6 +56,25 @@ class ProfileRepository {
     }
   }
 
+  Future<void> updateDeviceToken(String token) async {
+    try {
+      final response = await _apiClient.dio.post(
+        ApiEndpoints.updateDeviceToken,
+        data: {'token': token},
+      );
+
+      final responseData = response.data as Map<String, dynamic>;
+      if (responseData['success'] != true) {
+        final message = responseData['message'] as String? ?? 'Failed to update device token.';
+        throw Exception(message);
+      }
+    } on DioException catch (e) {
+      final errorMsg = _extractErrorMessage(e);
+      throw Exception(errorMsg);
+    }
+  }
+
+
   String _extractErrorMessage(DioException error) {
     if (error.response?.data != null && error.response?.data is Map<String, dynamic>) {
       final data = error.response!.data as Map<String, dynamic>;

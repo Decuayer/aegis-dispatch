@@ -19,12 +19,24 @@
 		<true/>
 	</dict>
 
+	<!-- Background Capabilities -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+		<string>fetch</string>
+		<string>remote-notification</string>
+	</array>
+
+	<!-- Location Permission Descriptions -->
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>SOCAR Dispatch requires access to your GPS location to accurately pinpoint incident reports for emergency dispatch.</string>
+	<string>SOCAR Dispatch requires continuous GPS access to transmit your real-time response unit telemetry to central dispatch.</string>
 	
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>SOCAR Dispatch requires access to your GPS location to accurately pinpoint incident reports for emergency dispatch.</string>
-
+	<string>SOCAR Dispatch streams your emergency response coordinates even when the app is minimized or the screen is locked.</string>
+	
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>SOCAR Dispatch requires background location access to provide real-time field telemetry during emergency missions.</string>
+	
 	<!-- URL Schemes for url_launcher -->
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
