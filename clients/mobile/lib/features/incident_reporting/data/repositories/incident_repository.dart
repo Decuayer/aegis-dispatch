@@ -87,6 +87,27 @@ class IncidentRepository {
     }
   }
 
+  /// Cancels an active incident report (within accidental trigger reversal window).
+  Future<bool> cancelIncident(String incidentId) async {
+    try {
+      final response = await _apiClient.dio.patch(
+        ApiEndpoints.incidentStatus(incidentId),
+        data: {'status': 'Canceled'},
+      );
+
+      final responseData = response.data as Map<String, dynamic>;
+      if (responseData['success'] == true) {
+        return true;
+      } else {
+        final message = responseData['message'] as String? ?? 'Failed to cancel incident.';
+        throw Exception(message);
+      }
+    } on DioException catch (e) {
+      throw Exception(_extractErrorMessage(e));
+    }
+  }
+
+
   String _extractErrorMessage(DioException error) {
     if (error.response?.data != null && error.response?.data is Map<String, dynamic>) {
       final data = error.response!.data as Map<String, dynamic>;
