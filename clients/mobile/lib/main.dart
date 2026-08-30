@@ -1,6 +1,12 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'app.dart';
 import 'core/network/api_client.dart';
+import 'core/permissions/permission_handler_service.dart';
+import 'core/services/background_location_service.dart';
+import 'core/services/fcm_notification_service.dart';
+import 'core/services/local_notification_service.dart';
 import 'core/storage/secure_storage_service.dart';
 import 'features/auth/data/repositories/auth_repository.dart';
 import 'features/incident_reporting/data/repositories/incident_repository.dart';
@@ -10,16 +16,31 @@ import 'features/profile/data/repositories/media_repository.dart';
 import 'features/profile/data/repositories/profile_repository.dart';
 import 'features/team_tasks/data/repositories/task_repository.dart';
 import 'features/team_tasks/services/route_service.dart';
+import 'features/tracking/data/location_stream_repository.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Native Platform Services
+  try {
+    await Firebase.initializeApp();
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  } catch (_) {
+    // Non-fatal initialization fallback for headless/test environments
+  }
+
+  await LocalNotificationService().initialize();
+  await BackgroundLocationService().initialize();
 
   // Core Services
   final secureStorage = SecureStorageService();
   final apiClient = ApiClient(storageService: secureStorage);
   const locationService = LocationService();
+  const permissionService = PermissionHandlerService();
   final mediaPickerService = MediaPickerService();
   final routeService = RouteService();
+  final fcmNotificationService = FcmNotificationService(apiClient: apiClient);
+  final locationStreamRepository = LocationStreamRepository(storageService: secureStorage);
 
   // Repositories
   final authRepository = AuthRepository(
@@ -48,8 +69,11 @@ void main() async {
       incidentRepository: incidentRepository,
       taskRepository: taskRepository,
       locationService: locationService,
+      permissionService: permissionService,
       mediaPickerService: mediaPickerService,
       routeService: routeService,
+      fcmNotificationService: fcmNotificationService,
+      locationStreamRepository: locationStreamRepository,
     ),
   );
 }

@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../incident_reporting/services/location_service.dart';
+import '../../../tracking/data/location_stream_repository.dart';
 import '../../data/models/task_detail_model.dart';
 import '../../data/models/team_model.dart';
 import '../../data/repositories/task_repository.dart';
@@ -14,16 +16,20 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
   final RouteService _routeService;
   final LocationService _locationService;
   final TeamLocationTracker _locationTracker;
+  final LocationStreamRepository? _locationStreamRepository;
+  StreamSubscription? _backgroundLocationSubscription;
 
   TaskBloc({
     required TaskRepository taskRepository,
     required RouteService routeService,
     required LocationService locationService,
     TeamLocationTracker? locationTracker,
+    LocationStreamRepository? locationStreamRepository,
   })  : _taskRepository = taskRepository,
         _routeService = routeService,
         _locationService = locationService,
         _locationTracker = locationTracker ?? TeamLocationTracker(),
+        _locationStreamRepository = locationStreamRepository,
         super(const TaskInitial()) {
     on<LoadActiveTask>(_onLoadActiveTask);
     on<LoadTaskHistory>(_onLoadTaskHistory);
@@ -31,6 +37,21 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     on<SubmitTaskDebrief>(_onSubmitTaskDebrief);
     on<TaskLocationUpdated>(_onTaskLocationUpdated);
     on<SignalRTaskReceived>(_onSignalRTaskReceived);
+
+    _listenToBackgroundLocationStream();
+  }
+
+  void _listenToBackgroundLocationStream() {
+    _backgroundLocationSubscription?.cancel();
+    _backgroundLocationSubscription = _locationStreamRepository?.onLocationUpdate.listen((data) {
+      if (data != null && data['latitude'] != null && data['longitude'] != null) {
+        final lat = double.tryParse(data['latitude'].toString());
+        final lng = double.tryParse(data['longitude'].toString());
+        if (lat != null && lng != null) {
+          add(TaskLocationUpdated(latitude: lat, longitude: lng));
+        }
+      }
+    });
   }
 
   Future<void> _onLoadActiveTask(
@@ -47,17 +68,16 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
 
       if (activeTask == null) {
         _locationTracker.stopTracking();
+        await _locationStreamRepository?.stopTracking();
         emit(TaskIdle(history: history));
         return;
       }
 
-      // Calculate route between device position and incident
       LatLng? currentCoords;
       try {
         final position = await _locationService.getCurrentLocation();
         currentCoords = LatLng(position.latitude, position.longitude);
       } catch (_) {
-        // Fallback default coordinates if GPS fix fails
         currentCoords = LatLng(activeTask.latitude - 0.005, activeTask.longitude - 0.005);
       }
 
@@ -68,11 +88,14 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
       );
 
       final currentStatus = TeamStatus.fromString(activeTask.status);
-      if (currentStatus == TeamStatus.enRoute || currentStatus == TeamStatus.onScene) {
+      if (currentStatus == TeamStatus.forwarded ||
+          currentStatus == TeamStatus.enRoute ||
+          currentStatus == TeamStatus.onScene) {
         _locationTracker.startTracking(
           teamId: event.teamId,
           taskRepository: _taskRepository,
         );
+        await _locationStreamRepository?.startTracking(event.teamId);
       }
 
       emit(
@@ -102,9 +125,7 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
       } else if (state is TaskIdle) {
         emit(TaskIdle(history: history));
       }
-    } catch (e) {
-      // Non-critical background history refresh
-    }
+    } catch (_) {}
   }
 
   Future<void> _onUpdateOperationalStatus(
@@ -121,10 +142,8 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     ));
 
     try {
-      // 1. Update Team Status on Backend
       await _taskRepository.updateTeamStatus(event.teamId, event.newStatus);
 
-      // 2. Map & Update Member Status on Backend
       final memberStatus = _mapTeamStatusToMemberStatus(event.newStatus);
       await _taskRepository.updateMemberStatus(
         event.teamId,
@@ -132,17 +151,19 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
         memberStatus,
       );
 
-      // 3. Manage real-time tracking lifecycle
-      if (event.newStatus == TeamStatus.enRoute || event.newStatus == TeamStatus.onScene) {
+      if (event.newStatus == TeamStatus.forwarded ||
+          event.newStatus == TeamStatus.enRoute ||
+          event.newStatus == TeamStatus.onScene) {
         _locationTracker.startTracking(
           teamId: event.teamId,
           taskRepository: _taskRepository,
         );
+        await _locationStreamRepository?.startTracking(event.teamId);
       } else {
         _locationTracker.stopTracking();
+        await _locationStreamRepository?.stopTracking();
       }
 
-      // 4. Update local task status to match UI flow (enRoute / onScene)
       final updatedTask = currentTask.copyWith(
         status: event.newStatus == TeamStatus.enRoute ? 'EnRoute' : event.newStatus.apiValue,
       );
@@ -154,7 +175,6 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     }
   }
 
-  
   Future<void> _onSubmitTaskDebrief(
     SubmitTaskDebrief event,
     Emitter<TaskState> emit,
@@ -177,9 +197,10 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
       );
 
       _locationTracker.stopTracking();
+      await _locationStreamRepository?.stopTracking();
+
       emit(const TaskDebriefSuccess('Task successfully completed and logged.'));
 
-      // Fetch fresh history and return to idle
       final history = await _taskRepository.getTaskHistory(event.teamId);
       emit(TaskIdle(history: history));
     } catch (e) {
@@ -242,8 +263,10 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
   }
 
   @override
-  Future<void> close() {
+  Future<void> close() async {
+    _backgroundLocationSubscription?.cancel();
     _locationTracker.stopTracking();
+    await _locationStreamRepository?.stopTracking();
     return super.close();
   }
 }

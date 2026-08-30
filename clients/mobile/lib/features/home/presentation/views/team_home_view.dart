@@ -11,6 +11,8 @@ import '../../../team_tasks/presentation/bloc/task_event.dart';
 import '../../../team_tasks/presentation/bloc/task_state.dart';
 import '../../../team_tasks/presentation/views/active_task_view.dart';
 import '../../../team_tasks/presentation/views/task_history_view.dart';
+import '../../../tracking/presentation/widgets/tracking_status_chip.dart';
+
 
 class TeamHomeView extends StatefulWidget {
   final UserModel user;
@@ -63,6 +65,15 @@ class _TeamHomeViewState extends State<TeamHomeView> with SingleTickerProviderSt
           ],
         ),
         actions: [
+          BlocBuilder<TaskBloc, TaskState>(
+            builder: (context, state) {
+              final isTracking = state is TaskActiveLoaded;
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+                child: TrackingStatusChip(isTracking: isTracking),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.account_circle_outlined, size: 28),
             tooltip: 'Profile',
