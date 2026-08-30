@@ -14,6 +14,8 @@ using SocarDispatch.Application.Features.Teams.DTOs;
 using SocarDispatch.Application.Features.Teams.Queries.GetTeamById;
 using SocarDispatch.Application.Features.Teams.Queries.GetTeams;
 using SocarDispatch.Domain.Exceptions;
+using SocarDispatch.Application.Features.Teams.Queries.GetAvailableTeams;
+
 
 namespace SocarDispatch.API.Controllers;
 
@@ -38,6 +40,18 @@ public class TeamsController : ControllerBase
         var result = await _sender.Send(query);
         return Ok(result);
     }
+
+    // GET /api/v1/teams/available
+    // Retrieves available idle teams with open capacity.
+    [HttpGet("available")]
+    [Authorize(Roles = "Operator,Team")]
+    public async Task<ActionResult<ApiResponse<List<AvailableTeamDto>>>> GetAvailableTeams()
+    {
+        var query = new GetAvailableTeamsQuery();
+        var result = await _sender.Send(query);
+        return Ok(result);
+    }
+
 
     // GET /api/v1/teams/{id}
     // Retrieves details of a single emergency team by ID.

@@ -35,12 +35,34 @@ public class AddTeamMemberCommandHandler : IRequestHandler<AddTeamMemberCommand,
             throw new EntityNotFoundException("User", request.RequesterId);
         }
 
-        if (team.LeaderId != request.RequesterId && requester.RoleType != RoleType.Operator)
+        bool isSelfJoin = request.RequesterId == request.UserId;
+
+        if (isSelfJoin)
         {
-            throw new ForbiddenAccessException("Only team leader or operator can add team members.");
+            if (requester.RoleType != RoleType.Team)
+            {
+                throw new DomainException("User must have RoleType 'Team' to join a team.");
+            }
+
+            if (team.Status != TeamStatus.Idle)
+            {
+                throw new DomainException("Cannot join a team that is not in Idle status.");
+            }
+        }
+        else
+        {
+            if (team.LeaderId != request.RequesterId && requester.RoleType != RoleType.Operator)
+            {
+                throw new ForbiddenAccessException("Only team leader or operator can add team members.");
+            }
         }
 
-        var targetUser = await _context.Users.FindAsync(new object[] { request.UserId }, cancellationToken);
+        if (team.Members.Count >= TeamConstants.MaxOperationalCapacity)
+        {
+            throw new DomainException("Team has reached its maximum operational capacity.");
+        }
+
+        var targetUser = isSelfJoin ? requester : await _context.Users.FindAsync(new object[] { request.UserId }, cancellationToken);
         if (targetUser == null)
         {
             throw new EntityNotFoundException("User", request.UserId);

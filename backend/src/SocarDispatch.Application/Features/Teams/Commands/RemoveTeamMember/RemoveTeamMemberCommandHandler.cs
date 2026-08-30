@@ -35,14 +35,13 @@ public class RemoveTeamMemberCommandHandler : IRequestHandler<RemoveTeamMemberCo
             throw new EntityNotFoundException("User", request.RequesterId);
         }
 
-        if (team.LeaderId != request.RequesterId && requester.RoleType != RoleType.Operator)
-        {
-            throw new ForbiddenAccessException("Only team leader or operator can remove team members.");
-        }
+        bool isSelfLeave = request.RequesterId == request.UserId;
+        bool isLeader = team.LeaderId == request.RequesterId;
+        bool isOperator = requester.RoleType == RoleType.Operator;
 
-        if (team.LeaderId == request.UserId)
+        if (!isSelfLeave && !isLeader && !isOperator)
         {
-            throw new DomainException("The team leader cannot be removed from the team directly. Transfer leadership first.");
+            throw new ForbiddenAccessException("Only team leader, operator, or the member themselves can remove this team member.");
         }
 
         var hasActiveAssignment = await _context.Assignments
@@ -53,7 +52,7 @@ public class RemoveTeamMemberCommandHandler : IRequestHandler<RemoveTeamMemberCo
                            a.Incident.Status != IncidentStatus.Canceled,
                        cancellationToken);
 
-        if (hasActiveAssignment)
+        if (team.Status != TeamStatus.Idle || hasActiveAssignment)
         {
             throw new DomainException("Cannot remove member while the team is involved in an active emergency response.");
         }
@@ -65,6 +64,13 @@ public class RemoveTeamMemberCommandHandler : IRequestHandler<RemoveTeamMemberCo
         }
 
         _context.TeamMembers.Remove(teamMember);
+
+        // Reset LeaderId if the departing member was the leader
+        if (team.LeaderId == request.UserId)
+        {
+            team.LeaderId = null;
+        }
+
         team.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync(cancellationToken);
 
