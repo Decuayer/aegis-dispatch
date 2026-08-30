@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using SocarDispatch.Application.Common.Extensions;
 using SocarDispatch.Application.Common.Interfaces;
 using SocarDispatch.Application.Common.Models;
 using SocarDispatch.Application.Features.Incidents.DTOs;
@@ -7,7 +8,7 @@ using SocarDispatch.Domain.Enums;
 
 namespace SocarDispatch.Application.Features.Incidents.Queries.GetIncidents;
 
-public class GetIncidentsQueryHandler : IRequestHandler<GetIncidentsQuery, ApiResponse<List<IncidentDto>>>
+public class GetIncidentsQueryHandler : IRequestHandler<GetIncidentsQuery, ApiResponse<PagedResult<IncidentDto>>>
 {
     private readonly IApplicationDbContext _context;
 
@@ -16,7 +17,7 @@ public class GetIncidentsQueryHandler : IRequestHandler<GetIncidentsQuery, ApiRe
         _context = context;
     }
 
-    public async Task<ApiResponse<List<IncidentDto>>> Handle(GetIncidentsQuery request, CancellationToken cancellationToken)
+    public async Task<ApiResponse<PagedResult<IncidentDto>>> Handle(GetIncidentsQuery request, CancellationToken cancellationToken)
     {
         var query = _context.Incidents
             .Include(i => i.Reporter)
@@ -26,6 +27,24 @@ public class GetIncidentsQueryHandler : IRequestHandler<GetIncidentsQuery, ApiRe
             .AsNoTracking()
             .AsQueryable();
 
+        // Exact IncidentId filter
+        if (request.IncidentId.HasValue)
+        {
+            query = query.Where(i => i.Id == request.IncidentId.Value);
+        }
+
+        // Multi-field text search
+        if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+        {
+            var searchLower = request.SearchTerm.Trim().ToLower();
+            query = query.Where(i =>
+                i.Id.ToString().ToLower().Contains(searchLower) ||
+                i.Category.ToLower().Contains(searchLower) ||
+                i.EmergencyCode.ToLower().Contains(searchLower) ||
+                (i.Description != null && i.Description.ToLower().Contains(searchLower)));
+        }
+
+        // Status filter
         if (!string.IsNullOrWhiteSpace(request.Status) && !request.Status.Equals("All", StringComparison.OrdinalIgnoreCase))
         {
             if (request.Status.Equals("Active", StringComparison.OrdinalIgnoreCase))
@@ -51,23 +70,31 @@ public class GetIncidentsQueryHandler : IRequestHandler<GetIncidentsQuery, ApiRe
             }
         }
 
+        // Category filter
         if (!string.IsNullOrWhiteSpace(request.Category) && !request.Category.Equals("All", StringComparison.OrdinalIgnoreCase))
         {
             query = query.Where(i => i.Category.ToLower() == request.Category.ToLower());
         }
 
-        // Apply temporal time-range boundaries
-        if (request.From.HasValue)
+        // Emergency code filter
+        if (!string.IsNullOrWhiteSpace(request.EmergencyCode) && !request.EmergencyCode.Equals("All", StringComparison.OrdinalIgnoreCase))
         {
-            query = query.Where(i => i.CreatedAt >= request.From.Value);
+            query = query.Where(i => i.EmergencyCode.ToLower() == request.EmergencyCode.ToLower());
         }
 
-        if (request.To.HasValue)
+        // Temporal boundary filters
+        if (request.FromDate.HasValue)
         {
-            query = query.Where(i => i.CreatedAt <= request.To.Value);
+            query = query.Where(i => i.CreatedAt >= request.FromDate.Value);
         }
 
-        var list = await query
+        if (request.ToDate.HasValue)
+        {
+            query = query.Where(i => i.CreatedAt <= request.ToDate.Value);
+        }
+
+        // Ordering and DTO projection
+        var projectedQuery = query
             .OrderByDescending(i => i.CreatedAt)
             .Select(i => new IncidentDto
             {
@@ -100,9 +127,16 @@ public class GetIncidentsQueryHandler : IRequestHandler<GetIncidentsQuery, ApiRe
                 CompletionNotes = (i.Status == IncidentStatus.Resolved || i.Status == IncidentStatus.Canceled)
                     ? i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => a.CompletionNotes).FirstOrDefault()
                     : null
-            })
-            .ToListAsync(cancellationToken);
+            });
 
-        return ApiResponse<List<IncidentDto>>.SuccessResult(list, "Incidents retrieved successfully.");
+        // Execute server-side pagination
+        var pagedResult = await projectedQuery.ToPagedResultAsync(
+            request.PageNumber,
+            request.PageSize,
+            cancellationToken);
+
+        return ApiResponse<PagedResult<IncidentDto>>.SuccessResult(
+            pagedResult,
+            "Incidents retrieved successfully.");
     }
 }
