@@ -51,15 +51,11 @@ public class IncidentsController : ControllerBase
     }
 
     // GET /api/v1/incidents
-    // Retrieves the list and details of all events with optional temporal and category filters.
+    // Retrieves paginated and filtered incidents with multi-field search and temporal boundaries.
     [HttpGet]
-    public async Task<ActionResult<ApiResponse<List<IncidentDto>>>> GetAll(
-        [FromQuery] string? status,
-        [FromQuery] string? category,
-        [FromQuery] DateTime? from,
-        [FromQuery] DateTime? to)
+    [ProducesResponseType(typeof(ApiResponse<PagedResult<IncidentDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<PagedResult<IncidentDto>>>> GetAll([FromQuery] GetIncidentsQuery query)
     {
-        var query = new GetIncidentsQuery(status, category, from, to);
         var result = await _sender.Send(query);
         return Ok(result);
     }
