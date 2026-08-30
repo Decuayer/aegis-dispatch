@@ -19,6 +19,9 @@ dependencies:
   # Secure Local Storage
   flutter_secure_storage: ^9.2.2
 
+  # Local Persistent Key-Value Storage
+  shared_preferences: ^2.3.5
+
   # Image Picker & Caching
   image_picker: ^1.1.2
   cached_network_image: ^3.4.1

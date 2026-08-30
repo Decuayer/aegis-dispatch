@@ -25,6 +25,12 @@ import 'features/team_tasks/presentation/bloc/task_bloc.dart';
 import 'features/team_tasks/presentation/bloc/task_event.dart';
 import 'features/team_tasks/services/route_service.dart';
 import 'features/tracking/data/location_stream_repository.dart';
+import 'features/onboarding/data/onboarding_repository.dart';
+import 'features/onboarding/presentation/bloc/onboarding_bloc.dart';
+import 'features/onboarding/presentation/bloc/onboarding_event.dart';
+import 'features/onboarding/presentation/views/onboarding_gate_view.dart';
+import 'features/onboarding/services/onboarding_permission_service.dart';
+
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -40,6 +46,8 @@ class SocarDispatchApp extends StatelessWidget {
   final RouteService routeService;
   final FcmNotificationService fcmNotificationService;
   final LocationStreamRepository locationStreamRepository;
+  final OnboardingRepository onboardingRepository;
+  final OnboardingPermissionService onboardingPermissionService;
 
   const SocarDispatchApp({
     super.key,
@@ -54,6 +62,8 @@ class SocarDispatchApp extends StatelessWidget {
     required this.routeService,
     required this.fcmNotificationService,
     required this.locationStreamRepository,
+    required this.onboardingRepository,
+    required this.onboardingPermissionService,
   });
 
   @override
@@ -71,6 +81,8 @@ class SocarDispatchApp extends StatelessWidget {
         RepositoryProvider.value(value: routeService),
         RepositoryProvider.value(value: fcmNotificationService),
         RepositoryProvider.value(value: locationStreamRepository),
+        RepositoryProvider.value(value: onboardingRepository),
+        RepositoryProvider.value(value: onboardingPermissionService),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -99,13 +111,22 @@ class SocarDispatchApp extends StatelessWidget {
               locationStreamRepository: locationStreamRepository,
             ),
           ),
+          BlocProvider(
+            create: (ctx) => OnboardingBloc(
+              onboardingRepository: onboardingRepository,
+              permissionService: onboardingPermissionService,
+            )..add(const OnboardingCheckRequested()),
+          ),
+
         ],
         child: MaterialApp(
           navigatorKey: rootNavigatorKey,
           title: 'SOCAR Dispatch',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,
-          home: AuthGate(fcmService: fcmNotificationService),
+          home: OnboardingGateView(
+            child: AuthGate(fcmService: fcmNotificationService),
+          ),
         ),
       ),
     );
