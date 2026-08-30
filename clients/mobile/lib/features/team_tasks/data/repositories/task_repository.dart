@@ -38,7 +38,7 @@ class TaskRepository {
       final responseData = response.data as Map<String, dynamic>;
 
       if (responseData['success'] == true && responseData['data'] != null) {
-        final list = responseData['data'] as List<dynamic>;
+        final list = _extractListFromData(responseData['data']);
         for (var item in list) {
           final incident = TeamTaskModel.fromJson(item as Map<String, dynamic>);
           final isTeamAssigned = incident.assignedTeamId?.toLowerCase() == teamId.toLowerCase();
@@ -62,9 +62,8 @@ class TaskRepository {
         queryParameters: {'status': 'Resolved'},
       );
       final responseData = response.data as Map<String, dynamic>;
-
       if (responseData['success'] == true && responseData['data'] != null) {
-        final list = responseData['data'] as List<dynamic>;
+        final list = _extractListFromData(responseData['data']);
         return list
             .map((item) => TeamTaskModel.fromJson(item as Map<String, dynamic>))
             .where((task) => task.assignedTeamId?.toLowerCase() == teamId.toLowerCase())
@@ -74,6 +73,15 @@ class TaskRepository {
     } on DioException catch (e) {
       throw Exception(_extractErrorMessage(e));
     }
+  }
+  /// Safely extracts dynamic list whether backend returns raw List or PagedResult { items: [] }
+  List<dynamic> _extractListFromData(dynamic data) {
+    if (data is List<dynamic>) {
+      return data;
+    } else if (data is Map<String, dynamic> && data['items'] is List<dynamic>) {
+      return data['items'] as List<dynamic>;
+    }
+    return const [];
   }
 
   Future<void> updateTeamStatus(String teamId, TeamStatus status) async {
