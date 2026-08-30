@@ -17,6 +17,10 @@ import 'features/profile/data/repositories/profile_repository.dart';
 import 'features/team_tasks/data/repositories/task_repository.dart';
 import 'features/team_tasks/services/route_service.dart';
 import 'features/tracking/data/location_stream_repository.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'features/onboarding/data/onboarding_repository.dart';
+import 'features/onboarding/services/onboarding_permission_service.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,6 +35,11 @@ void main() async {
 
   await LocalNotificationService().initialize();
   await BackgroundLocationService().initialize();
+
+  // Storage & Persistent Preferences
+  final prefs = await SharedPreferences.getInstance();
+  final onboardingRepository = OnboardingRepository(prefs: prefs);
+  const onboardingPermissionService = OnboardingPermissionService();
 
   // Core Services
   final secureStorage = SecureStorageService();
@@ -61,7 +70,7 @@ void main() async {
     apiClient: apiClient,
   );
 
-  runApp(
+    runApp(
     SocarDispatchApp(
       authRepository: authRepository,
       profileRepository: profileRepository,
@@ -74,6 +83,9 @@ void main() async {
       routeService: routeService,
       fcmNotificationService: fcmNotificationService,
       locationStreamRepository: locationStreamRepository,
+      onboardingRepository: onboardingRepository,
+      onboardingPermissionService: onboardingPermissionService,
     ),
   );
+
 }
