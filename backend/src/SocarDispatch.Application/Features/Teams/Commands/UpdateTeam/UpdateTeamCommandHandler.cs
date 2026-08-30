@@ -35,9 +35,27 @@ public class UpdateTeamCommandHandler : IRequestHandler<UpdateTeamCommand, ApiRe
             throw new EntityNotFoundException("User", request.RequesterId);
         }
 
-        if (team.LeaderId != request.RequesterId && requester.RoleType != RoleType.Operator)
+        bool isOperator = requester.RoleType == RoleType.Operator;
+        bool isCurrentLeader = team.LeaderId.HasValue && team.LeaderId.Value == request.RequesterId;
+        bool isVacant = team.LeaderId == null;
+        bool isRequesterActiveMember = team.Members.Any(m => m.UserId == request.RequesterId);
+
+        if (isVacant)
         {
-            throw new ForbiddenAccessException("Only the team leader or operator can update it.");
+            if (!isOperator)
+            {
+                if (!isRequesterActiveMember || request.LeaderId != request.RequesterId)
+                {
+                    throw new ForbiddenAccessException("Only an active member of this team can claim vacant leadership for themselves, or an operator can manage the team.");
+                }
+            }
+        }
+        else
+        {
+            if (!isCurrentLeader && !isOperator)
+            {
+                throw new ForbiddenAccessException("Only the team leader or operator can update it.");
+            }
         }
 
         if (!team.TeamName.Equals(request.TeamName, StringComparison.OrdinalIgnoreCase))
