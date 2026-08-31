@@ -37,8 +37,11 @@ class ApiEndpoints {
 
   // Response Teams & Tasks Endpoints
   static const String teams = '/api/v1/teams';
+  static const String availableTeams = '/api/v1/teams/available';
   static String teamById(String id) => '/api/v1/teams/$id';
   static String teamStatus(String teamId) => '/api/v1/teams/$teamId/status';
+  static String teamMembers(String teamId) => '/api/v1/teams/$teamId/members';
+  static String teamMember(String teamId, String userId) => '/api/v1/teams/$teamId/members/$userId';
   static String teamMemberStatus(String teamId, String userId) => '/api/v1/teams/$teamId/members/$userId/status';
   static const String teamLocation = '/api/v1/teams/location';
 }

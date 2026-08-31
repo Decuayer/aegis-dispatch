@@ -32,6 +32,9 @@ import 'features/onboarding/presentation/bloc/onboarding_bloc.dart';
 import 'features/onboarding/presentation/bloc/onboarding_event.dart';
 import 'features/onboarding/presentation/views/onboarding_gate_view.dart';
 import 'features/onboarding/services/onboarding_permission_service.dart';
+import 'features/team_portal/data/repositories/team_portal_repository.dart';
+import 'features/team_portal/presentation/bloc/team_portal_bloc.dart';
+
 
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -50,6 +53,7 @@ class SocarDispatchApp extends StatelessWidget {
   final LocationStreamRepository locationStreamRepository;
   final OnboardingRepository onboardingRepository;
   final OnboardingPermissionService onboardingPermissionService;
+  final TeamPortalRepository teamPortalRepository;
 
   const SocarDispatchApp({
     super.key,
@@ -66,6 +70,7 @@ class SocarDispatchApp extends StatelessWidget {
     required this.locationStreamRepository,
     required this.onboardingRepository,
     required this.onboardingPermissionService,
+    required this.teamPortalRepository,
   });
 
   @override
@@ -85,6 +90,7 @@ class SocarDispatchApp extends StatelessWidget {
         RepositoryProvider.value(value: locationStreamRepository),
         RepositoryProvider.value(value: onboardingRepository),
         RepositoryProvider.value(value: onboardingPermissionService),
+        RepositoryProvider.value(value: teamPortalRepository),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -113,7 +119,6 @@ class SocarDispatchApp extends StatelessWidget {
               ),
             ),
           ),
-
           BlocProvider(
             create: (ctx) => TaskBloc(
               taskRepository: taskRepository,
@@ -123,12 +128,16 @@ class SocarDispatchApp extends StatelessWidget {
             ),
           ),
           BlocProvider(
+            create: (ctx) => TeamPortalBloc(
+              repository: teamPortalRepository,
+            ),
+          ),
+          BlocProvider(
             create: (ctx) => OnboardingBloc(
               onboardingRepository: onboardingRepository,
               permissionService: onboardingPermissionService,
             )..add(const OnboardingCheckRequested()),
           ),
-
         ],
         child: MaterialApp(
           navigatorKey: rootNavigatorKey,
