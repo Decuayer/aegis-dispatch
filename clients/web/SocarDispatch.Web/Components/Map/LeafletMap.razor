@@ -94,10 +94,10 @@
     {
         try
         {
-            var response = await Http.GetFromJsonAsync<ApiResponse<List<MapIncidentDto>>>("api/v1/incidents");
-            if (response?.Data != null)
+            var response = await Http.GetFromJsonAsync<ApiResponse<PagedResult<MapIncidentDto>>>("api/v1/incidents?pageSize=1000");
+            if (response?.Data?.Items != null)
             {
-                foreach (var incident in response.Data)
+                foreach (var incident in response.Data.Items)
                 {
                     await MapService.AddIncidentMarkerAsync(incident);
                 }
