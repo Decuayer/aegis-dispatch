@@ -42,9 +42,10 @@ public class GetUsersDirectoryQueryTests
 
         // Assert
         result.Should().NotBeNull();
-        result.Data.Should().HaveCount(1);
-        result.Data.First().FirstName.Should().Be("Mehmet");
-        result.Data.First().RoleType.Should().Be(RoleType.Team);
+        result.Data.Items.Should().HaveCount(1);
+        result.Data.TotalCount.Should().Be(1);
+        result.Data.Items.First().FirstName.Should().Be("Mehmet");
+        result.Data.Items.First().RoleType.Should().Be(RoleType.Team);
     }
 
     [Fact]
@@ -67,9 +68,10 @@ public class GetUsersDirectoryQueryTests
 
         // Assert
         result.Should().NotBeNull();
-        result.Data.Should().HaveCount(1);
-        result.Data.First().FirstName.Should().Be("Can");
-        result.Data.First().Department.Should().Be("İSG");
+        result.Data.Items.Should().HaveCount(1);
+        result.Data.TotalCount.Should().Be(1);
+        result.Data.Items.First().FirstName.Should().Be("Can");
+        result.Data.Items.First().Department.Should().Be("İSG");
     }
 
     [Fact]
@@ -92,7 +94,111 @@ public class GetUsersDirectoryQueryTests
 
         // Assert
         result.Should().NotBeNull();
-        result.Data.Should().HaveCount(1);
-        result.Data.First().FirstName.Should().Be("Demir");
+        result.Data.Items.Should().HaveCount(1);
+        result.Data.TotalCount.Should().Be(1);
+        result.Data.Items.First().FirstName.Should().Be("Demir");
+    }
+
+    [Fact]
+    public async Task GetUsersQuery_FilterByUserId_ShouldReturnExactUser()
+    {
+        // Arrange
+        using var context = CreateInMemoryDbContext();
+
+        var targetUser = new User { FirstName = "Ahmet", LastName = "Kaya", Email = "ahmet@socar.com", Phone = "+905558888888", PasswordHash = "h", Department = "İSG", RoleType = RoleType.Employee };
+        var otherUser = new User { FirstName = "Mehmet", LastName = "Kaya", Email = "mehmet.k@socar.com", Phone = "+905559999999", PasswordHash = "h", Department = "İSG", RoleType = RoleType.Employee };
+
+        context.Users.AddRange(targetUser, otherUser);
+        await context.SaveChangesAsync();
+
+        var handler = new GetUsersQueryHandler(context);
+        var query = new GetUsersQuery { UserId = targetUser.Id };
+
+        // Act
+        var result = await handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Data.Items.Should().HaveCount(1);
+        result.Data.TotalCount.Should().Be(1);
+        result.Data.Items.First().Id.Should().Be(targetUser.Id);
+    }
+
+    [Fact]
+    public async Task GetUsersQuery_Pagination_ShouldRespectPageNumberAndPageSize()
+    {
+        // Arrange
+        using var context = CreateInMemoryDbContext();
+
+        for (int i = 1; i <= 30; i++)
+        {
+            context.Users.Add(new User
+            {
+                FirstName = $"User{i:D2}",
+                LastName = "Test",
+                Email = $"user{i}@socar.com",
+                Phone = $"+9055500000{i:D2}",
+                PasswordHash = "h",
+                Department = "IT",
+                RoleType = RoleType.Employee
+            });
+        }
+        await context.SaveChangesAsync();
+
+        var handler = new GetUsersQueryHandler(context);
+        var query = new GetUsersQuery { PageNumber = 2, PageSize = 10 };
+
+        // Act
+        var result = await handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Data.Items.Should().HaveCount(10);
+        result.Data.TotalCount.Should().Be(30);
+        result.Data.PageNumber.Should().Be(2);
+        result.Data.PageSize.Should().Be(10);
+        result.Data.TotalPages.Should().Be(3);
+        result.Data.HasPreviousPage.Should().BeTrue();
+        result.Data.HasNextPage.Should().BeTrue();
+    }
+
+    [Fact]
+    public void GetUsersQueryValidator_ValidInputs_ShouldPassValidation()
+    {
+        // Arrange
+        var validator = new GetUsersQueryValidator();
+        var validQuery = new GetUsersQuery
+        {
+            PageNumber = 1,
+            PageSize = 25,
+            SearchTerm = "Demir",
+            Department = "IT"
+        };
+
+        // Act
+        var result = validator.Validate(validQuery);
+
+        // Assert
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void GetUsersQueryValidator_ExcessiveLengths_ShouldFailValidation()
+    {
+        // Arrange
+        var validator = new GetUsersQueryValidator();
+        var invalidQuery = new GetUsersQuery
+        {
+            SearchTerm = new string('a', 101),
+            Department = new string('b', 101)
+        };
+
+        // Act
+        var result = validator.Validate(invalidQuery);
+
+        // Assert
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == "SearchTerm");
+        result.Errors.Should().Contain(e => e.PropertyName == "Department");
     }
 }

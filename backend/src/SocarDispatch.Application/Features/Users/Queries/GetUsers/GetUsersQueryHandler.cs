@@ -1,13 +1,13 @@
-
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using SocarDispatch.Application.Common.Extensions;
 using SocarDispatch.Application.Common.Interfaces;
 using SocarDispatch.Application.Common.Models;
 using SocarDispatch.Application.Features.Auth.DTOs;
 
 namespace SocarDispatch.Application.Features.Users.Queries.GetUsers;
 
-public class GetUsersQueryHandler : IRequestHandler<GetUsersQuery, ApiResponse<List<UserDto>>>
+public class GetUsersQueryHandler : IRequestHandler<GetUsersQuery, ApiResponse<PagedResult<UserDto>>>
 {
     private readonly IApplicationDbContext _context;
 
@@ -16,13 +16,20 @@ public class GetUsersQueryHandler : IRequestHandler<GetUsersQuery, ApiResponse<L
         _context = context;
     }
 
-    public async Task<ApiResponse<List<UserDto>>> Handle(GetUsersQuery request, CancellationToken cancellationToken)
+    public async Task<ApiResponse<PagedResult<UserDto>>> Handle(GetUsersQuery request, CancellationToken cancellationToken)
     {
         var query = _context.Users.AsNoTracking().AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(request.Search))
+        // Exact UserId lookup
+        if (request.UserId.HasValue)
         {
-            var searchLower = request.Search.Trim().ToLower();
+            query = query.Where(u => u.Id == request.UserId.Value);
+        }
+
+        // Multi-field text search matching FirstName, LastName, Email, and Phone
+        if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+        {
+            var searchLower = request.SearchTerm.Trim().ToLower();
             query = query.Where(u =>
                 u.FirstName.ToLower().Contains(searchLower) ||
                 u.LastName.ToLower().Contains(searchLower) ||
@@ -30,33 +37,46 @@ public class GetUsersQueryHandler : IRequestHandler<GetUsersQuery, ApiResponse<L
                 u.Phone.Contains(searchLower));
         }
 
+        // Department filter
         if (!string.IsNullOrWhiteSpace(request.Department))
         {
-            query = query.Where(u => u.Department.ToLower() == request.Department.Trim().ToLower());
+            var deptLower = request.Department.Trim().ToLower();
+            query = query.Where(u => u.Department.ToLower() == deptLower);
         }
 
-        if (request.RoleType.HasValue)
+        // Role filter (accepts either Role or RoleType)
+        var roleFilter = request.Role ?? request.RoleType;
+        if (roleFilter.HasValue)
         {
-            query = query.Where(u => u.RoleType == request.RoleType.Value);
+            query = query.Where(u => u.RoleType == roleFilter.Value);
         }
 
-        var users = await query
-            .OrderBy(u => u.FirstName)
-            .ThenBy(u => u.LastName)
-            .Select(u => new UserDto
-            {
-                Id = u.Id,
-                FirstName = u.FirstName,
-                LastName = u.LastName,
-                Email = u.Email,
-                Phone = u.Phone,
-                Department = u.Department,
-                RoleType = u.RoleType,
-                SubRole = u.SubRole,
-                AvatarUrl = u.AvatarUrl
-            })
-            .ToListAsync(cancellationToken);
+        // Default deterministic ordering (aligned with composite index IX_Users_RoleType_Department_FirstName_LastName)
+        query = query.OrderBy(u => u.RoleType)
+                     .ThenBy(u => u.Department)
+                     .ThenBy(u => u.FirstName)
+                     .ThenBy(u => u.LastName);
 
-        return ApiResponse<List<UserDto>>.SuccessResult(users, "User directory list retrieved successfully.");
+        // Project to UserDto
+        var projectedQuery = query.Select(u => new UserDto
+        {
+            Id = u.Id,
+            FirstName = u.FirstName,
+            LastName = u.LastName,
+            Email = u.Email,
+            Phone = u.Phone,
+            Department = u.Department,
+            RoleType = u.RoleType,
+            SubRole = u.SubRole,
+            AvatarUrl = u.AvatarUrl
+        });
+
+        // Execute server-side pagination
+        var pagedResult = await projectedQuery.ToPagedResultAsync(
+            request.PageNumber,
+            request.PageSize,
+            cancellationToken);
+
+        return ApiResponse<PagedResult<UserDto>>.SuccessResult(pagedResult, "User directory list retrieved successfully.");
     }
 }

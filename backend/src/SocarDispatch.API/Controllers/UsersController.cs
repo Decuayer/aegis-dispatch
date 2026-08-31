@@ -109,16 +109,11 @@ public class UsersController : ControllerBase
     }
 
     // GET /api/v1/users
-    // Retrieves the contact/department list for all users (Search/Quick Contact Directory).
+    // Retrieves paginated contact/department list for all users (Search/Quick Contact Directory).
     [HttpGet]
-    public async Task<ActionResult<ApiResponse<List<UserDto>>>> GetUsers(
-        [FromQuery] string? search,
-        [FromQuery] string? department,
-        [FromQuery(Name = "role")] RoleType? role,
-        [FromQuery(Name = "roleType")] RoleType? roleType)
+    [ProducesResponseType(typeof(ApiResponse<PagedResult<UserDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<PagedResult<UserDto>>>> GetUsers([FromQuery] GetUsersQuery query)
     {
-        var selectedRole = role ?? roleType;
-        var query = new GetUsersQuery(search, department, selectedRole);
         var result = await _sender.Send(query);
         return Ok(result);
     }
