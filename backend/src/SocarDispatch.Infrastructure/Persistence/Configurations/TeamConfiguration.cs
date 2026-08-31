@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SocarDispatch.Domain.Entities;
 using SocarDispatch.Domain.Enums;
 
-
 namespace SocarDispatch.Infrastructure.Persistence.Configurations;
 
 public class TeamConfiguration : IEntityTypeConfiguration<Team>
@@ -25,10 +24,14 @@ public class TeamConfiguration : IEntityTypeConfiguration<Team>
 
         builder.Property(t => t.UpdatedAt).HasDefaultValueSql("NOW()");
 
+        // Composite index for team availability and name search
+        builder.HasIndex(t => new { t.Status, t.TeamName })
+            .HasDatabaseName("IX_Teams_Status_TeamName");
+
         // Team Leader (User -> Teams 1-to-Many optional relationship)
         builder.HasOne(t => t.Leader)
             .WithMany(u => u.LedTeams)
             .HasForeignKey(t => t.LeaderId)
-            .OnDelete(DeleteBehavior.SetNull); // If the leader is deleted, the team is not deleted; the leader position becomes vacant.
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

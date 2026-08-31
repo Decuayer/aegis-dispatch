@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using SocarDispatch.Domain.Entities;
 using SocarDispatch.Domain.Enums;
+using SocarDispatch.Infrastructure.Persistence.Configurations;
 using Xunit;
 
 namespace SocarDispatch.Infrastructure.Tests;
@@ -141,4 +142,57 @@ public class DbContextConstraintTests
         var savedMember = await context.TeamMembers.FindAsync(team.Id, user.Id);
         savedMember.Should().NotBeNull();
     }
+
+    // 4. COMPOSITE B-TREE INDEX TESTS (SDDC-69)
+
+    [Fact]
+    public void Incidents_CompositeIndex_CreatedAtDesc_Status_Category_ShouldBeConfigured()
+    {
+        // Arrange
+        var modelBuilder = new ModelBuilder();
+        new IncidentConfiguration().Configure(modelBuilder.Entity<Incident>());
+        var entityType = modelBuilder.Model.FindEntityType(typeof(Incident));
+
+        // Act
+        var index = entityType?.GetIndexes()
+            .FirstOrDefault(i => i.GetDatabaseName() == "IX_Incidents_CreatedAt_Status_Category");
+
+        // Assert
+        index.Should().NotBeNull();
+        index!.Properties.Select(p => p.Name).Should().Equal("CreatedAt", "Status", "Category");
+        index.IsDescending.Should().Equal(new[] { true, false, false });
+    }
+
+    [Fact]
+    public void Teams_CompositeIndex_Status_TeamName_ShouldBeConfigured()
+    {
+        // Arrange
+        using var context = TestDbContextFactory.Create();
+        var entityType = context.Model.FindEntityType(typeof(Team));
+
+        // Act
+        var index = entityType?.GetIndexes()
+            .FirstOrDefault(i => i.GetDatabaseName() == "IX_Teams_Status_TeamName");
+
+        // Assert
+        index.Should().NotBeNull();
+        index!.Properties.Select(p => p.Name).Should().Equal("Status", "TeamName");
+    }
+
+    [Fact]
+    public void Users_CompositeIndex_RoleType_Department_Name_ShouldBeConfigured()
+    {
+        // Arrange
+        using var context = TestDbContextFactory.Create();
+        var entityType = context.Model.FindEntityType(typeof(User));
+
+        // Act
+        var index = entityType?.GetIndexes()
+            .FirstOrDefault(i => i.GetDatabaseName() == "IX_Users_RoleType_Department_FirstName_LastName");
+
+        // Assert
+        index.Should().NotBeNull();
+        index!.Properties.Select(p => p.Name).Should().Equal("RoleType", "Department", "FirstName", "LastName");
+    }
+
 }

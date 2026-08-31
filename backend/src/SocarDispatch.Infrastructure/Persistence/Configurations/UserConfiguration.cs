@@ -25,5 +25,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.DeviceToken).HasMaxLength(500);
         builder.Property(u => u.DeviceTokenUpdatedAt);
         builder.Property(u => u.CreatedAt).HasDefaultValueSql("NOW()");
+
+        // Composite index for user directory filtering and role-based lookups
+        builder.HasIndex(u => new { u.RoleType, u.Department, u.FirstName, u.LastName })
+            .HasDatabaseName("IX_Users_RoleType_Department_FirstName_LastName");
     }
 }
