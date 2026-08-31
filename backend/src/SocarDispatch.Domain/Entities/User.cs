@@ -23,4 +23,6 @@ public class User
     public ICollection<TeamMember> TeamMemberships { get; set; } = new List<TeamMember>();
     public ICollection<Incident> ReportedIncidents { get; set; } = new List<Incident>();
     public ICollection<Assignment> AssignedDispatches { get; set; } = new List<Assignment>();
+    public ICollection<Feedback> Feedbacks { get; set; } = new List<Feedback>();
+
 }
