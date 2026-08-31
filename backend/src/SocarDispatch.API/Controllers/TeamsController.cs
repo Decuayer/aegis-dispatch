@@ -32,11 +32,11 @@ public class TeamsController : ControllerBase
     }
 
     // GET /api/v1/teams
-    // Retrieves all emergency teams, their members, and their real-time locations and statuses.
+    // Retrieves paginated emergency teams, their members, and their real-time locations and statuses.
     [HttpGet]
-    public async Task<ActionResult<ApiResponse<List<TeamDto>>>> GetAll()
+    [ProducesResponseType(typeof(ApiResponse<PagedResult<TeamDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<PagedResult<TeamDto>>>> GetAll([FromQuery] GetTeamsQuery query)
     {
-        var query = new GetTeamsQuery();
         var result = await _sender.Send(query);
         return Ok(result);
     }
