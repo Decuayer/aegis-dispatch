@@ -20,6 +20,8 @@ import 'features/tracking/data/location_stream_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'features/onboarding/data/onboarding_repository.dart';
 import 'features/onboarding/services/onboarding_permission_service.dart';
+import 'features/team_portal/data/repositories/team_portal_repository.dart';
+
 
 
 void main() async {
@@ -69,8 +71,11 @@ void main() async {
   final taskRepository = TaskRepository(
     apiClient: apiClient,
   );
+  final teamPortalRepository = TeamPortalRepository(
+    apiClient: apiClient,
+  );
 
-    runApp(
+  runApp(
     SocarDispatchApp(
       authRepository: authRepository,
       profileRepository: profileRepository,
@@ -85,6 +90,7 @@ void main() async {
       locationStreamRepository: locationStreamRepository,
       onboardingRepository: onboardingRepository,
       onboardingPermissionService: onboardingPermissionService,
+      teamPortalRepository: teamPortalRepository,
     ),
   );
 
