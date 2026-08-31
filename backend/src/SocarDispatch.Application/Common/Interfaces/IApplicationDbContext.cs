@@ -14,6 +14,9 @@ public interface IApplicationDbContext
     DbSet<EmergencyCodeDefinition> EmergencyCodes { get; }
     DbSet<IncidentReport> IncidentReports { get; }
     DbSet<IncidentCategory> IncidentCategories { get; }
+    DbSet<Feedback> Feedbacks { get; }
+    DbSet<FeedbackMedia> FeedbackMedia { get; }
+
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

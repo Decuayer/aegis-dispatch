@@ -97,4 +97,141 @@ public class DbContextRelationshipTests
         var mediaExists = await context.IncidentMedia.AnyAsync(m => m.IncidentId == incident.Id);
         mediaExists.Should().BeFalse(); // Cascade Delete verified
     }
+
+    // 4. CASCADE DELETE TEST (FeedbackMedia records are deleted when Feedback is deleted)
+    [Fact]
+    public async Task DeleteFeedback_ShouldCascadeDelete_FeedbackMedia()
+    {
+        // Arrange
+        using var context = TestDbContextFactory.Create();
+        var user = new User
+        {
+            FirstName = "John",
+            LastName = "Doe",
+            Email = "john.doe@socar.com",
+            Phone = "+905001112244",
+            PasswordHash = "hashed_pw",
+            Department = "Refinery Operations",
+            RoleType = RoleType.Employee
+        };
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
+
+        var feedback = new Feedback
+        {
+            UserId = user.Id,
+            Title = "Equipment Inspection Needed",
+            Description = "Safety valve pressure gauge inspection is required.",
+            Status = FeedbackStatus.Pending,
+            MediaAttachments = new List<FeedbackMedia>
+            {
+                new FeedbackMedia { MediaUrl = "http://minio/feedback1.jpg", MediaType = "image/jpeg" },
+                new FeedbackMedia { MediaUrl = "http://minio/feedback2.mp4", MediaType = "video/mp4" }
+            }
+        };
+        context.Feedbacks.Add(feedback);
+        await context.SaveChangesAsync();
+
+        // Verify model metadata constraint
+        var mediaFk = context.Model.FindEntityType(typeof(FeedbackMedia))!
+            .GetForeignKeys()
+            .First(fk => fk.PrincipalEntityType.ClrType == typeof(Feedback));
+        mediaFk.DeleteBehavior.Should().Be(DeleteBehavior.Cascade);
+
+        // Act (Delete Feedback)
+        context.Feedbacks.Remove(feedback);
+        await context.SaveChangesAsync();
+
+        // Assert
+        var mediaExists = await context.FeedbackMedia.AnyAsync(m => m.FeedbackId == feedback.Id);
+        mediaExists.Should().BeFalse();
+    }
+
+    // 5. RESTRICT DELETE TEST (Deleting a User with existing Feedback records is restricted)
+    [Fact]
+    public async Task DeleteUser_WithAssociatedFeedback_ShouldBeRestricted()
+    {
+        // Arrange
+        using var context = TestDbContextFactory.Create();
+        var user = new User
+        {
+            FirstName = "Jane",
+            LastName = "Smith",
+            Email = "jane.smith@socar.com",
+            Phone = "+905001112255",
+            PasswordHash = "hashed_pw",
+            Department = "HSE",
+            RoleType = RoleType.Employee
+        };
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
+
+        var feedback = new Feedback
+        {
+            UserId = user.Id,
+            Title = "Hazard Report",
+            Description = "Dimmed emergency exit illumination at sector B.",
+            Status = FeedbackStatus.Pending
+        };
+        context.Feedbacks.Add(feedback);
+        await context.SaveChangesAsync();
+
+        // Verify model metadata configuration
+        var userFk = context.Model.FindEntityType(typeof(Feedback))!
+            .GetForeignKeys()
+            .First(fk => fk.PrincipalEntityType.ClrType == typeof(User));
+        userFk.DeleteBehavior.Should().Be(DeleteBehavior.Restrict);
+
+        // Act & Assert (Attempting to remove the user triggers tracking restriction)
+        Action act = () => context.Users.Remove(user);
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    // 6. ENUM & METADATA TEST (FeedbackStatus maps to string, length is 20, defaults to Pending)
+    [Fact]
+    public async Task Feedback_ShouldHaveStringConvertedStatus_AndDefaultToPending()
+    {
+        // Arrange
+        using var context = TestDbContextFactory.Create();
+
+        // Verify EF Core metadata configuration
+        var statusProperty = context.Model.FindEntityType(typeof(Feedback))!
+            .FindProperty(nameof(Feedback.Status));
+        statusProperty.Should().NotBeNull();
+        statusProperty!.GetProviderClrType().Should().Be(typeof(string));
+        statusProperty.GetMaxLength().Should().Be(20);
+
+        var user = new User
+        {
+            FirstName = "Alice",
+            LastName = "Brown",
+            Email = "alice.brown@socar.com",
+            Phone = "+905001112266",
+            PasswordHash = "hashed_pw",
+            Department = "Logistics",
+            RoleType = RoleType.Employee
+        };
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
+
+        // Act
+        var feedback = new Feedback
+        {
+            UserId = user.Id,
+            Title = "System Usability Feedback",
+            Description = "Map marker rendering is clear and responsive."
+        };
+
+        // Assert default enum value
+        feedback.Status.Should().Be(FeedbackStatus.Pending);
+
+        context.Feedbacks.Add(feedback);
+        await context.SaveChangesAsync();
+
+        // Assert persisted entity
+        var savedFeedback = await context.Feedbacks.FirstAsync(f => f.Id == feedback.Id);
+        savedFeedback.Should().NotBeNull();
+        savedFeedback.Status.Should().Be(FeedbackStatus.Pending);
+    }
+
 }
