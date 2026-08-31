@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SocarDispatch.Domain.Entities;
 using SocarDispatch.Domain.Enums;
 
-
 namespace SocarDispatch.Infrastructure.Persistence.Configurations;
 
 public class IncidentConfiguration : IEntityTypeConfiguration<Incident>
@@ -26,6 +25,11 @@ public class IncidentConfiguration : IEntityTypeConfiguration<Incident>
         builder.HasIndex(i => i.Location).HasMethod("GIST");
 
         builder.Property(i => i.CreatedAt).HasDefaultValueSql("NOW()");
+
+        // Composite index for chronological sorting and status/category filtering
+        builder.HasIndex(i => new { i.CreatedAt, i.Status, i.Category })
+            .IsDescending(true, false, false)
+            .HasDatabaseName("IX_Incidents_CreatedAt_Status_Category");
 
         builder.HasOne(i => i.Reporter)
             .WithMany(u => u.ReportedIncidents)
