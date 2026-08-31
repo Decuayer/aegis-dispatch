@@ -169,10 +169,10 @@
         _isLoading = true;
         try
         {
-            var incidentsResponse = await Http.GetFromJsonAsync<ApiResponse<List<MapIncidentDto>>>("api/v1/incidents");
-            if (incidentsResponse?.Data != null)
+            var incidentsResponse = await Http.GetFromJsonAsync<ApiResponse<PagedResult<MapIncidentDto>>>("api/v1/incidents?pageSize=1000");
+            if (incidentsResponse?.Data?.Items != null)
             {
-                _activeIncidents = incidentsResponse.Data.Count(i => i.Status is "Open" or "Assigned" or "InProgress");
+                _activeIncidents = incidentsResponse.Data.Items.Count(i => i.Status is "Open" or "Assigned" or "InProgress");
             }
 
             var teamsResponse = await Http.GetFromJsonAsync<ApiResponse<List<MapTeamDto>>>("api/v1/teams");

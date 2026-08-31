@@ -31,9 +31,18 @@ public class IncidentService : IIncidentService
     {
         try
         {
-            return await _http.GetFromJsonAsync<ApiResponse<List<IncidentDetailViewModel>>>(
-                "api/v1/incidents?status=Open,Assigned", 
+            var response = await _http.GetFromJsonAsync<ApiResponse<PagedResult<IncidentDetailViewModel>>>(
+                "api/v1/incidents?status=Open,Assigned&pageSize=1000", 
                 cancellationToken);
+
+            if (response != null && response.Success && response.Data != null)
+            {
+                return ApiResponse<List<IncidentDetailViewModel>>.SuccessResult(response.Data.Items, response.Message);
+            }
+
+            return response != null
+                ? ApiResponse<List<IncidentDetailViewModel>>.FailureResult(response.Message)
+                : ApiResponse<List<IncidentDetailViewModel>>.FailureResult("Failed to retrieve active incidents.");
         }
         catch (Exception ex)
         {
@@ -60,9 +69,20 @@ public class IncidentService : IIncidentService
             if (to.HasValue)
                 queryParams.Add($"to={Uri.EscapeDataString(to.Value.ToString("o"))}");
 
-            var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : string.Empty;
+            queryParams.Add("pageSize=1000");
+
+            var queryString = "?" + string.Join("&", queryParams);
             var url = $"api/v1/incidents{queryString}";
-            return await _http.GetFromJsonAsync<ApiResponse<List<IncidentDetailViewModel>>>(url, cancellationToken);
+
+            var response = await _http.GetFromJsonAsync<ApiResponse<PagedResult<IncidentDetailViewModel>>>(url, cancellationToken);
+            if (response != null && response.Success && response.Data != null)
+            {
+                return ApiResponse<List<IncidentDetailViewModel>>.SuccessResult(response.Data.Items, response.Message);
+            }
+
+            return response != null
+                ? ApiResponse<List<IncidentDetailViewModel>>.FailureResult(response.Message)
+                : ApiResponse<List<IncidentDetailViewModel>>.FailureResult("Failed to retrieve incidents.");
         }
         catch (Exception ex)
         {
