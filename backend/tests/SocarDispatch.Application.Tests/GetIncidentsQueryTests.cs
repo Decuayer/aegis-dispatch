@@ -281,6 +281,37 @@ public class GetIncidentsQueryTests
     }
 
     [Fact]
+    public async Task Handle_WithSearchTerm_PrefixedWithIncTag_ReturnsMatchedIncident()
+    {
+        // Arrange
+        using var context = CreateInMemoryDbContext();
+        var reporter = await SeedReporterAsync(context);
+
+        var knownId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
+        context.Incidents.Add(new Incident
+        {
+            Id = knownId,
+            ReporterId = reporter.Id,
+            Category = "Security",
+            EmergencyCode = "SEC-01",
+            Status = IncidentStatus.Open,
+            Location = new Point(49.8671, 40.4093) { SRID = 4326 }
+        });
+        await context.SaveChangesAsync();
+
+        var handler = new GetIncidentsQueryHandler(context);
+        var query = new GetIncidentsQuery { SearchTerm = "#INC-aaaaaaaa" };
+
+        // Act
+        var response = await handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        response.Data!.Items.Should().HaveCount(1);
+        response.Data.Items.First().Id.Should().Be(knownId);
+    }
+
+
+    [Fact]
     public async Task Handle_WithSearchTerm_MatchingDescriptionOrCode_ReturnsMatches()
     {
         // Arrange
