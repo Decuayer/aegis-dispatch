@@ -13,6 +13,14 @@ window.leafletMap = (function () {
     let _pickerDotNetRef = null;
     let pickerTileLayer = null;
 
+    // SOCAR Aliaga / STAR Refinery facility bounding box
+    const SOCAR_FACILITY_BOUNDS = [
+        [38.7650, 26.8900], // South-West (Lat, Lng)
+        [38.8350, 26.9750]  // North-East (Lat, Lng)
+    ];
+    const DEFAULT_LOCKED_MIN_ZOOM = 13;
+    const DEFAULT_UNLOCKED_MIN_ZOOM = 0;
+
     // Get color according to EmergencyCode or Status
     function getIncidentColor(emergencyCode, status) {
         if (status === 'Resolved') return '#22c55e'; // Green
@@ -712,10 +720,55 @@ window.leafletMap = (function () {
             );
         });
     }
+
+    // Helper: Parse bounds from C# MapBoundsDto or array
+    function parseBounds(customBounds) {
+        if (!customBounds) return L.latLngBounds(SOCAR_FACILITY_BOUNDS);
+
+        if (typeof customBounds === 'object' && customBounds.southWestLat !== undefined) {
+            return L.latLngBounds(
+                [customBounds.southWestLat, customBounds.southWestLng],
+                [customBounds.northEastLat, customBounds.northEastLng]
+            );
+        }
+
+        if (Array.isArray(customBounds) && customBounds.length === 2) {
+            return L.latLngBounds(customBounds[0], customBounds[1]);
+        }
+
+        return L.latLngBounds(SOCAR_FACILITY_BOUNDS);
+    }
+
+    // Configure facility boundary lock with rigid elasticity
+    function setMapBoundaryLock(enabled, customBounds) {
+        const targetMaps = [map, pickerMap].filter(m => m !== null);
+        if (targetMaps.length === 0) return;
+
+        const bounds = parseBounds(customBounds);
+
+        targetMaps.forEach(targetMap => {
+            if (enabled) {
+                targetMap.setMaxBounds(bounds);
+                targetMap.options.maxBoundsViscosity = 1.0;
+                targetMap.setMinZoom(DEFAULT_LOCKED_MIN_ZOOM);
+
+                if (!bounds.contains(targetMap.getCenter())) {
+                    targetMap.panInsideBounds(bounds, { animate: true });
+                }
+            } else {
+                targetMap.setMaxBounds(null);
+                targetMap.options.maxBoundsViscosity = 0.0;
+                targetMap.setMinZoom(DEFAULT_UNLOCKED_MIN_ZOOM);
+            }
+            targetMap.invalidateSize();
+        });
+    }
+
     
     // Public API
     return {
         initMap,
+        setMapBoundaryLock,
         updateMainTileLayer,
         addIncidentMarker,
         addTeamMarker,
@@ -744,4 +797,5 @@ window.leafletMap = (function () {
         destroyPickerMap,
         getCurrentBrowserLocation
     };
+
 })();

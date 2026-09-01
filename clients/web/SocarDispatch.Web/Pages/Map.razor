@@ -15,18 +15,21 @@
                            OnTeamFocused="HandleTeamFocused" />
     </div>
 
-    <!-- Floating Top-Right Layer & Tile Controls -->
+        <!-- Floating Top-Right Layer & Tile Controls -->
     <div class="map-floating-controls">
         <MapControlOverlay ActiveIncidentCount="_activeIncidentsCount"
                        ResolvedIncidentCount="_resolvedIncidentsCount"
                        ActiveTeamCount="_activeTeamsCount"
                        SelectedTileProvider="@_selectedTileProvider"
+                       IsBoundaryLocked="_isBoundaryLocked"
                        OnToggleIncidents="HandleToggleIncidents"
                        OnToggleResolvedIncidents="HandleToggleResolvedIncidents"
                        OnToggleTeams="HandleToggleTeams"
                        OnTileProviderChanged="HandleTileProviderChanged"
-                       OnResetView="HandleResetView" />
+                       OnResetView="HandleResetView"
+                       OnToggleBoundaryLock="HandleToggleBoundaryLock" />
     </div>
+
 
 
     <!-- Full-Height Interactive GIS Leaflet Map Canvas -->

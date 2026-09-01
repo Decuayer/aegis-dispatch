@@ -226,4 +226,77 @@ public class UpdateIncidentAuthorizationTests
         var act = async () => await handler.Handle(command, CancellationToken.None);
         await act.Should().ThrowAsync<EntityNotFoundException>();
     }
+
+    [Fact]
+    public async Task UpdateIncident_WhenIncidentHasExistingMedia_ShouldReplaceMediaWithoutConcurrencyError()
+    {
+        // Arrange
+        using var context = CreateInMemoryDbContext();
+
+        var reporter = new User
+        {
+            FirstName = "Ahmet",
+            LastName = "Yılmaz",
+            Email = "ahmet@socar.com",
+            Phone = "+905550001122",
+            PasswordHash = "hash",
+            Department = "Saha",
+            RoleType = RoleType.Employee
+        };
+        context.Users.Add(reporter);
+
+        var category = new IncidentCategory
+        {
+            Code = "Fire",
+            Name = "Yangın",
+            IsActive = true
+        };
+        context.IncidentCategories.Add(category);
+
+        var incident = new Incident
+        {
+            ReporterId = reporter.Id,
+            Category = "Fire",
+            EmergencyCode = "Kırmızı Kod",
+            Description = "Orijinal Açıklama",
+            Latitude = 40.99m,
+            Longitude = 29.02m,
+            Location = new NetTopologySuite.Geometries.Point(29.02, 40.99) { SRID = 4326 },
+            Status = IncidentStatus.Open,
+            MediaAttachments = new List<IncidentMedia>
+            {
+                new()
+                {
+                    MediaUrl = "http://old-media.jpg",
+                    MediaType = MediaType.Photo,
+                    CreatedAt = DateTime.UtcNow
+                }
+            }
+        };
+        context.Incidents.Add(incident);
+        await context.SaveChangesAsync();
+
+        var handler = new UpdateIncidentCommandHandler(context);
+        var command = new UpdateIncidentCommand(
+            incident.Id,
+            reporter.Id,
+            "Fire",
+            "Kırmızı Kod",
+            "Güncellenmiş Açıklama",
+            new List<CreateIncidentMediaRequestDto>
+            {
+                new() { MediaUrl = "http://new-media.jpg", MediaType = MediaType.Photo }
+            },
+            40.99m,
+            29.02m
+        );
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Data.MediaAttachments.Should().HaveCount(1);
+        result.Data.MediaAttachments[0].MediaUrl.Should().Be("http://new-media.jpg");
+    }
 }

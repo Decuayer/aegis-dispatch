@@ -52,12 +52,25 @@ public class UpdateIncidentCommandHandler : IRequestHandler<UpdateIncidentComman
         incident.Category = request.Category;
         incident.EmergencyCode = request.EmergencyCode;
         incident.Description = request.Description;
-        incident.MediaAttachments = request.MediaAttachments.Select(m => new IncidentMedia
+        // Safely remove existing media attachments and add new ones
+        foreach (var existing in incident.MediaAttachments.ToList())
         {
-            MediaUrl = m.MediaUrl,
-            MediaType = m.MediaType,
-            CreatedAt = DateTime.UtcNow
-        }).ToList();
+            _context.IncidentMedia.Remove(existing);
+        }
+
+        if (request.MediaAttachments != null && request.MediaAttachments.Count > 0)
+        {
+            foreach (var m in request.MediaAttachments)
+            {
+                _context.IncidentMedia.Add(new IncidentMedia
+                {
+                    IncidentId = incident.Id,
+                    MediaUrl = m.MediaUrl,
+                    MediaType = m.MediaType,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+        }
         incident.Latitude = request.Latitude;
         incident.Longitude = request.Longitude;
         incident.Location = new Point((double)request.Longitude, (double)request.Latitude) { SRID = 4326 };

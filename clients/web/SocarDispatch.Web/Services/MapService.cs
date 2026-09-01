@@ -18,6 +18,24 @@ public class MapService : IMapService
     public async Task UpdateMainTileLayerAsync(string tileProvider)
         => await _js.InvokeVoidAsync("leafletMap.updateMainTileLayer", tileProvider);
 
+    public async Task SetMapBoundaryLockAsync(bool enabled, MapBoundsDto? customBounds = null)
+    {
+        if (customBounds != null)
+        {
+            await _js.InvokeVoidAsync("leafletMap.setMapBoundaryLock", enabled, new
+            {
+                southWestLat = customBounds.SouthWestLat,
+                southWestLng = customBounds.SouthWestLng,
+                northEastLat = customBounds.NorthEastLat,
+                northEastLng = customBounds.NorthEastLng
+            });
+        }
+        else
+        {
+            await _js.InvokeVoidAsync("leafletMap.setMapBoundaryLock", enabled, null);
+        }
+    }
+
     public async Task ToggleResolvedIncidentsLayerAsync(bool visible)
         => await _js.InvokeVoidAsync("leafletMap.toggleResolvedIncidentsLayer", visible);
 
