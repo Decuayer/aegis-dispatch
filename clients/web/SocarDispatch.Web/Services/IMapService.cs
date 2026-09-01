@@ -14,6 +14,8 @@ public interface IMapService
     Task PanToIncidentAsync(Guid incidentId);
     Task PanToTeamAsync(Guid teamId);
     Task PanToLocationAsync(double lat, double lng, int zoom = 15);
+    Task FocusMarkerByIdAsync(string entityType, Guid entityId, int zoomLevel = 17);
+
     Task ToggleIncidentsLayerAsync(bool visible);
     Task ToggleTeamsLayerAsync(bool visible);
     Task InvalidateSizeAsync();

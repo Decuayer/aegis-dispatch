@@ -64,6 +64,9 @@
 
     public async Task PanToLocationAsync(double lat, double lng, int zoom = 15)
         => await MapService.PanToLocationAsync(lat, lng, zoom);
+    
+    public async Task FocusMarkerByIdAsync(string entityType, Guid entityId, int zoomLevel = 17)
+        => await MapService.FocusMarkerByIdAsync(entityType, entityId, zoomLevel);
 
     public async Task ToggleIncidentsLayerAsync(bool visible)
         => await MapService.ToggleIncidentsLayerAsync(visible);

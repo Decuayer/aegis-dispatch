@@ -144,11 +144,46 @@ window.leafletMap = (function () {
         mainTileLayer.bringToBack();
     }
 
+    // Copy text to clipboard with fallback and visual feedback
+    function copyToClipboard(text, element) {
+        if (!text) return;
+        const cleanText = text.trim();
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(cleanText)
+                .then(() => showCopyFeedback(element))
+                .catch(() => fallbackCopy(cleanText, element));
+        } else {
+            fallbackCopy(cleanText, element);
+        }
+    }
+
+    function fallbackCopy(text, element) {
+        const tempInput = document.createElement('input');
+        tempInput.value = text;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+        showCopyFeedback(element);
+    }
+
+    function showCopyFeedback(el) {
+        if (!el) return;
+        const originalHtml = el.innerHTML;
+        el.classList.add('copied');
+        el.innerHTML = `✓ Copied!`;
+        setTimeout(() => {
+            el.classList.remove('copied');
+            el.innerHTML = originalHtml;
+        }, 1500);
+    }
+
     // Helper: Incident Popup HTML Template Generator
     function createIncidentPopupHtml(data) {
         const { id, category, emergencyCode, reporterFullName, status, createdAt, assignedTeamName } = data;
         const formattedDate = new Date(createdAt).toLocaleString('tr-TR');
         const color = getIncidentColor(emergencyCode, status);
+        const shortId = id ? id.substring(0, 8).toUpperCase() : 'UNKNOWN';
 
         const teamInfo = assignedTeamName
             ? `<div class="lf-popup-row"><span class="lf-label">Assigned Team:</span> <span class="lf-value">${assignedTeamName}</span></div>`
@@ -161,6 +196,13 @@ window.leafletMap = (function () {
               <strong>${category}</strong>
             </div>
             <div class="lf-popup-body">
+              <div class="lf-popup-id-row">
+                <span class="badge-entity-id" 
+                      title="Full ID: ${id} (Click to copy)" 
+                      onclick="window.leafletMap.copyToClipboard('${id}', this)">
+                  ID: #${shortId} <span class="copy-icon">📋</span>
+                </span>
+              </div>
               <div class="lf-popup-row"><span class="lf-label">Reporter:</span> <span class="lf-value">${reporterFullName}</span></div>
               <div class="lf-popup-row"><span class="lf-label">Status:</span> <span class="lf-value lf-status-${status.toLowerCase()}">${status}</span></div>
               <div class="lf-popup-row"><span class="lf-label">Time:</span> <span class="lf-value">${formattedDate}</span></div>
@@ -173,6 +215,7 @@ window.leafletMap = (function () {
           </div>
         `;
     }
+
 
     // Add or update incident marker
     function addIncidentMarker(incident) {
@@ -217,6 +260,35 @@ window.leafletMap = (function () {
         incidentMarkers[id] = marker;
     }
 
+    // Helper: Team Popup HTML Template Generator
+    function createTeamPopupHtml(team) {
+        const { id, teamName, status, updatedAt } = team;
+        const shortId = id ? id.substring(0, 8).toUpperCase() : 'UNKNOWN';
+        const formattedDate = new Date(updatedAt).toLocaleTimeString('tr-TR');
+        const color = getTeamColor(status);
+
+        return `
+          <div class="lf-popup">
+            <div class="lf-popup-header" style="border-color: ${color}">
+              <span class="lf-status-badge lf-status-${status.toLowerCase()}">${status}</span>
+              <strong>${teamName}</strong>
+            </div>
+            <div class="lf-popup-body">
+              <div class="lf-popup-id-row">
+                <span class="badge-entity-id" 
+                      title="Full ID: ${id} (Click to copy)" 
+                      onclick="window.leafletMap.copyToClipboard('${id}', this)">
+                  ID: #${shortId} <span class="copy-icon">📋</span>
+                </span>
+              </div>
+              <div class="lf-popup-row"><span class="lf-label">Status:</span> <span class="lf-value lf-status-${status.toLowerCase()}">${status}</span></div>
+              <div class="lf-popup-row"><span class="lf-label">Updated:</span> <span class="lf-value">${formattedDate}</span></div>
+            </div>
+          </div>
+        `;
+    }
+
+
     // Add / update team marker
     function addTeamMarker(team) {
         if (!map) return;
@@ -224,16 +296,21 @@ window.leafletMap = (function () {
 
         if (!lat || !lng) return;
 
+        const shortTeamId = id ? id.substring(0, 8).toUpperCase() : 'UNKNOWN';
+
         if (teamMarkers[id]) {
             teamMarkers[id].setLatLng([lat, lng]);
             teamMarkers[id].setIcon(createTeamIcon(status));
+            teamMarkers[id]._teamData = { ...teamMarkers[id]._teamData, ...team };
             teamMarkers[id].setTooltipContent(`
                 <div class="lf-tooltip">
                   <strong>${teamName}</strong>
+                  <span class="badge-entity-id" style="width:fit-content; margin: 2px 0;">Team ID: #${shortTeamId}</span>
                   <span class="lf-status-badge lf-status-${status.toLowerCase()}">${status}</span>
                   <small>Updated: ${new Date(updatedAt).toLocaleTimeString('tr-TR')}</small>
                 </div>
             `);
+            teamMarkers[id].setPopupContent(createTeamPopupHtml(teamMarkers[id]._teamData));
             return;
         }
 
@@ -247,14 +324,21 @@ window.leafletMap = (function () {
         marker.bindTooltip(`
             <div class="lf-tooltip">
               <strong>${teamName}</strong>
+              <span class="badge-entity-id" style="width:fit-content; margin: 2px 0;">Team ID: #${shortTeamId}</span>
               <span class="lf-status-badge lf-status-${status.toLowerCase()}">${status}</span>
               <small>Updated: ${new Date(updatedAt).toLocaleTimeString('tr-TR')}</small>
             </div>
         `, { permanent: false, direction: 'top', className: 'lf-custom-tooltip' });
 
+        marker.bindPopup(createTeamPopupHtml(team), {
+            maxWidth: 260,
+            className: 'lf-custom-popup'
+        });
+
         teamLayerGroup.addLayer(marker);
         teamMarkers[id] = marker;
     }
+
 
     function animateTeamMarker(teamId, targetLat, targetLng) {
         const marker = teamMarkers[teamId];
@@ -323,16 +407,20 @@ window.leafletMap = (function () {
         if (marker._teamData) {
             marker._teamData.status = newStatus;
             marker._teamData.updatedAt = new Date().toISOString();
+            const shortTeamId = teamId ? teamId.substring(0, 8).toUpperCase() : 'UNKNOWN';
 
             marker.setTooltipContent(`
                 <div class="lf-tooltip">
                   <strong>${marker._teamData.teamName}</strong>
+                  <span class="badge-entity-id" style="width:fit-content; margin: 2px 0;">Team ID: #${shortTeamId}</span>
                   <span class="lf-status-badge lf-status-${newStatus.toLowerCase()}">${newStatus}</span>
                   <small>Updated: ${new Date().toLocaleTimeString('tr-TR')}</small>
                 </div>
             `);
+            marker.setPopupContent(createTeamPopupHtml(marker._teamData));
         }
     }
+
 
     function updateIncidentAssignment(incidentId, teamId, teamName) {
         const marker = incidentMarkers[incidentId];
@@ -373,6 +461,69 @@ window.leafletMap = (function () {
             teamMarkers[teamId].openTooltip();
         }
     }
+
+    function focusMarkerById(entityType, entityId, zoomLevel) {
+        if (!map || !entityId) return false;
+        const zoom = zoomLevel || 17;
+        const type = (entityType || '').toLowerCase();
+
+        let targetMarker = null;
+
+        if (type === 'incident') {
+            targetMarker = incidentMarkers[entityId];
+            if (targetMarker) {
+                if (resolvedClusterGroup && resolvedClusterGroup.hasLayer(targetMarker) && !map.hasLayer(resolvedClusterGroup)) {
+                    map.addLayer(resolvedClusterGroup);
+                }
+                if (incidentClusterGroup && incidentClusterGroup.hasLayer(targetMarker) && !map.hasLayer(incidentClusterGroup)) {
+                    map.addLayer(incidentClusterGroup);
+                }
+
+                // If clustered, uncluster and reveal popup
+                const cluster = incidentClusterGroup && incidentClusterGroup.hasLayer(targetMarker) ? incidentClusterGroup : resolvedClusterGroup;
+                if (cluster && typeof cluster.zoomToShowLayer === 'function') {
+                    cluster.zoomToShowLayer(targetMarker, () => {
+                        targetMarker.openPopup();
+                        applyMarkerPulse(targetMarker);
+                    });
+                    return true;
+                }
+            }
+        } else if (type === 'team') {
+            targetMarker = teamMarkers[entityId];
+            if (targetMarker && teamLayerGroup && !map.hasLayer(teamLayerGroup)) {
+                map.addLayer(teamLayerGroup);
+            }
+        }
+
+        if (targetMarker) {
+            const latlng = targetMarker.getLatLng();
+            map.flyTo(latlng, zoom, { animate: true, duration: 1.2 });
+
+            if (targetMarker.openPopup) {
+                targetMarker.openPopup();
+            } else if (targetMarker.openTooltip) {
+                targetMarker.openTooltip();
+            }
+
+            applyMarkerPulse(targetMarker);
+            return true;
+        }
+
+        return false;
+    }
+
+    function applyMarkerPulse(marker) {
+        if (!marker || !marker._icon) return;
+        const iconEl = marker._icon;
+        iconEl.classList.remove('lf-marker-focus-pulse');
+        void iconEl.offsetWidth; // Trigger reflow for animation restart
+        iconEl.classList.add('lf-marker-focus-pulse');
+        setTimeout(() => {
+            iconEl.classList.remove('lf-marker-focus-pulse');
+        }, 2500);
+    }
+
 
     // Toggle Active Incidents Layer
     function toggleIncidentsLayer(visible) {
@@ -577,8 +728,10 @@ window.leafletMap = (function () {
         panToIncident,
         panToTeam,
         panToLocation,
+        focusMarkerById,
+        copyToClipboard,
         toggleIncidentsLayer,
-        toggleResolvedIncidentsLayer, // EKLENDİ
+        toggleResolvedIncidentsLayer,
         toggleTeamsLayer,
         invalidateSize,
         setDotNetRef,
