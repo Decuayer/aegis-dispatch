@@ -206,7 +206,7 @@ public partial class Map : ComponentBase, IDisposable
     {
         if (_mapRef != null)
         {
-            await _mapRef.PanToIncidentAsync(incidentId);
+            await _mapRef.FocusMarkerByIdAsync("Incident", incidentId, 17);
         }
     }
 
@@ -214,9 +214,10 @@ public partial class Map : ComponentBase, IDisposable
     {
         if (_mapRef != null)
         {
-            await _mapRef.PanToTeamAsync(teamId);
+            await _mapRef.FocusMarkerByIdAsync("Team", teamId, 17);
         }
     }
+
 
     private async Task HandleToggleIncidents(bool visible)
     {

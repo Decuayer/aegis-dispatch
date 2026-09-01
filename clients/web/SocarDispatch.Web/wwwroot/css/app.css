@@ -652,6 +652,70 @@ code {
 .lf-status-onscene   { background: rgba(245,158,11,0.15); color: var(--color-warning); }
 .lf-status-busy      { background: rgba(239,68,68,0.15);  color: var(--color-danger); }
 
+/* --- Entity ID Badges & Pulse Animation (SDDC-77) --- */
+.badge-entity-id {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--color-border, #2e3138);
+    color: var(--color-text-muted, #9ca3af);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.badge-entity-id:hover {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: var(--color-accent, #3b82f6);
+    color: #60a5fa;
+}
+
+.badge-entity-id .copy-icon {
+    font-size: 10px;
+    opacity: 0.7;
+}
+
+.badge-entity-id.copied {
+    background: rgba(34, 197, 94, 0.2) !important;
+    border-color: var(--color-success, #22c55e) !important;
+    color: #4ade80 !important;
+}
+
+.lf-popup-id-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+/* Marker focus pulsing animation */
+@keyframes lfMarkerPulse {
+    0% {
+        filter: drop-shadow(0 0 0 rgba(59, 130, 246, 0.9));
+        transform: scale(1);
+    }
+    50% {
+        filter: drop-shadow(0 0 16px rgba(59, 130, 246, 1)) drop-shadow(0 0 24px rgba(96, 165, 250, 0.8));
+        transform: scale(1.22);
+    }
+    100% {
+        filter: drop-shadow(0 0 0 rgba(59, 130, 246, 0));
+        transform: scale(1);
+    }
+}
+
+.lf-marker-focus-pulse {
+    animation: lfMarkerPulse 1.2s ease-in-out 2 !important;
+    z-index: 1000 !important;
+}
+
+
 
 /* =========================================================
    Incident Sidebar & Dispatch Drawer Styles
@@ -832,8 +896,6 @@ code {
     display: flex;
     gap: 10px;
 }
-
-
 
 /* --- Filter Toolbar --- */
 .filter-toolbar-container {

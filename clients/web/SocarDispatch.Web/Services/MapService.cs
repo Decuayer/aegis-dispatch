@@ -65,6 +65,9 @@ public class MapService : IMapService
     public async Task PanToLocationAsync(double lat, double lng, int zoom = 15)
         => await _js.InvokeVoidAsync("leafletMap.panToLocation", lat, lng, zoom);
 
+    public async Task FocusMarkerByIdAsync(string entityType, Guid entityId, int zoomLevel = 17)
+        => await _js.InvokeVoidAsync("leafletMap.focusMarkerById", entityType, entityId.ToString(), zoomLevel);
+
     public async Task ToggleIncidentsLayerAsync(bool visible)
         => await _js.InvokeVoidAsync("leafletMap.toggleIncidentsLayer", visible);
 

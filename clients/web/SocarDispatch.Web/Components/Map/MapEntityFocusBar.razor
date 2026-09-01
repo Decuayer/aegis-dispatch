@@ -82,7 +82,10 @@
                         <div class="item-left">
                             <span class="entity-badge badge-@item.Type.ToLower() badge-@item.SeverityClass.ToLower()">@item.BadgeText</span>
                             <div class="entity-info">
-                                <strong class="entity-title">@item.Title</strong>
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <strong class="entity-title">@item.Title</strong>
+                                    <span class="badge-entity-id" style="font-size: 10px; padding: 1px 5px;">@item.FormattedId</span>
+                                </div>
                                 <span class="entity-sub">@item.Subtitle</span>
                             </div>
                         </div>
@@ -125,6 +128,7 @@
                 return Enumerable.Empty<SearchResultItem>();
 
             var query = _searchQuery.Trim().ToLowerInvariant();
+            var cleanQuery = query.TrimStart('#').Trim();
             var results = new List<SearchResultItem>();
 
             var trCulture = new CultureInfo("tr-TR");
@@ -162,7 +166,13 @@
                                           (query is "bugün" or "today" && inc.CreatedAt.Date == today) ||
                                           (query is "dün" or "yesterday" && inc.CreatedAt.Date == today.AddDays(-1));
 
-                    if (inc.Category.ToLowerInvariant().Contains(query) ||
+                    var idStr = inc.Id.ToString("N").ToLowerInvariant();
+                    var idFormatted = inc.Id.ToString().ToLowerInvariant();
+                    bool isIdMatch = !string.IsNullOrWhiteSpace(cleanQuery) && 
+                                     (idStr.Contains(cleanQuery) || idFormatted.Contains(cleanQuery));
+
+                    if (isIdMatch ||
+                        inc.Category.ToLowerInvariant().Contains(query) ||
                         inc.EmergencyCode.ToLowerInvariant().Contains(query) ||
                         inc.ReporterFullName.ToLowerInvariant().Contains(query) ||
                         inc.Status.ToLowerInvariant().Contains(query) ||
@@ -200,7 +210,13 @@
             {
                 foreach (var team in Teams)
                 {
-                    if (team.TeamName.ToLowerInvariant().Contains(query) ||
+                    var teamIdStr = team.Id.ToString("N").ToLowerInvariant();
+                    var teamIdFormatted = team.Id.ToString().ToLowerInvariant();
+                    bool isTeamIdMatch = !string.IsNullOrWhiteSpace(cleanQuery) && 
+                                         (teamIdStr.Contains(cleanQuery) || teamIdFormatted.Contains(cleanQuery));
+
+                    if (isTeamIdMatch ||
+                        team.TeamName.ToLowerInvariant().Contains(query) ||
                         team.Status.ToLowerInvariant().Contains(query))
                     {
                         results.Add(new SearchResultItem
@@ -285,6 +301,7 @@
         public string SeverityClass { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
         public string Subtitle { get; set; } = string.Empty;
+        public string FormattedId => $"#{Id.ToString()[..8].ToUpperInvariant()}";
     }
 }
 
