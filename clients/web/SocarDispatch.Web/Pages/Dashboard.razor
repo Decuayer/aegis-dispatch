@@ -13,110 +13,111 @@
 
 <PageTitle>Dashboard — SOCAR Dispatch</PageTitle>
 
-<div class="dash-header">
-    <div>
-        <h1 class="dash-title">Overview</h1>
-        <p class="dash-sub">Real-time emergency dispatch and field team status</p>
+<div class="dashboard-page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Overview</h1>
+            <p class="page-subtitle">Real-time emergency dispatch and field team status</p>
+        </div>
+        <button type="button" class="btn-report-incident" @onclick="() => _isCreateModalOpen = true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            <span>Report Incident</span>
+        </button>
     </div>
-    <button type="button" class="btn-report-incident" @onclick="() => _isCreateModalOpen = true">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-        </svg>
-        <span>Report Incident</span>
-    </button>
+
+    <!-- Dynamic Key Metrics -->
+    <div class="dash-stats">
+        <!-- 1. Active Events -->
+        <div class="stat-card">
+            <div class="stat-label">Active Incidents</div>
+            <div class="stat-value danger">
+                @if (_isLoading)
+                {
+                    <span class="stat-loading">...</span>
+                }
+                else
+                {
+                    @_activeIncidents
+                }
+            </div>
+            <div class="stat-hint">Requires immediate action</div>
+        </div>
+
+        <!-- 2. Teams Ready for Duty (Available) -->
+        <div class="stat-card">
+            <div class="stat-label">Available Teams</div>
+            <div class="stat-value success">
+                @if (_isLoading)
+                {
+                    <span class="stat-loading">...</span>
+                }
+                else
+                {
+                    @_availableTeams
+                }
+            </div>
+            <div class="stat-hint">Ready to dispatch</div>
+        </div>
+
+        <!-- 3. Dispatched / On-Scene Teams -->
+        <div class="stat-card">
+            <div class="stat-label">Dispatched Teams</div>
+            <div class="stat-value warning">
+                @if (_isLoading)
+                {
+                    <span class="stat-loading">...</span>
+                }
+                else
+                {
+                    @_dispatchedTeams
+                }
+            </div>
+            <div class="stat-hint">En route or on-scene</div>
+        </div>
+
+        <!-- 4. Average Response Time -->
+        <div class="stat-card">
+            <div class="stat-label">Avg. Response Time</div>
+            <div class="stat-value">
+                @if (_isLoading)
+                {
+                    <span class="stat-loading">...</span>
+                }
+                else
+                {
+                    @_avgResponseTime
+                }
+            </div>
+            <div class="stat-hint">Last 24 hours</div>
+        </div>
+    </div>
+
+    <!-- ——— Live Operations Grid (Map + Recent Incidents Feed) ——— -->
+    <div class="dash-operations-grid">
+        <div class="dash-map-section">
+            <div class="dash-map-header">
+                <h2 class="dash-section-title">Live Operational Map</h2>
+                <p class="dash-section-sub">Active incidents and field team positions in real-time</p>
+            </div>
+            <div class="dash-map-canvas-wrapper">
+                <LeafletMap
+                    @ref="_leafletMapRef"
+                    Height="100%"
+                    OnIncidentDetailRequested="HandleIncidentDetail"
+                    OnAssignTeamRequested="HandleAssignTeam" />
+            </div>
+        </div>
+
+        <div class="dash-feed-section">
+            <RecentIncidentsFeed
+                MaxItems="15"
+                OnIncidentSelected="HandleIncidentDetail" />
+        </div>
+    </div>
 </div>
-
-<!-- Dynamic Key Metrics -->
-<div class="dash-stats">
-    <!-- 1. Active Events -->
-    <div class="stat-card">
-        <div class="stat-label">Active Incidents</div>
-        <div class="stat-value danger">
-            @if (_isLoading)
-            {
-                <span class="stat-loading">...</span>
-            }
-            else
-            {
-                @_activeIncidents
-            }
-        </div>
-        <div class="stat-hint">Requires immediate action</div>
-    </div>
-
-    <!-- 2. Teams Ready for Duty (Available) -->
-    <div class="stat-card">
-        <div class="stat-label">Available Teams</div>
-        <div class="stat-value success">
-            @if (_isLoading)
-            {
-                <span class="stat-loading">...</span>
-            }
-            else
-            {
-                @_availableTeams
-            }
-        </div>
-        <div class="stat-hint">Ready to dispatch</div>
-    </div>
-
-    <!-- 3. Dispatched / On-Scene Teams -->
-    <div class="stat-card">
-        <div class="stat-label">Dispatched Teams</div>
-        <div class="stat-value warning">
-            @if (_isLoading)
-            {
-                <span class="stat-loading">...</span>
-            }
-            else
-            {
-                @_dispatchedTeams
-            }
-        </div>
-        <div class="stat-hint">En route or on-scene</div>
-    </div>
-
-    <!-- 4. Average Response Time -->
-    <div class="stat-card">
-        <div class="stat-label">Avg. Response Time</div>
-        <div class="stat-value">
-            @if (_isLoading)
-            {
-                <span class="stat-loading">...</span>
-            }
-            else
-            {
-                @_avgResponseTime
-            }
-        </div>
-        <div class="stat-hint">Last 24 hours</div>
-    </div>
-</div>
-
-<!-- ——— Live Operations Grid (Map + Recent Incidents Feed) ——— -->
-<div class="dash-operations-grid">
-    <div class="dash-map-section">
-        <div class="dash-map-header">
-            <h2 class="dash-section-title">Live Operational Map</h2>
-            <p class="dash-section-sub">Active incidents and field team positions in real-time</p>
-        </div>
-        <div class="dash-map-canvas-wrapper">
-            <LeafletMap
-                @ref="_leafletMapRef"
-                Height="100%"
-                OnIncidentDetailRequested="HandleIncidentDetail"
-                OnAssignTeamRequested="HandleAssignTeam" />
-        </div>
-    </div>
-
-    <div class="dash-feed-section">
-        <RecentIncidentsFeed
-            MaxItems="15"
-            OnIncidentSelected="HandleIncidentDetail" />
-    </div>
-</div>
-
 <!-- Active Incidents & Assigned Teams Relational Dispatch Board -->
 <ActiveDispatchBoard
     @ref="_dispatchBoardRef"
@@ -348,25 +349,6 @@
 }
 
 <style>
-    .dash-header {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        margin-bottom: 24px;
-    }
-
-    .dash-title {
-        font-size: 20px;
-        font-weight: 700;
-        color: var(--color-text-primary);
-        margin: 0 0 4px;
-    }
-
-    .dash-sub {
-        font-size: 13px;
-        color: var(--color-text-muted);
-        margin: 0;
-    }
 
     .dash-stats {
         display: grid;

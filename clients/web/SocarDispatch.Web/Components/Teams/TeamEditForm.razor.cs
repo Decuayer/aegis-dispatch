@@ -58,7 +58,7 @@ public partial class TeamEditForm : ComponentBase
     {
         try
         {
-            var response = await UserService.GetUsersAsync(role: RoleType.Team);
+            var response = await UserService.GetAllUsersAsync(role: RoleType.Team);
             if (response != null && response.Success && response.Data != null)
             {
                 _availableUsers = response.Data;

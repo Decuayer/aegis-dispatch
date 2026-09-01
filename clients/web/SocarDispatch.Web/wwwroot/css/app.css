@@ -803,7 +803,7 @@ code {
 
 .incidents-page {
     padding: 24px 32px;
-    max-width: 1600px;
+    max-width: 1400px;
     margin: 0 auto;
 }
 
@@ -823,9 +823,9 @@ code {
 }
 
 .page-subtitle {
-    font-size: 14px;
+    margin: 4px 0 0 0;
+    font-size: 0.88rem;
     color: var(--color-text-muted);
-    margin: 0;
 }
 
 .header-stats {
@@ -833,22 +833,7 @@ code {
     gap: 10px;
 }
 
-.stat-pill {
-    padding: 6px 14px;
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: 20px;
-    font-size: 13px;
-    color: var(--color-text-muted);
-}
 
-.stat-pill strong {
-    color: var(--color-text-primary);
-}
-
-.stat-pill.open strong {
-    color: var(--color-danger);
-}
 
 /* --- Filter Toolbar --- */
 .filter-toolbar-container {
@@ -1313,7 +1298,7 @@ code {
 /* --- Teams Page Layout --- */
 .teams-page {
     padding: 24px 32px;
-    max-width: 1600px;
+    max-width: 1400px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
@@ -1327,16 +1312,44 @@ code {
 }
 
 .stat-pill {
-    font-size: 12px;
-    padding: 4px 10px;
-    border-radius: 20px;
-    background-color: var(--color-surface-2);
+    background: var(--color-surface);
     border: 1px solid var(--color-border);
-    color: var(--color-text-muted);
+    border-radius: 10px;
+    padding: 8px 16px;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    box-shadow: var(--shadow-sm);
 }
 
-.stat-pill.idle strong { color: var(--color-success); }
-.stat-pill.forwarded strong { color: var(--color-accent); }
+.stat-num {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--color-accent);
+}
+
+.stat-label {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.stat-pill strong {
+    color: var(--color-text-primary) !important;
+}
+
+.stat-pill.open strong {
+    color: var(--color-danger) !important;
+}
+
+.stat-pill.idle strong {
+    color: var(--color-success) !important; 
+}
+
+.stat-pill.forwarded strong {
+    color: var(--color-accent) !important; 
+}
 
 /* --- Teams Toolbar --- */
 .teams-toolbar {
@@ -1433,6 +1446,7 @@ code {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 16px;
+    margin-bottom: 24px;
 }
 
 /* --- Team Card Component --- */
@@ -3218,4 +3232,16 @@ code {
     font-size: 10px;
     padding: 2px 6px;
     border-radius: 4px;
+}
+
+.users-page-container {
+    padding: 24px 32px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.dashboard-page-container {
+    padding: 24px 32px;
+    max-width: 1400px;
+    margin: 0 auto;
 }
