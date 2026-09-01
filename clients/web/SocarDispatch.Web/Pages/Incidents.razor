@@ -18,10 +18,13 @@
         </div>
         <div class="header-stats">
             <span class="stat-pill">
-                Showing: <strong>@_totalCount</strong> @(_selectedStatus == "All" ? "total" : _selectedStatus.ToLower()) incidents
+                <span class="stat-label">Showing</span>
+                <span class="stat-num">@_totalCount</span>
+                <span class="stat-label">@(_selectedStatus == "All" ? "total" : _selectedStatus.ToLower()) incidents</span>
             </span>
             <span class="stat-pill open">
-                Active Open: <strong>@_statusCounts.GetValueOrDefault("Open", 0)</strong>
+                <span class="stat-num">@_statusCounts.GetValueOrDefault("Open", 0)</span>
+                <span class="stat-label">Active Open</span>
             </span>
         </div>
     </div>

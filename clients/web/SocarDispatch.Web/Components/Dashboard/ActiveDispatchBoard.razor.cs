@@ -47,7 +47,7 @@ public partial class ActiveDispatchBoard : ComponentBase, IDisposable
         try
         {
             var incidentsTask = IncidentService.GetActiveIncidentsAsync();
-            var teamsTask = TeamService.GetTeamsAsync();
+            var teamsTask = TeamService.GetAllTeamsAsync();
 
             await Task.WhenAll(incidentsTask, teamsTask);
 

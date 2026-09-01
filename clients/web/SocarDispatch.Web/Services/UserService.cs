@@ -15,27 +15,73 @@ public class UserService : IUserService
         _http = http;
     }
 
-    public async Task<ApiResponse<List<UserDto>>?> GetUsersAsync(string? search = null, RoleType? role = null, CancellationToken cancellationToken = default)
+        public async Task<ApiResponse<PagedResult<UserDto>>?> GetUsersAsync(
+        int pageNumber = 1,
+        int pageSize = 25,
+        RoleType? role = null,
+        string? department = null,
+        Guid? userId = null,
+        string? searchTerm = null,
+        CancellationToken cancellationToken = default)
     {
         try
         {
-            var queryParams = new List<string>();
-            if (!string.IsNullOrWhiteSpace(search))
+            var queryParams = new List<string>
             {
-                queryParams.Add($"search={Uri.EscapeDataString(search)}");
+                $"pageNumber={Math.Max(1, pageNumber)}",
+                $"pageSize={Math.Clamp(pageSize, 1, 100)}"
+            };
+
+            if (userId.HasValue)
+            {
+                queryParams.Add($"userId={userId.Value}");
             }
+
             if (role.HasValue)
             {
                 queryParams.Add($"role={role.Value}");
             }
-            queryParams.Add("pageSize=100");
-            var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : string.Empty;
+
+            if (!string.IsNullOrWhiteSpace(department))
+            {
+                queryParams.Add($"department={Uri.EscapeDataString(department.Trim())}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                queryParams.Add($"searchTerm={Uri.EscapeDataString(searchTerm.Trim())}");
+            }
+
+            var queryString = "?" + string.Join("&", queryParams);
             var url = $"api/v1/users{queryString}";
-            var response = await _http.GetFromJsonAsync<ApiResponse<PagedResult<UserDto>>>(url, cancellationToken);
+
+            return await _http.GetFromJsonAsync<ApiResponse<PagedResult<UserDto>>>(url, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<PagedResult<UserDto>>.FailureResult($"Failed to retrieve users: {ex.Message}");
+        }
+    }
+
+    public async Task<ApiResponse<List<UserDto>>?> GetAllUsersAsync(
+        string? search = null, 
+        RoleType? role = null, 
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await GetUsersAsync(
+                pageNumber: 1,
+                pageSize: 100,
+                role: role,
+                searchTerm: search,
+                cancellationToken: cancellationToken);
+
             if (response != null && response.Success && response.Data != null)
             {
                 return ApiResponse<List<UserDto>>.SuccessResult(response.Data.Items, response.Message);
             }
+
             return response != null
                 ? ApiResponse<List<UserDto>>.FailureResult(response.Message)
                 : ApiResponse<List<UserDto>>.FailureResult("Failed to retrieve users.");
@@ -45,6 +91,7 @@ public class UserService : IUserService
             return ApiResponse<List<UserDto>>.FailureResult($"Failed to retrieve users: {ex.Message}");
         }
     }
+
 
 
     public async Task<ApiResponse<UserDto>?> GetCurrentUserAsync(CancellationToken cancellationToken = default)

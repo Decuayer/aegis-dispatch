@@ -1,10 +1,10 @@
 @* Pages/Users.razor *@
 @page "/users"
 @attribute [Authorize(Roles = "Operator")]
+@namespace SocarDispatch.Web.Pages
+
 @using SocarDispatch.Web.Models.Auth
-@using SocarDispatch.Web.Services
-@inject IUserService UserService
-@inject IToastService ToastService
+@using SocarDispatch.Web.Components.Common
 
 <PageTitle>User Management — SOCAR Dispatch</PageTitle>
 
@@ -17,15 +17,15 @@
         </div>
         <div class="header-stats">
             <div class="stat-pill">
-                <span class="stat-num">@_users.Count</span>
+                <span class="stat-num">@_totalCount</span>
                 <span class="stat-label">Total Users</span>
             </div>
             <div class="stat-pill">
-                <span class="stat-num">@_users.Count(u => u.RoleType == RoleType.Operator)</span>
+                <span class="stat-num">@_operatorCount</span>
                 <span class="stat-label">Operators</span>
             </div>
             <div class="stat-pill">
-                <span class="stat-num">@_users.Count(u => u.RoleType == RoleType.Team)</span>
+                <span class="stat-num">@_teamCount</span>
                 <span class="stat-label">Response Units</span>
             </div>
         </div>
@@ -40,12 +40,12 @@
             </svg>
             <input type="text" 
                    class="form-control search-field" 
-                   placeholder="Search by user name, email, department, sub-role..." 
-                   @bind="_searchQuery" 
-                   @bind:event="oninput" />
+                   placeholder="Search by name, email, department, or user ID (GUID)..." 
+                   value="@_searchQuery" 
+                   @oninput="HandleSearchInput" />
             @if (!string.IsNullOrWhiteSpace(_searchQuery))
             {
-                <button type="button" class="btn-clear-search" @onclick="() => _searchQuery = string.Empty">✕</button>
+                <button type="button" class="btn-clear-search" @onclick="ClearSearch">✕</button>
             }
         </div>
 
@@ -53,7 +53,7 @@
             <!-- Role Filter -->
             <div class="filter-group">
                 <label class="filter-label">Role:</label>
-                <select class="form-select filter-select" @bind="_selectedRoleFilter">
+                <select class="form-select filter-select" value="@_selectedRoleFilter" @onchange="HandleRoleFilterChanged">
                     <option value="">All Roles</option>
                     <option value="Operator">Operator</option>
                     <option value="Team">Team Responder</option>
@@ -64,7 +64,7 @@
             <!-- Department Filter -->
             <div class="filter-group">
                 <label class="filter-label">Department:</label>
-                <select class="form-select filter-select" @bind="_selectedDeptFilter">
+                <select class="form-select filter-select" value="@_selectedDeptFilter" @onchange="HandleDeptFilterChanged">
                     <option value="">All Departments</option>
                     @foreach (var dept in _departments)
                     {
@@ -76,7 +76,7 @@
             <!-- Sort By -->
             <div class="filter-group">
                 <label class="filter-label">Sort By:</label>
-                <select class="form-select filter-select" @bind="_sortBy">
+                <select class="form-select filter-select" value="@_sortBy" @onchange="HandleSortChanged">
                     <option value="name_asc">Name (A → Z)</option>
                     <option value="name_desc">Name (Z → A)</option>
                     <option value="role">Role</option>
@@ -95,7 +95,7 @@
                 <span>Loading users directory...</span>
             </div>
         }
-        else if (FilteredUsers.Count == 0)
+        else if (_users.Count == 0)
         {
             <div class="empty-state">
                 <div class="empty-icon">👥</div>
@@ -122,7 +122,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var user in FilteredUsers)
+                        @foreach (var user in _users)
                         {
                             <tr @key="user.Id">
                                 <td>
@@ -180,11 +180,20 @@
                     </tbody>
                 </table>
             </div>
-            <div class="table-footer-info">
-                <span>Showing <strong>@FilteredUsers.Count</strong> of <strong>@_users.Count</strong> users</span>
-            </div>
         }
     </div>
+
+    @if (!_isLoading && _users.Count > 0)
+    {
+        <!-- Reusable Pagination Bar Component -->
+        <PaginationBar CurrentPage="@CurrentPage"
+                       PageSize="@PageSize"
+                       TotalCount="@_totalCount"
+                       ItemName="users"
+                       Disabled="@_isLoading"
+                       OnPageChanged="HandlePageChanged"
+                       OnPageSizeChanged="HandlePageSizeChanged" />
+    }
 </div>
 
 <!-- Edit User Role Modal -->
@@ -300,191 +309,6 @@
         </div>
     </div>
 }
-
-@code {
-    private List<UserDto> _users = new();
-    private List<string> _departments = new();
-    private bool _isLoading = true;
-    private bool _isSavingRole = false;
-
-    private string _searchQuery = string.Empty;
-    private string _selectedRoleFilter = string.Empty;
-    private string _selectedDeptFilter = string.Empty;
-    private string _sortBy = "name_asc";
-
-    private bool _isEditModalOpen = false;
-    private UserDto? _selectedUserForEdit;
-    private UpdateUserRoleRequestDto _editRoleModel = new();
-
-    private bool HasActiveFilters => !string.IsNullOrWhiteSpace(_searchQuery) || 
-                                     !string.IsNullOrWhiteSpace(_selectedRoleFilter) || 
-                                     !string.IsNullOrWhiteSpace(_selectedDeptFilter);
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadUsersAsync();
-    }
-
-    private async Task LoadUsersAsync()
-    {
-        _isLoading = true;
-        try
-        {
-            var response = await UserService.GetUsersAsync();
-            if (response?.Success == true && response.Data != null)
-            {
-                _users = response.Data;
-                _departments = _users
-                    .Where(u => !string.IsNullOrWhiteSpace(u.Department))
-                    .Select(u => u.Department!)
-                    .Distinct()
-                    .OrderBy(d => d)
-                    .ToList();
-            }
-            else
-            {
-                ToastService.Show("Error", response?.Message ?? "Failed to retrieve users directory.", ToastLevel.Danger);
-            }
-        }
-        catch (Exception ex)
-        {
-            ToastService.Show("Error", ex.Message, ToastLevel.Danger);
-        }
-        finally
-        {
-            _isLoading = false;
-        }
-    }
-
-    private List<UserDto> FilteredUsers
-    {
-        get
-        {
-            var result = _users.AsEnumerable();
-
-            if (!string.IsNullOrWhiteSpace(_searchQuery))
-            {
-                var q = _searchQuery.Trim().ToLowerInvariant();
-                result = result.Where(u =>
-                    (u.FirstName != null && u.FirstName.ToLowerInvariant().Contains(q)) ||
-                    (u.LastName != null && u.LastName.ToLowerInvariant().Contains(q)) ||
-                    (u.Email != null && u.Email.ToLowerInvariant().Contains(q)) ||
-                    (u.Department != null && u.Department.ToLowerInvariant().Contains(q)) ||
-                    (u.SubRole != null && u.SubRole.ToLowerInvariant().Contains(q)));
-            }
-
-            if (!string.IsNullOrWhiteSpace(_selectedRoleFilter))
-            {
-                if (Enum.TryParse<RoleType>(_selectedRoleFilter, true, out var roleType))
-                {
-                    result = result.Where(u => u.RoleType == roleType);
-                }
-            }
-
-            if (!string.IsNullOrWhiteSpace(_selectedDeptFilter))
-            {
-                result = result.Where(u => string.Equals(u.Department, _selectedDeptFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            result = _sortBy switch
-            {
-                "name_desc" => result.OrderByDescending(u => u.FirstName).ThenByDescending(u => u.LastName),
-                "role" => result.OrderBy(u => u.RoleType).ThenBy(u => u.FirstName),
-                "dept" => result.OrderBy(u => u.Department).ThenBy(u => u.FirstName),
-                _ => result.OrderBy(u => u.FirstName).ThenBy(u => u.LastName)
-            };
-
-            return result.ToList();
-        }
-    }
-
-    private void ResetFilters()
-    {
-        _searchQuery = string.Empty;
-        _selectedRoleFilter = string.Empty;
-        _selectedDeptFilter = string.Empty;
-        _sortBy = "name_asc";
-    }
-
-    private void OpenEditRoleModal(UserDto user)
-    {
-        _selectedUserForEdit = user;
-        _editRoleModel = new UpdateUserRoleRequestDto
-        {
-            RoleType = user.RoleType,
-            SubRole = user.SubRole
-        };
-        _isEditModalOpen = true;
-    }
-
-    private void CloseEditModal()
-    {
-        _isEditModalOpen = false;
-        _selectedUserForEdit = null;
-    }
-
-    private async Task SaveUserRoleAsync()
-    {
-        if (_selectedUserForEdit == null || _isSavingRole) return;
-
-        _isSavingRole = true;
-        try
-        {
-            var response = await UserService.UpdateUserRoleAsync(_selectedUserForEdit.Id, _editRoleModel);
-            if (response?.Success == true && response.Data != null)
-            {
-                _selectedUserForEdit.RoleType = response.Data.RoleType;
-                _selectedUserForEdit.SubRole = response.Data.SubRole;
-
-                ToastService.Show("Role Updated", $"Updated role for {_selectedUserForEdit.FirstName} {_selectedUserForEdit.LastName}.", ToastLevel.Success);
-                CloseEditModal();
-            }
-            else
-            {
-                ToastService.Show("Update Failed", response?.Message ?? "Could not update user role.", ToastLevel.Danger);
-            }
-        }
-        catch (Exception ex)
-        {
-            ToastService.Show("Error", ex.Message, ToastLevel.Danger);
-        }
-        finally
-        {
-            _isSavingRole = false;
-        }
-    }
-
-    private string GetInitials(string firstName, string lastName)
-    {
-        var f = !string.IsNullOrWhiteSpace(firstName) ? firstName[0].ToString().ToUpper() : "";
-        var l = !string.IsNullOrWhiteSpace(lastName) ? lastName[0].ToString().ToUpper() : "";
-        return $"{f}{l}";
-    }
-
-    private string GetRoleDisplayName(RoleType role) => role switch
-    {
-        RoleType.Operator => "Operator",
-        RoleType.Team => "Team Unit",
-        RoleType.Employee => "Employee",
-        _ => role.ToString()
-    };
-
-    private string GetRoleBadgeClass(RoleType role) => role switch
-    {
-        RoleType.Operator => "badge-role-operator",
-        RoleType.Team => "badge-role-team",
-        RoleType.Employee => "badge-role-employee",
-        _ => "badge-role-default"
-    };
-
-    private string GetRoleAvatarClass(RoleType role) => role switch
-    {
-        RoleType.Operator => "avatar-operator",
-        RoleType.Team => "avatar-team",
-        _ => "avatar-employee"
-    };
-}
-
 <style>
     .users-page-container {
         display: flex;
@@ -500,19 +324,6 @@
         justify-content: space-between;
         flex-wrap: wrap;
         gap: 16px;
-    }
-
-    .page-title {
-        margin: 0;
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: var(--color-text-primary);
-    }
-
-    .page-subtitle {
-        margin: 4px 0 0 0;
-        font-size: 0.88rem;
-        color: var(--color-text-muted);
     }
 
     .header-stats {
@@ -535,7 +346,7 @@
     .stat-num {
         font-size: 1.2rem;
         font-weight: 700;
-        color: var(--color-accent);
+        color: var( --color-accent);
     }
 
     .stat-label {

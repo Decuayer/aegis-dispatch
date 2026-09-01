@@ -59,7 +59,7 @@ public partial class IncidentSidebar : ComponentBase, IDisposable
         try
         {
             var incidentTask = IncidentService.GetIncidentByIdAsync(incidentId);
-            var teamsTask = TeamService.GetTeamsAsync();
+            var teamsTask = TeamService.GetAllTeamsAsync();
 
             await Task.WhenAll(incidentTask, teamsTask);
 

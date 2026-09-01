@@ -1,19 +1,11 @@
 @* clients/web/SocarDispatch.Web/Pages/Teams.razor *@
 @page "/teams"
 @attribute [Authorize(Roles = "Operator")]
+@namespace SocarDispatch.Web.Pages
 
 @using SocarDispatch.Web.Models.Dispatch
-@using SocarDispatch.Web.Services
-@using SocarDispatch.Web.Services.SignalR
-@using SocarDispatch.Web.Events
 @using SocarDispatch.Web.Components.Teams
-
-@inject ITeamService TeamService
-@inject ILocationHubClient LocationHub
-@inject IIncidentHubClient IncidentHub
-@inject IToastService ToastService
-@inject NavigationManager Navigation
-@implements IDisposable
+@using SocarDispatch.Web.Components.Common
 
 <PageTitle>Response Teams — SOCAR Dispatch</PageTitle>
 
@@ -25,9 +17,18 @@
             <p class="page-subtitle">Monitor operational readiness, inspect rosters, and manage response personnel.</p>
         </div>
         <div class="header-stats">
-            <span class="stat-pill">Total Units: <strong>@_teams.Count</strong></span>
-            <span class="stat-pill idle">Idle (Ready): <strong>@GetStatusCount("Idle")</strong></span>
-            <span class="stat-pill forwarded">Active/En Route: <strong>@(GetStatusCount("Forwarded") + GetStatusCount("OnScene"))</strong></span>
+            <span class="stat-pill">
+                <span class="stat-num">@GetStatusCount("All")</span>
+                <span class="stat-label">Total Units</span>
+            </span>
+            <span class="stat-pill idle">
+                <span class="stat-num">@GetStatusCount("Idle")</span>
+                <span class="stat-label">Idle (Ready)</span>
+            </span>
+            <span class="stat-pill forwarded">
+                <span class="stat-num">@(GetStatusCount("Forwarded") + GetStatusCount("OnScene"))</span>
+                <span class="stat-label">Active/En Route</span>
+            </span>
         </div>
     </div>
 
@@ -39,7 +40,7 @@
                     class="tab-btn @(_selectedStatus == "All" ? "active" : "")" 
                     @onclick='() => SetStatusFilter("All")'>
                 All
-                <span class="tab-count">@_teams.Count</span>
+                <span class="tab-count">@GetStatusCount("All")</span>
             </button>
             <button type="button" 
                     class="tab-btn @(_selectedStatus == "Idle" ? "active" : "")" 
@@ -76,7 +77,7 @@
                 </svg>
                 <input type="text" 
                        class="form-control search-input" 
-                       placeholder="Search teams or personnel..." 
+                       placeholder="Search by team name or team ID (GUID)..." 
                        value="@_searchTerm" 
                        @oninput="HandleSearchInput" />
             </div>
@@ -100,7 +101,7 @@
                 <p>Loading response teams...</p>
             </div>
         }
-        else if (FilteredTeams.Count == 0)
+        else if (_teams.Count == 0)
         {
             <div class="empty-state">
                 <div class="empty-icon">
@@ -119,13 +120,22 @@
         else
         {
             <div class="teams-grid">
-                @foreach (var team in FilteredTeams)
+                @foreach (var team in _teams)
                 {
                     <TeamCard @key="team.Id" 
                               Team="team" 
                               OnSelect="HandleTeamSelected" />
                 }
             </div>
+
+            <!-- Reusable Pagination Bar Component -->
+            <PaginationBar CurrentPage="@CurrentPage"
+                           PageSize="@PageSize"
+                           TotalCount="@_totalCount"
+                           ItemName="teams"
+                           Disabled="@_isLoading"
+                           OnPageChanged="HandlePageChanged"
+                           OnPageSizeChanged="HandlePageSizeChanged" />
         }
     </div>
 
@@ -140,179 +150,3 @@
                      OnClose="CloseCreateModal" 
                      OnTeamCreated="HandleTeamCreated" />
 </div>
-
-@code {
-    private List<TeamDto> _teams = new();
-    private bool _isLoading = true;
-    private string _selectedStatus = "All";
-    private string _searchTerm = string.Empty;
-
-    // Modal States
-    private bool _isDetailModalOpen;
-    private bool _isCreateModalOpen;
-    private TeamDto? _selectedTeam;
-
-    private List<TeamDto> FilteredTeams => _teams
-        .Where(t => _selectedStatus == "All" || string.Equals(t.Status, _selectedStatus, StringComparison.OrdinalIgnoreCase))
-        .Where(t => string.IsNullOrWhiteSpace(_searchTerm) ||
-                    t.TeamName.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                    (!string.IsNullOrEmpty(t.LeaderFullName) && t.LeaderFullName.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase)) ||
-                    t.Members.Any(m => m.FullName.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                                       m.Department.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase)))
-        .ToList();
-
-    protected override async Task OnInitializedAsync()
-    {
-        // 1. Subscribe to SignalR Real-time events
-        LocationHub.OnTeamLocationUpdated += HandleLocationUpdated;
-        IncidentHub.OnTeamDispatched += HandleTeamDispatched;
-        IncidentHub.OnMemberStatusChanged += HandleMemberStatusChanged;
-
-        // 2. Fetch initial teams data
-        await LoadTeamsAsync();
-    }
-
-    private async Task LoadTeamsAsync()
-    {
-        _isLoading = true;
-        try
-        {
-            var response = await TeamService.GetTeamsAsync();
-            if (response != null && response.Success && response.Data != null)
-            {
-                _teams = response.Data;
-            }
-            else
-            {
-                ToastService.ShowError(response?.Message ?? "Failed to load response teams.");
-            }
-        }
-        catch (Exception ex)
-        {
-            ToastService.ShowError($"Error loading teams: {ex.Message}");
-        }
-        finally
-        {
-            _isLoading = false;
-        }
-    }
-
-    private void SetStatusFilter(string status)
-    {
-        _selectedStatus = status;
-    }
-
-    private void HandleSearchInput(ChangeEventArgs e)
-    {
-        _searchTerm = e.Value?.ToString() ?? string.Empty;
-    }
-
-    private void ResetFilters()
-    {
-        _selectedStatus = "All";
-        _searchTerm = string.Empty;
-    }
-
-    private int GetStatusCount(string status)
-    {
-        return _teams.Count(t => string.Equals(t.Status, status, StringComparison.OrdinalIgnoreCase));
-    }
-
-    private void HandleTeamSelected(TeamDto team)
-    {
-        _selectedTeam = team;
-        _isDetailModalOpen = true;
-    }
-
-    private void CloseDetailModal()
-    {
-        _isDetailModalOpen = false;
-    }
-
-    private void OpenCreateModal()
-    {
-        _isCreateModalOpen = true;
-    }
-
-    private void CloseCreateModal()
-    {
-        _isCreateModalOpen = false;
-    }
-
-    private void HandleTeamCreated(TeamDto newTeam)
-    {
-        _teams.Insert(0, newTeam);
-        _isCreateModalOpen = false;
-        _selectedTeam = newTeam;
-        _isDetailModalOpen = true;
-        StateHasChanged();
-    }
-
-    private void HandleTeamUpdated(TeamDto updatedTeam)
-    {
-        var index = _teams.FindIndex(t => t.Id == updatedTeam.Id);
-        if (index >= 0)
-        {
-            _teams[index] = updatedTeam;
-        }
-        _selectedTeam = updatedTeam;
-        StateHasChanged();
-    }
-
-    // ──────────────────────────────────────────────
-    // SignalR Real-Time Event Handlers
-    // ──────────────────────────────────────────────
-    private void HandleLocationUpdated(object? sender, TeamLocationUpdatedEventArgs e)
-    {
-        InvokeAsync(() =>
-        {
-            var target = _teams.FirstOrDefault(t => t.Id == e.TeamId);
-            if (target != null)
-            {
-                target.CurrentLatitude = (decimal)e.Latitude;
-                target.CurrentLongitude = (decimal)e.Longitude;
-                target.UpdatedAt = e.UpdatedAt;
-                StateHasChanged();
-            }
-        });
-    }
-
-    private void HandleTeamDispatched(object? sender, TeamDispatchedEventArgs e)
-    {
-        InvokeAsync(() =>
-        {
-            var target = _teams.FirstOrDefault(t => t.Id == e.TeamId);
-            if (target != null)
-            {
-                target.Status = "Forwarded";
-                target.UpdatedAt = e.AssignedAt;
-                StateHasChanged();
-            }
-        });
-    }
-
-    private void HandleMemberStatusChanged(object? sender, MemberStatusChangedEventArgs e)
-    {
-        InvokeAsync(() =>
-        {
-            var targetTeam = _teams.FirstOrDefault(t => t.Id == e.TeamId);
-            if (targetTeam != null)
-            {
-                var targetMember = targetTeam.Members.FirstOrDefault(m => m.UserId == e.UserId);
-                if (targetMember != null)
-                {
-                    targetMember.MemberStatus = e.NewStatus;
-                    targetMember.StatusUpdatedAt = e.ChangedAt;
-                    StateHasChanged();
-                }
-            }
-        });
-    }
-
-    public void Dispose()
-    {
-        LocationHub.OnTeamLocationUpdated -= HandleLocationUpdated;
-        IncidentHub.OnTeamDispatched -= HandleTeamDispatched;
-        IncidentHub.OnMemberStatusChanged -= HandleMemberStatusChanged;
-    }
-}
