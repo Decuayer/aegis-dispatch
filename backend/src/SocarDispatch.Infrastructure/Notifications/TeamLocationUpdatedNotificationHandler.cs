@@ -23,13 +23,16 @@ public class TeamLocationUpdatedNotificationHandler : INotificationHandler<TeamL
     {
         try
         {
-            await _hubContext.Clients.Group("operators").SendAsync("TeamLocationUpdated", new
+            var payload = new
             {
                 teamId = notification.TeamId,
                 lat = notification.Latitude,
                 lng = notification.Longitude,
                 updatedAt = notification.UpdatedAt
-            }, cancellationToken);
+            };
+
+            await _hubContext.Clients.All.SendAsync("TeamLocationUpdated", payload, cancellationToken);
+            await _hubContext.Clients.All.SendAsync("ReceiveTeamLocationUpdated", payload, cancellationToken);
         }
         catch (Exception ex)
         {

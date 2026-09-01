@@ -26,13 +26,24 @@ public class UpdateIncidentCommandHandler : IRequestHandler<UpdateIncidentComman
     {
         var incident = await _context.Incidents
             .Include(i => i.Reporter)
-            .Include(i => i.Assignments).ThenInclude(a => a.Team)
+            .Include(i => i.Assignments)
+                .ThenInclude(a => a.Team)
+                    .ThenInclude(t => t.Leader)
+            .Include(i => i.Assignments)
+                .ThenInclude(a => a.Team)
+                    .ThenInclude(t => t.Members)
             .Include(i => i.MediaAttachments)
             .FirstOrDefaultAsync(i => i.Id == request.Id, cancellationToken);
 
         if (incident == null)
         {
             throw new EntityNotFoundException("Incident", request.Id);
+        }
+
+        // Guard against updating incidents that are already resolved or canceled
+        if (incident.Status == IncidentStatus.Resolved || incident.Status == IncidentStatus.Canceled)
+        {
+            throw new DomainException("Cannot edit an incident that has already been resolved or canceled.");
         }
 
         // Authorization / Ownership Check (Reporter or Operator)
@@ -52,6 +63,7 @@ public class UpdateIncidentCommandHandler : IRequestHandler<UpdateIncidentComman
         incident.Category = request.Category;
         incident.EmergencyCode = request.EmergencyCode;
         incident.Description = request.Description;
+
         // Safely remove existing media attachments and add new ones
         foreach (var existing in incident.MediaAttachments.ToList())
         {
@@ -110,6 +122,10 @@ public class UpdateIncidentCommandHandler : IRequestHandler<UpdateIncidentComman
             CompletedAt = latestAssignment?.CompletedAt,
             AssignedTeamId = latestAssignment?.TeamId,
             AssignedTeamName = latestAssignment?.Team.TeamName,
+            AssignedTeamLeaderName = latestAssignment?.Team?.Leader != null ? $"{latestAssignment.Team.Leader.FirstName} {latestAssignment.Team.Leader.LastName}".Trim() : null,
+            AssignedTeamLeaderPhone = latestAssignment?.Team?.Leader?.Phone,
+            AssignedTeamStatus = latestAssignment?.Team?.Status.ToString(),
+            AssignedTeamMemberCount = latestAssignment?.Team?.Members.Count,
             CompletionNotes = latestAssignment?.CompletionNotes,
             MediaAttachments = incident.MediaAttachments.Select(m => new IncidentMediaDto
             {

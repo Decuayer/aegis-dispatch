@@ -11,6 +11,7 @@ public record GetIncidentsQuery : PaginationFilter, IRequest<ApiResponse<PagedRe
     private readonly DateTime? _toDate;
 
     public Guid? IncidentId { get; init; }
+    public Guid? ReporterId { get; init; }
 
     public string? SearchTerm
     {
@@ -56,6 +57,15 @@ public record GetIncidentsQuery : PaginationFilter, IRequest<ApiResponse<PagedRe
 
     public GetIncidentsQuery(string? status, string? category, DateTime? from, DateTime? to)
     {
+        Status = status;
+        Category = category;
+        _fromDate = from;
+        _toDate = to;
+    }
+
+    public GetIncidentsQuery(Guid? reporterId, string? status, string? category, DateTime? from, DateTime? to)
+    {
+        ReporterId = reporterId;
         Status = status;
         Category = category;
         _fromDate = from;

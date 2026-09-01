@@ -28,15 +28,18 @@ public class IncidentStatusChangedNotificationHandler : INotificationHandler<Inc
                 notification.IncidentId, notification.PreviousStatus, notification.NewStatus
             );
 
-            // SignalR Live Broadcast
-            await _hubContext.Clients.All.SendAsync("IncidentStatusChanged", new
+            var statusPayload = new
             {
                 incidentId = notification.IncidentId,
                 previousStatus = notification.PreviousStatus.ToString(),
                 status = notification.NewStatus.ToString(),
                 changedById = notification.ChangedById,
                 changedAt = notification.ChangedAt
-            }, cancellationToken);
+            };
+
+            // SignalR Live Broadcast
+            await _hubContext.Clients.All.SendAsync("IncidentStatusChanged", statusPayload, cancellationToken);
+            await _hubContext.Clients.All.SendAsync("ReceiveIncidentStatusChanged", statusPayload, cancellationToken);
         }
         catch (Exception ex)
         {

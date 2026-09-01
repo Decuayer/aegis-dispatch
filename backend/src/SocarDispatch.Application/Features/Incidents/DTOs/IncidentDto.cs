@@ -27,7 +27,10 @@ public class IncidentDto
     // Assigned Team Information
     public Guid? AssignedTeamId { get; set; }
     public string? AssignedTeamName { get; set; }
+    public string? AssignedTeamLeaderName { get; set; }
+    public string? AssignedTeamLeaderPhone { get; set; }
+    public string? AssignedTeamStatus { get; set; }
+    public int? AssignedTeamMemberCount { get; set; }
     public string? CompletionNotes { get; set; }
     public List<IncidentReportDto> Reports { get; set; } = new();
 }
-

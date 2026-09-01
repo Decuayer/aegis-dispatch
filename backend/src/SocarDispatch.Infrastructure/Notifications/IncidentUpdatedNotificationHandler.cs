@@ -25,7 +25,7 @@ public class IncidentUpdatedNotificationHandler : INotificationHandler<IncidentU
         {
             _logger.LogInformation("Broadcasting IncidentUpdated event for IncidentId: {IncidentId}", notification.IncidentId);
 
-            await _hubContext.Clients.All.SendAsync("IncidentUpdated", new
+            var updatePayload = new
             {
                 incidentId = notification.IncidentId,
                 category = notification.Category,
@@ -35,7 +35,10 @@ public class IncidentUpdatedNotificationHandler : INotificationHandler<IncidentU
                 longitude = notification.Longitude,
                 updatedById = notification.UpdatedById,
                 updatedAt = notification.UpdatedAt
-            }, cancellationToken);
+            };
+
+            await _hubContext.Clients.All.SendAsync("IncidentUpdated", updatePayload, cancellationToken);
+            await _hubContext.Clients.All.SendAsync("ReceiveIncidentUpdated", updatePayload, cancellationToken);
         }
         catch (Exception ex)
         {

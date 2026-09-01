@@ -13,13 +13,13 @@ public class AssignmentCreatedNotificationHandler : INotificationHandler<Assignm
 {
     private readonly IApplicationDbContext _context;
     private readonly IPushNotificationService _pushService;
-    private readonly IHubContext<IncidentsHub> _hubContext; // <-- EKLE
+    private readonly IHubContext<IncidentsHub> _hubContext;
     private readonly ILogger<AssignmentCreatedNotificationHandler> _logger;
 
     public AssignmentCreatedNotificationHandler(
         IApplicationDbContext context,
         IPushNotificationService pushService,
-        IHubContext<IncidentsHub> hubContext, // <-- EKLE
+        IHubContext<IncidentsHub> hubContext,
         ILogger<AssignmentCreatedNotificationHandler> logger)
     {
         _context = context;
@@ -32,17 +32,20 @@ public class AssignmentCreatedNotificationHandler : INotificationHandler<Assignm
     {
         try
         {
-            // 1. SignalR Real-Time TeamDispatched Broadcast
-            await _hubContext.Clients.All.SendAsync("TeamDispatched", new
+            // 1. SignalR Real-Time TeamDispatched & ReceiveAssignmentCreated Broadcast
+            var dispatchPayload = new
             {
                 assignmentId = notification.AssignmentId,
                 incidentId = notification.IncidentId,
                 teamId = notification.TeamId,
                 operatorId = notification.OperatorId,
                 assignedAt = notification.AssignedAt
-            }, cancellationToken);
+            };
 
-            // 2. FCM Push Notification (Mevcut mantık)
+            await _hubContext.Clients.All.SendAsync("TeamDispatched", dispatchPayload, cancellationToken);
+            await _hubContext.Clients.All.SendAsync("ReceiveAssignmentCreated", dispatchPayload, cancellationToken);
+
+            // 2. FCM Push Notification
             var teamMembers = await _context.TeamMembers
                 .Include(tm => tm.User)
                 .Where(tm => tm.TeamId == notification.TeamId && tm.User.DeviceToken != null)
@@ -74,14 +77,19 @@ public class AssignmentCreatedNotificationHandler : INotificationHandler<Assignm
 
             await _pushService.SendMulticastAsync(
                 tokens,
-                title: $"Acil Durum Atandı — {incident.EmergencyCode}",
-                body: $"{incident.Category} | Konuma yönelin.",
+                title: $"Emergency Dispatched — {incident.EmergencyCode}",
+                body: $"{incident.Category} | Proceed to coordinates.",
                 data: data,
-                ct: cancellationToken);
+                ct: cancellationToken
+            );
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred in AssignmentCreatedNotificationHandler for AssignmentId: {AssignmentId}", notification.AssignmentId);
+            _logger.LogError(
+                ex,
+                "Error occurred in AssignmentCreatedNotificationHandler for AssignmentId: {AssignmentId}",
+                notification.AssignmentId
+            );
         }
     }
 }

@@ -431,4 +431,59 @@ public class GetIncidentsQueryTests
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e => e.PropertyName == nameof(GetIncidentsQuery.ToDate));
     }
+
+    [Fact]
+    public async Task Handle_WithReporterId_ReturnsOnlyIncidentsReportedBySpecifiedUser()
+    {
+        // Arrange
+        using var context = CreateInMemoryDbContext();
+        var reporter1 = await SeedReporterAsync(context);
+
+        var reporter2 = new User
+        {
+            Id = Guid.NewGuid(),
+            FirstName = "Leyla",
+            LastName = "Hasanova",
+            Email = "leyla@socar.az",
+            Department = "HSE",
+            RoleType = RoleType.Employee,
+            PasswordHash = "hash"
+        };
+        context.Users.Add(reporter2);
+        await context.SaveChangesAsync();
+
+        context.Incidents.AddRange(
+            new Incident
+            {
+                ReporterId = reporter1.Id,
+                Category = "Fire",
+                EmergencyCode = "RED-1",
+                Status = IncidentStatus.Open,
+                CreatedAt = DateTime.UtcNow,
+                Location = new Point(49.8671, 40.4093) { SRID = 4326 }
+            },
+            new Incident
+            {
+                ReporterId = reporter2.Id,
+                Category = "Medical",
+                EmergencyCode = "YELLOW-1",
+                Status = IncidentStatus.Open,
+                CreatedAt = DateTime.UtcNow,
+                Location = new Point(49.8671, 40.4093) { SRID = 4326 }
+            }
+        );
+        await context.SaveChangesAsync();
+
+        var handler = new GetIncidentsQueryHandler(context);
+        var query = new GetIncidentsQuery { ReporterId = reporter1.Id };
+
+        // Act
+        var result = await handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Data.Items.Should().HaveCount(1);
+        result.Data.Items.First().ReporterId.Should().Be(reporter1.Id);
+    }
+
 }
