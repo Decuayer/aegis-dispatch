@@ -37,6 +37,12 @@
             _cachedPreferences.DefaultLongitude, 
             _cachedPreferences.DefaultZoom, 
             _cachedPreferences.TileProvider ?? "OpenStreetMap");
+        
+        // Apply facility boundary lock if enabled in user preferences
+        if (_cachedPreferences.LockMapToFacilityBoundary)
+        {
+            await MapService.SetMapBoundaryLockAsync(true);
+        }
 
         // 2. Connect DotNet reference for popup button interop
         _dotNetRef = DotNetObjectReference.Create(this);
@@ -79,6 +85,9 @@
 
     public async Task ChangeTileLayerAsync(string tileProvider)
         => await MapService.UpdateMainTileLayerAsync(tileProvider);
+    
+    public async Task SetBoundaryLockAsync(bool enabled, MapBoundsDto? bounds = null)
+        => await MapService.SetMapBoundaryLockAsync(enabled, bounds);
 
     public async Task InvalidateSizeAsync()
         => await MapService.InvalidateSizeAsync();

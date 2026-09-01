@@ -16,6 +16,8 @@ public class UserPreferencesDto
 
     public string TileProvider { get; set; } = "OpenStreetMap";
 
+    public bool LockMapToFacilityBoundary { get; set; } = false;
+
     // Notification preferences
     public bool EmergencyAudioAlertEnabled { get; set; } = true;
 

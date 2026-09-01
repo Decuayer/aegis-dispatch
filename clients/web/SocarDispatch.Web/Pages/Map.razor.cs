@@ -27,6 +27,7 @@ public partial class Map : ComponentBase, IDisposable
     private Guid? _quickDispatchIncidentId;
     private bool _isQuickDispatchOpen = false;
     private string _selectedTileProvider = "OpenStreetMap";
+    private bool _isBoundaryLocked = false;
 
     private int _activeIncidentsCount => _incidents.Count(i => i.Status is not ("Resolved" or "Canceled"));
     private int _activeTeamsCount => _teams.Count(t => t.Status == "Idle");
@@ -57,6 +58,7 @@ public partial class Map : ComponentBase, IDisposable
             {
                 _selectedTileProvider = prefs.TileProvider;
             }
+            _isBoundaryLocked = prefs.LockMapToFacilityBoundary;
         }
         catch (Exception ex)
         {
@@ -250,6 +252,19 @@ public partial class Map : ComponentBase, IDisposable
         {
             await _mapRef.ResetViewAsync();
         }
+    }
+
+    private async Task HandleToggleBoundaryLock(bool enabled)
+    {
+        _isBoundaryLocked = enabled;
+        if (_mapRef != null)
+        {
+            await _mapRef.SetBoundaryLockAsync(enabled);
+        }
+
+        var prefs = await SettingsService.GetPreferencesAsync();
+        prefs.LockMapToFacilityBoundary = enabled;
+        await SettingsService.SavePreferencesAsync(prefs);
     }
 
     private async Task HandleIncidentAssigned(Guid incidentId)

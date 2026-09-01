@@ -75,6 +75,25 @@
                     <option value="CartoPositron">CartoDB Positron (Light)</option>
                 </select>
             </div>
+
+            <!-- Facility Boundary Lock (Geofence Lock) Toggle -->
+            <div class="form-group full-width-group" style="grid-column: 1 / -1;">
+                <div class="slider-label-row" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                    <label class="form-label" style="margin-bottom: 0; display: flex; align-items: center; gap: 6px;">
+                        <span>🔒</span>
+                        <span>Lock Map to Facility Boundary</span>
+                    </label>
+                    <label class="sd-switch">
+                        <input type="checkbox" 
+                               @bind="_preferences.LockMapToFacilityBoundary" 
+                               @bind:after="OnBoundaryLockToggledAsync" />
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <p class="text-muted" style="font-size: 0.8125rem; margin: 0;">
+                    Restricts map viewport panning strictly to the SOCAR Aliaga / STAR Refinery perimeter.
+                </p>
+            </div>
         </div>
     </div>
 
@@ -117,6 +136,24 @@
                 _preferences.DefaultZoom, 
                 _dotNetRef, 
                 _preferences.TileProvider);
+            
+            if (firstRender)
+            {
+                _dotNetRef = DotNetObjectReference.Create(this);
+                await MapService.InitializePickerMapAsync(
+                    _pickerContainerId, 
+                    _preferences.DefaultLatitude, 
+                    _preferences.DefaultLongitude, 
+                    _preferences.DefaultZoom, 
+                    _dotNetRef, 
+                    _preferences.TileProvider);
+
+                // Apply boundary lock on mini-map if preference is enabled
+                if (_preferences.LockMapToFacilityBoundary)
+                {
+                    await MapService.SetMapBoundaryLockAsync(true);
+                }
+            }
         }
     }
 
@@ -137,6 +174,22 @@
     {
         await MapService.UpdatePickerTileLayerAsync(_preferences.TileProvider);
     }
+    
+    private async Task OnBoundaryLockToggledAsync()
+    {
+        await MapService.SetMapBoundaryLockAsync(_preferences.LockMapToFacilityBoundary);
+        await SettingsService.SavePreferencesAsync(_preferences);
+
+        if (_preferences.LockMapToFacilityBoundary)
+        {
+            ToastService.ShowInfo("Map viewport is locked to STAR Refinery boundary.", "Boundary Lock Active");
+        }
+        else
+        {
+            ToastService.ShowInfo("Map viewport boundary lock released.", "Boundary Lock Disabled");
+        }
+    }
+
 
     private async Task UseCurrentLocationAsync()
     {

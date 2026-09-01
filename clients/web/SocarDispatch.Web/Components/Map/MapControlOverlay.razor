@@ -66,6 +66,19 @@
                                @onchange="HandleTeamsToggle" />
                     </div>
                 </label>
+
+                <!-- Facility Boundary Lock Toggle -->
+                <label class="layer-toggle-item">
+                    <div class="layer-info">
+                        <span class="layer-indicator boundary-indicator"></span>
+                        <span class="layer-name">Facility Boundary Lock</span>
+                    </div>
+                    <div class="toggle-right">
+                        <input type="checkbox"
+                               checked="@IsBoundaryLocked"
+                               @onchange="HandleBoundaryLockToggle" />
+                    </div>
+                </label>
             </div>
 
             <!-- 2. Base Map (Tile Provider) Switcher -->
@@ -117,11 +130,19 @@
     [Parameter] public EventCallback<bool> OnToggleTeams { get; set; }
     [Parameter] public EventCallback<string> OnTileProviderChanged { get; set; }
     [Parameter] public EventCallback OnResetView { get; set; }
+    [Parameter] public bool IsBoundaryLocked { get; set; } = false;
+    [Parameter] public EventCallback<bool> OnToggleBoundaryLock { get; set; }
 
     private bool _showIncidents = true;
     private bool _showResolved = false;
     private bool _showTeams = true;
     private bool _isCollapsed = false;
+
+    private async Task HandleBoundaryLockToggle(ChangeEventArgs e)
+    {
+        var isLocked = (bool)(e.Value ?? false);
+        await OnToggleBoundaryLock.InvokeAsync(isLocked);
+    }
 
     private async Task HandleIncidentsToggle(ChangeEventArgs e)
     {
@@ -264,6 +285,8 @@
     .incident-indicator { background-color: #ef4444; }
     .resolved-indicator { background-color: #22c55e; }
     .team-indicator { background-color: #3b82f6; }
+    .boundary-indicator { background-color: #8b5cf6; }
+
 
     .layer-name {
         font-size: 12px;
