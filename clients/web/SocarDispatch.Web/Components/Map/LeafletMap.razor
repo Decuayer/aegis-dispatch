@@ -113,11 +113,10 @@
     {
         try
         {
-            var response = await Http.GetFromJsonAsync<ApiResponse<List<MapTeamDto>>>("api/v1/teams");
-
-            if (response?.Data != null)
+            var response = await Http.GetFromJsonAsync<ApiResponse<PagedResult<MapTeamDto>>>("api/v1/teams?pageSize=100");
+            if (response?.Data?.Items != null)
             {
-                foreach (var team in response.Data)
+                foreach (var team in response.Data.Items)
                 {
                     await MapService.AddTeamMarkerAsync(team);
                 }

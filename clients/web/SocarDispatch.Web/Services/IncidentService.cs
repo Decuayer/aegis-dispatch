@@ -50,31 +50,79 @@ public class IncidentService : IIncidentService
         }
     }
 
-    public async Task<ApiResponse<List<IncidentDetailViewModel>>?> GetAllIncidentsAsync(
-        string? status = null, 
-        string? category = null, 
-        DateTime? from = null,
-        DateTime? to = null,
+        public async Task<ApiResponse<PagedResult<IncidentDetailViewModel>>?> GetIncidentsAsync(
+        int pageNumber = 1,
+        int pageSize = 25,
+        string? searchTerm = null,
+        string? status = null,
+        string? category = null,
+        DateTime? fromDate = null,
+        DateTime? toDate = null,
         CancellationToken cancellationToken = default)
     {
         try
         {
-            var queryParams = new List<string>();
-            if (!string.IsNullOrWhiteSpace(status) && status != "All")
-                queryParams.Add($"status={Uri.EscapeDataString(status)}");
-            if (!string.IsNullOrWhiteSpace(category) && category != "All")
-                queryParams.Add($"category={Uri.EscapeDataString(category)}");
-            if (from.HasValue)
-                queryParams.Add($"from={Uri.EscapeDataString(from.Value.ToString("o"))}");
-            if (to.HasValue)
-                queryParams.Add($"to={Uri.EscapeDataString(to.Value.ToString("o"))}");
+            var queryParams = new List<string>
+            {
+                $"pageNumber={Math.Max(1, pageNumber)}",
+                $"pageSize={Math.Clamp(pageSize, 1, 100)}"
+            };
 
-            queryParams.Add("pageSize=1000");
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                var cleanedSearch = searchTerm.Trim();
+                if (cleanedSearch.StartsWith("#INC-", StringComparison.OrdinalIgnoreCase))
+                    cleanedSearch = cleanedSearch.Substring(5).Trim();
+                else if (cleanedSearch.StartsWith("INC-", StringComparison.OrdinalIgnoreCase))
+                    cleanedSearch = cleanedSearch.Substring(4).Trim();
+                else if (cleanedSearch.StartsWith("#", StringComparison.OrdinalIgnoreCase))
+                    cleanedSearch = cleanedSearch.Substring(1).Trim();
+
+                if (!string.IsNullOrWhiteSpace(cleanedSearch))
+                    queryParams.Add($"searchTerm={Uri.EscapeDataString(cleanedSearch)}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(status) && !status.Equals("All", StringComparison.OrdinalIgnoreCase))
+                queryParams.Add($"status={Uri.EscapeDataString(status)}");
+
+            if (!string.IsNullOrWhiteSpace(category) && !category.Equals("All", StringComparison.OrdinalIgnoreCase))
+                queryParams.Add($"category={Uri.EscapeDataString(category)}");
+
+            if (fromDate.HasValue)
+                queryParams.Add($"fromDate={Uri.EscapeDataString(fromDate.Value.ToString("o"))}");
+
+            if (toDate.HasValue)
+                queryParams.Add($"toDate={Uri.EscapeDataString(toDate.Value.ToString("o"))}");
 
             var queryString = "?" + string.Join("&", queryParams);
             var url = $"api/v1/incidents{queryString}";
 
-            var response = await _http.GetFromJsonAsync<ApiResponse<PagedResult<IncidentDetailViewModel>>>(url, cancellationToken);
+            return await _http.GetFromJsonAsync<ApiResponse<PagedResult<IncidentDetailViewModel>>>(url, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<PagedResult<IncidentDetailViewModel>>.FailureResult($"Failed to retrieve incidents: {ex.Message}");
+        }
+    }
+
+    public async Task<ApiResponse<List<IncidentDetailViewModel>>?> GetAllIncidentsAsync(
+        string? status = null, 
+        string? category = null, 
+        DateTime? from = null, 
+        DateTime? to = null, 
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await GetIncidentsAsync(
+                pageNumber: 1,
+                pageSize: 100,
+                status: status,
+                category: category,
+                fromDate: from,
+                toDate: to,
+                cancellationToken: cancellationToken);
+
             if (response != null && response.Success && response.Data != null)
             {
                 return ApiResponse<List<IncidentDetailViewModel>>.SuccessResult(response.Data.Items, response.Message);
@@ -89,6 +137,7 @@ public class IncidentService : IIncidentService
             return ApiResponse<List<IncidentDetailViewModel>>.FailureResult($"Failed to retrieve incidents: {ex.Message}");
         }
     }
+
 
     public async Task<ApiResponse<IncidentDetailViewModel>?> CreateIncidentAsync(
         CreateIncidentRequestDto request, 

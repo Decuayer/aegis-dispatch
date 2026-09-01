@@ -175,11 +175,11 @@
                 _activeIncidents = incidentsResponse.Data.Items.Count(i => i.Status is "Open" or "Assigned" or "InProgress");
             }
 
-            var teamsResponse = await Http.GetFromJsonAsync<ApiResponse<List<MapTeamDto>>>("api/v1/teams");
-            if (teamsResponse?.Data != null)
+            var teamsResponse = await Http.GetFromJsonAsync<ApiResponse<PagedResult<MapTeamDto>>>("api/v1/teams?pageSize=100");
+            if (teamsResponse?.Data?.Items != null)
             {
-                _availableTeams = teamsResponse.Data.Count(t => t.Status == "Idle");
-                _dispatchedTeams = teamsResponse.Data.Count(t => t.Status is "Forwarded" or "OnScene" or "Busy");
+                _availableTeams = teamsResponse.Data.Items.Count(t => t.Status == "Idle");
+                _dispatchedTeams = teamsResponse.Data.Items.Count(t => t.Status is "Forwarded" or "OnScene" or "Busy");
             }
 
             // Calculate Dynamic Avg Response Time for the last 24 hours
