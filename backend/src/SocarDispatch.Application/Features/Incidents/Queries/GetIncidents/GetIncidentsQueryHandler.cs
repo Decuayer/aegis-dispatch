@@ -23,6 +23,10 @@ public class GetIncidentsQueryHandler : IRequestHandler<GetIncidentsQuery, ApiRe
             .Include(i => i.Reporter)
             .Include(i => i.Assignments)
                 .ThenInclude(a => a.Team)
+                    .ThenInclude(t => t.Leader)
+            .Include(i => i.Assignments)
+                .ThenInclude(a => a.Team)
+                    .ThenInclude(t => t.Members)
             .Include(i => i.MediaAttachments)
             .AsNoTracking()
             .AsQueryable();
@@ -31,6 +35,12 @@ public class GetIncidentsQueryHandler : IRequestHandler<GetIncidentsQuery, ApiRe
         if (request.IncidentId.HasValue)
         {
             query = query.Where(i => i.Id == request.IncidentId.Value);
+        }
+
+        // ReporterId filter
+        if (request.ReporterId.HasValue)
+        {
+            query = query.Where(i => i.ReporterId == request.ReporterId.Value);
         }
 
         // Multi-field text search
@@ -56,7 +66,6 @@ public class GetIncidentsQueryHandler : IRequestHandler<GetIncidentsQuery, ApiRe
                 i.EmergencyCode.ToLower().Contains(searchLower) ||
                 (i.Description != null && i.Description.ToLower().Contains(searchLower)));
         }
-
 
         // Status filter
         if (!string.IsNullOrWhiteSpace(request.Status) && !request.Status.Equals("All", StringComparison.OrdinalIgnoreCase))
@@ -138,6 +147,10 @@ public class GetIncidentsQueryHandler : IRequestHandler<GetIncidentsQuery, ApiRe
                 CompletedAt = i.Status == IncidentStatus.Open ? null : i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => a.CompletedAt).FirstOrDefault(),
                 AssignedTeamId = i.Status == IncidentStatus.Open ? null : i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => (Guid?)a.TeamId).FirstOrDefault(),
                 AssignedTeamName = i.Status == IncidentStatus.Open ? null : i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => a.Team.TeamName).FirstOrDefault(),
+                AssignedTeamLeaderName = i.Status == IncidentStatus.Open ? null : i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => a.Team.Leader != null ? (a.Team.Leader.FirstName + " " + a.Team.Leader.LastName).Trim() : null).FirstOrDefault(),
+                AssignedTeamLeaderPhone = i.Status == IncidentStatus.Open ? null : i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => a.Team.Leader != null ? a.Team.Leader.Phone : null).FirstOrDefault(),
+                AssignedTeamStatus = i.Status == IncidentStatus.Open ? null : i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => a.Team.Status.ToString()).FirstOrDefault(),
+                AssignedTeamMemberCount = i.Status == IncidentStatus.Open ? null : i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => (int?)a.Team.Members.Count).FirstOrDefault(),
                 CompletionNotes = (i.Status == IncidentStatus.Resolved || i.Status == IncidentStatus.Canceled)
                     ? i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => a.CompletionNotes).FirstOrDefault()
                     : null

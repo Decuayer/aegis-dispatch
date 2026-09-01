@@ -299,4 +299,61 @@ public class UpdateIncidentAuthorizationTests
         result.Data.MediaAttachments.Should().HaveCount(1);
         result.Data.MediaAttachments[0].MediaUrl.Should().Be("http://new-media.jpg");
     }
+
+    [Fact]
+    public async Task UpdateIncident_WhenIncidentIsResolved_ShouldThrowDomainException()
+    {
+        // Arrange
+        using var context = CreateInMemoryDbContext();
+        var reporter = new User
+        {
+            FirstName = "Murad",
+            LastName = "Gasimov",
+            Email = "murad@socar.az",
+            PasswordHash = "hash",
+            Department = "Operations",
+            RoleType = RoleType.Employee
+        };
+        context.Users.Add(reporter);
+
+        var category = new IncidentCategory
+        {
+            Code = "Fire",
+            Name = "Fire Emergency",
+            IsActive = true
+        };
+        context.IncidentCategories.Add(category);
+        await context.SaveChangesAsync();
+
+        var incident = new Incident
+        {
+            ReporterId = reporter.Id,
+            Category = "Fire",
+            EmergencyCode = "RED-1",
+            Status = IncidentStatus.Resolved,
+            Latitude = 40.40m,
+            Longitude = 49.86m,
+            Location = new NetTopologySuite.Geometries.Point(49.86, 40.40) { SRID = 4326 }
+        };
+        context.Incidents.Add(incident);
+        await context.SaveChangesAsync();
+
+        var handler = new UpdateIncidentCommandHandler(context);
+        var command = new UpdateIncidentCommand(
+            incident.Id,
+            reporter.Id,
+            "Fire",
+            "RED-1",
+            "Attempted edit after resolution",
+            new List<CreateIncidentMediaRequestDto>(),
+            40.40m,
+            49.86m
+        );
+
+        // Act & Assert
+        var act = async () => await handler.Handle(command, CancellationToken.None);
+        await act.Should().ThrowAsync<DomainException>()
+            .WithMessage("Cannot edit an incident that has already been resolved or canceled.");
+    }
+
 }

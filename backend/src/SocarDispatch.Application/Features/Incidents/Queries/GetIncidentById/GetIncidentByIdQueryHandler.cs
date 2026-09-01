@@ -23,6 +23,10 @@ public class GetIncidentByIdQueryHandler : IRequestHandler<GetIncidentByIdQuery,
             .Include(i => i.Reporter)
             .Include(i => i.Assignments)
                 .ThenInclude(a => a.Team)
+                    .ThenInclude(t => t.Leader)
+            .Include(i => i.Assignments)
+                .ThenInclude(a => a.Team)
+                    .ThenInclude(t => t.Members)
             .Include(i => i.MediaAttachments)
             .Include(i => i.Reports)
                 .ThenInclude(r => r.Team)
@@ -37,6 +41,8 @@ public class GetIncidentByIdQueryHandler : IRequestHandler<GetIncidentByIdQuery,
         }
 
         var latestAssignment = incident.Assignments.OrderByDescending(a => a.AssignedAt).FirstOrDefault();
+        var assignedTeam = incident.Status == SocarDispatch.Domain.Enums.IncidentStatus.Open ? null : latestAssignment?.Team;
+        var leader = assignedTeam?.Leader;
 
         var dto = new IncidentDto
         {
@@ -65,7 +71,11 @@ public class GetIncidentByIdQueryHandler : IRequestHandler<GetIncidentByIdQuery,
             AssignedAt = incident.Status == SocarDispatch.Domain.Enums.IncidentStatus.Open ? null : latestAssignment?.AssignedAt,
             CompletedAt = incident.Status == SocarDispatch.Domain.Enums.IncidentStatus.Open ? null : latestAssignment?.CompletedAt,
             AssignedTeamId = incident.Status == SocarDispatch.Domain.Enums.IncidentStatus.Open ? null : latestAssignment?.TeamId,
-            AssignedTeamName = incident.Status == SocarDispatch.Domain.Enums.IncidentStatus.Open ? null : latestAssignment?.Team?.TeamName,
+            AssignedTeamName = assignedTeam?.TeamName,
+            AssignedTeamLeaderName = leader != null ? $"{leader.FirstName} {leader.LastName}".Trim() : null,
+            AssignedTeamLeaderPhone = leader?.Phone,
+            AssignedTeamStatus = assignedTeam?.Status.ToString(),
+            AssignedTeamMemberCount = assignedTeam?.Members.Count,
             CompletionNotes = (incident.Status == SocarDispatch.Domain.Enums.IncidentStatus.Resolved || incident.Status == SocarDispatch.Domain.Enums.IncidentStatus.Canceled)
                 ? latestAssignment?.CompletionNotes
                 : null,

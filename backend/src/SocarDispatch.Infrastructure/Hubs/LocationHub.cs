@@ -15,10 +15,12 @@ public class LocationHub : Hub
         var now = DateTime.UtcNow;
         if (_lastUpdateTimes.TryGetValue(teamId, out var last) && (now - last).TotalMilliseconds < ThrottleMs)
         {
-            return; // Throttled: 1 saniyeden daha kısa süre içinde gelen harita verisini atla
+            return; // Throttle location updates within 1 second window
         }
 
         _lastUpdateTimes[teamId] = now;
-        await Clients.Group("operators").SendAsync("TeamLocationUpdated", new { teamId, lat, lng, timestamp = now });
+        var payload = new { teamId, lat, lng, timestamp = now };
+        await Clients.All.SendAsync("TeamLocationUpdated", payload);
+        await Clients.All.SendAsync("ReceiveTeamLocationUpdated", payload);
     }
 }
