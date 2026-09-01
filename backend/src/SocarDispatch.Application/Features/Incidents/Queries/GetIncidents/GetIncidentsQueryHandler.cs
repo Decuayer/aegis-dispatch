@@ -36,13 +36,27 @@ public class GetIncidentsQueryHandler : IRequestHandler<GetIncidentsQuery, ApiRe
         // Multi-field text search
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
-            var searchLower = request.SearchTerm.Trim().ToLower();
+            var searchLower = request.SearchTerm.Trim().ToLowerInvariant();
+
+            // Strip #INC- or INC- or # prefix if present for ID search
+            var idSearchTerm = searchLower;
+            if (idSearchTerm.StartsWith("#inc-", StringComparison.OrdinalIgnoreCase))
+                idSearchTerm = idSearchTerm.Substring(5).Trim();
+            else if (idSearchTerm.StartsWith("inc-", StringComparison.OrdinalIgnoreCase))
+                idSearchTerm = idSearchTerm.Substring(4).Trim();
+            else if (idSearchTerm.StartsWith("#"))
+                idSearchTerm = idSearchTerm.Substring(1).Trim();
+
+            if (string.IsNullOrEmpty(idSearchTerm))
+                idSearchTerm = searchLower;
+
             query = query.Where(i =>
-                i.Id.ToString().ToLower().Contains(searchLower) ||
+                i.Id.ToString().ToLower().Contains(idSearchTerm) ||
                 i.Category.ToLower().Contains(searchLower) ||
                 i.EmergencyCode.ToLower().Contains(searchLower) ||
                 (i.Description != null && i.Description.ToLower().Contains(searchLower)));
         }
+
 
         // Status filter
         if (!string.IsNullOrWhiteSpace(request.Status) && !request.Status.Equals("All", StringComparison.OrdinalIgnoreCase))

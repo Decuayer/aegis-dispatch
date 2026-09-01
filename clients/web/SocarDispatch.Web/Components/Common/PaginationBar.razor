@@ -1,0 +1,229 @@
+@* clients/web/SocarDispatch.Web/Components/Common/PaginationBar.razor *@
+@namespace SocarDispatch.Web.Components.Common
+
+<div class="pagination-bar @(Disabled ? "is-disabled" : "")">
+    <!-- Left: Summary Info -->
+    <div class="pagination-info">
+        @if (TotalCount == 0)
+        {
+            <span>No @ItemName found</span>
+        }
+        else
+        {
+            <span>Showing <strong>@StartIndex</strong> to <strong>@EndIndex</strong> of <strong>@TotalCount</strong> @ItemName</span>
+        }
+    </div>
+
+    <!-- Right: Controls -->
+    <div class="pagination-controls">
+        <!-- Page Size Selector -->
+        <div class="page-size-selector">
+            <label for="pageSizeSelect">Rows per page:</label>
+            <select id="pageSizeSelect"
+                    class="form-select form-select-sm"
+                    value="@PageSize"
+                    @onchange="HandlePageSizeChange"
+                    disabled="@Disabled">
+                @foreach (var size in PageSizeOptions)
+                {
+                    <option value="@size">@size</option>
+                }
+            </select>
+        </div>
+
+        <!-- Navigation Buttons & Page Indicators -->
+        <nav class="pagination-nav" aria-label="Incident list pagination">
+            <!-- First Page Button -->
+            <button type="button"
+                    class="btn-pagination"
+                    disabled="@(!HasPreviousPage || Disabled)"
+                    @onclick="() => GoToPage(1)"
+                    title="First page"
+                    aria-label="First page">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="11 17 6 12 11 7"></polyline>
+                    <polyline points="18 17 13 12 18 7"></polyline>
+                </svg>
+            </button>
+
+            <!-- Previous Page Button -->
+            <button type="button"
+                    class="btn-pagination"
+                    disabled="@(!HasPreviousPage || Disabled)"
+                    @onclick="() => GoToPage(CurrentPage - 1)"
+                    title="Previous page"
+                    aria-label="Previous page">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </button>
+
+            <!-- Page Number Indicators -->
+            <div class="page-numbers">
+                @foreach (var pageNumber in GetVisiblePageNumbers())
+                {
+                    @if (pageNumber == -1)
+                    {
+                        <span class="pagination-ellipsis" aria-hidden="true">&hellip;</span>
+                    }
+                    else
+                    {
+                        <button type="button"
+                                class="btn-page @(pageNumber == CurrentPage ? "active" : "")"
+                                disabled="@Disabled"
+                                @onclick="() => GoToPage(pageNumber)"
+                                aria-current="@(pageNumber == CurrentPage ? "page" : null)"
+                                aria-label="Page @pageNumber">
+                            @pageNumber
+                        </button>
+                    }
+                }
+            </div>
+
+            <!-- Next Page Button -->
+            <button type="button"
+                    class="btn-pagination"
+                    disabled="@(!HasNextPage || Disabled)"
+                    @onclick="() => GoToPage(CurrentPage + 1)"
+                    title="Next page"
+                    aria-label="Next page">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
+
+            <!-- Last Page Button -->
+            <button type="button"
+                    class="btn-pagination"
+                    disabled="@(!HasNextPage || Disabled)"
+                    @onclick="() => GoToPage(TotalPages)"
+                    title="Last page"
+                    aria-label="Last page">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="13 17 18 12 13 7"></polyline>
+                    <polyline points="6 17 11 12 6 7"></polyline>
+                </svg>
+            </button>
+        </nav>
+    </div>
+</div>
+
+<style>
+    .pagination-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 20px;
+        background-color: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        flex-wrap: wrap;
+        gap: 16px;
+        transition: opacity 0.2s ease;
+    }
+
+    .pagination-bar.is-disabled {
+        opacity: 0.65;
+        pointer-events: none;
+    }
+
+    .pagination-info {
+        font-size: 13px;
+        color: var(--color-text-muted);
+    }
+
+    .pagination-info strong {
+        color: var(--color-text-primary);
+        font-weight: 600;
+    }
+
+    .pagination-controls {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .page-size-selector {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--color-text-muted);
+    }
+
+    .page-size-selector select {
+        width: auto;
+        min-width: 64px;
+        height: 32px;
+        font-size: 13px;
+        padding: 2px 24px 2px 8px;
+        background-color: var(--color-surface-2);
+        color: var(--color-text-primary);
+        border: 1px solid var(--color-border);
+        border-radius: 6px;
+    }
+
+    .pagination-nav {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .page-numbers {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin: 0 4px;
+    }
+
+    .btn-pagination,
+    .btn-page {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 32px;
+        height: 32px;
+        padding: 0 8px;
+        border: 1px solid var(--color-border);
+        border-radius: 6px;
+        background-color: var(--color-surface-2);
+        color: var(--color-text-muted);
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+
+    .btn-pagination:hover:not(:disabled),
+    .btn-page:hover:not(:disabled) {
+        background-color: var(--color-surface-hover, rgba(255, 255, 255, 0.08));
+        color: var(--color-text-primary);
+        border-color: var(--color-border-hover, var(--color-border));
+    }
+
+    .btn-page.active {
+        background-color: var(--color-primary);
+        color: #ffffff;
+        border-color: var(--color-primary);
+        font-weight: 600;
+    }
+
+    .btn-pagination:disabled,
+    .btn-page:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+        border-color: var(--color-border);
+    }
+
+    .pagination-ellipsis {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 24px;
+        height: 32px;
+        color: var(--color-text-subtle);
+        font-size: 14px;
+        user-select: none;
+    }
+</style>

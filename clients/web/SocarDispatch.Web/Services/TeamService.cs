@@ -17,15 +17,25 @@ public class TeamService : ITeamService
     {
         try
         {
-            return await _http.GetFromJsonAsync<ApiResponse<List<TeamDto>>>(
-                "api/v1/teams", 
+            var response = await _http.GetFromJsonAsync<ApiResponse<PagedResult<TeamDto>>>(
+                "api/v1/teams?pageSize=100", 
                 cancellationToken);
+
+            if (response != null && response.Success && response.Data != null)
+            {
+                return ApiResponse<List<TeamDto>>.SuccessResult(response.Data.Items, response.Message);
+            }
+
+            return response != null
+                ? ApiResponse<List<TeamDto>>.FailureResult(response.Message)
+                : ApiResponse<List<TeamDto>>.FailureResult("Failed to retrieve teams.");
         }
         catch (Exception ex)
         {
             return ApiResponse<List<TeamDto>>.FailureResult($"Failed to retrieve teams: {ex.Message}");
         }
     }
+
 
     public async Task<ApiResponse<TeamDto>?> GetTeamByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {

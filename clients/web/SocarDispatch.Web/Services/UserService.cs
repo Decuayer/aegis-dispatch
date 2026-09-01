@@ -28,17 +28,24 @@ public class UserService : IUserService
             {
                 queryParams.Add($"role={role.Value}");
             }
-
+            queryParams.Add("pageSize=100");
             var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : string.Empty;
             var url = $"api/v1/users{queryString}";
-
-            return await _http.GetFromJsonAsync<ApiResponse<List<UserDto>>>(url, cancellationToken);
+            var response = await _http.GetFromJsonAsync<ApiResponse<PagedResult<UserDto>>>(url, cancellationToken);
+            if (response != null && response.Success && response.Data != null)
+            {
+                return ApiResponse<List<UserDto>>.SuccessResult(response.Data.Items, response.Message);
+            }
+            return response != null
+                ? ApiResponse<List<UserDto>>.FailureResult(response.Message)
+                : ApiResponse<List<UserDto>>.FailureResult("Failed to retrieve users.");
         }
         catch (Exception ex)
         {
             return ApiResponse<List<UserDto>>.FailureResult($"Failed to retrieve users: {ex.Message}");
         }
     }
+
 
     public async Task<ApiResponse<UserDto>?> GetCurrentUserAsync(CancellationToken cancellationToken = default)
     {

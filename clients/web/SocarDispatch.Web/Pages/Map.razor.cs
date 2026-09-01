@@ -69,7 +69,7 @@ public partial class Map : ComponentBase, IDisposable
         try
         {
             var incidentsTask = Http.GetFromJsonAsync<ApiResponse<PagedResult<MapIncidentDto>>>("api/v1/incidents?pageSize=1000");
-            var teamsTask = Http.GetFromJsonAsync<ApiResponse<List<MapTeamDto>>>("api/v1/teams");
+            var teamsTask = Http.GetFromJsonAsync<ApiResponse<PagedResult<MapTeamDto>>>("api/v1/teams?pageSize=100");
 
             await Task.WhenAll(incidentsTask, teamsTask);
 
@@ -81,9 +81,9 @@ public partial class Map : ComponentBase, IDisposable
                 _incidents = incidentsRes.Data.Items;
             }
 
-            if (teamsRes?.Data != null)
+            if (teamsRes?.Data?.Items != null)
             {
-                _teams = teamsRes.Data;
+                _teams = teamsRes.Data.Items;
             }
         }
         catch (Exception ex)
