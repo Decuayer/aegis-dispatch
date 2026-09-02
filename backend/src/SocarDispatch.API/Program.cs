@@ -133,12 +133,47 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 
-// Auto Migrate and Seed Default Teams if database has no teams
+// Database Migration, PostGIS Extension Checks & Object Storage Bucket Provisioning Lifecycle
 using (var scope = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<SocarDispatch.Infrastructure.Persistence.ApplicationDbContext>();
-    context.Database.Migrate();
-    if (!context.Teams.Any())
+    var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
+    var context = services.GetRequiredService<SocarDispatch.Infrastructure.Persistence.ApplicationDbContext>();
+
+    try
+    {
+        // 1. PostGIS and UUID extension verification
+        logger.LogInformation("Verifying PostgreSQL extensions (postgis, uuid-ossp)...");
+        await context.Database.ExecuteSqlRawAsync("CREATE EXTENSION IF NOT EXISTS postgis;");
+        await context.Database.ExecuteSqlRawAsync("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";");
+        logger.LogInformation("PostgreSQL extensions verified successfully.");
+
+        // 2. Automated EF Core Database Migrations
+        logger.LogInformation("Applying EF Core migrations...");
+        await context.Database.MigrateAsync();
+        logger.LogInformation("EF Core migrations applied successfully.");
+    }
+    catch (Exception ex)
+    {
+        logger.LogCritical(ex, "Database migration/extension initialization failed. Halting application startup.");
+        throw;
+    }
+
+    // 3. Automated MinIO Bucket & Storage Policy Provisioning
+    try
+    {
+        var storageInitializer = services.GetRequiredService<SocarDispatch.Application.Common.Interfaces.IStorageInitializer>();
+        logger.LogInformation("Initializing object storage buckets...");
+        await storageInitializer.InitializeStorageAsync();
+        logger.LogInformation("Object storage initialized successfully.");
+    }
+    catch (Exception ex)
+    {
+        logger.LogWarning(ex, "Object storage initialization encountered an issue. Startup will continue.");
+    }
+
+    // 4. Default Seed Data
+    if (!await context.Teams.AnyAsync())
     {
         context.Teams.AddRange(
             new SocarDispatch.Domain.Entities.Team
@@ -154,9 +189,10 @@ using (var scope = app.Services.CreateScope())
                 Status = SocarDispatch.Domain.Enums.TeamStatus.Idle
             }
         );
-        context.SaveChanges();
+        await context.SaveChangesAsync();
     }
 }
+
 
 app.MapHub<IncidentsHub>("/hubs/incidents");
 app.MapHub<LocationHub>("/hubs/location");

@@ -51,6 +51,8 @@ services:
       /usr/bin/mc alias set localminio http://minio:9000 ${MINIO_ROOT_USER:-minioadmin} ${MINIO_ROOT_PASSWORD:-miniopassword};
       /usr/bin/mc mb --ignore-existing localminio/${MINIO_DEFAULT_BUCKET:-socar-dispatch-media};
       /usr/bin/mc anonymous set download localminio/${MINIO_DEFAULT_BUCKET:-socar-dispatch-media};
+      /usr/bin/mc mb --ignore-existing localminio/socar-dispatch-feedbacks;
+      /usr/bin/mc anonymous set download localminio/socar-dispatch-feedbacks;
       exit 0;
       "
     restart: "no"
