@@ -4,16 +4,22 @@ import '../../data/repositories/incident_repository.dart';
 import '../../services/location_service.dart';
 import 'incident_report_event.dart';
 import 'incident_report_state.dart';
+import '../../services/thumbnail_generator_service.dart';
+
 
 class IncidentReportBloc extends Bloc<IncidentReportEvent, IncidentReportState> {
   final IncidentRepository _incidentRepository;
   final LocationService _locationService;
+  final ThumbnailGeneratorService _thumbnailGeneratorService;
 
   IncidentReportBloc({
     required IncidentRepository incidentRepository,
     required LocationService locationService,
+    ThumbnailGeneratorService? thumbnailGeneratorService,
+
   })  : _incidentRepository = incidentRepository,
         _locationService = locationService,
+        _thumbnailGeneratorService = thumbnailGeneratorService ?? ThumbnailGeneratorService(),
         super(const IncidentReportState()) {
     on<LoadEmergencyCodesStarted>(_onLoadEmergencyCodesStarted);
     on<StepChanged>(_onStepChanged);
@@ -94,6 +100,10 @@ class IncidentReportBloc extends Bloc<IncidentReportEvent, IncidentReportState> 
     Emitter<IncidentReportState> emit,
   ) {
     if (event.index >= 0 && event.index < state.selectedMediaFiles.length) {
+      final removedMedia = state.selectedMediaFiles[event.index];
+      if (removedMedia.thumbnailPath != null) {
+        _thumbnailGeneratorService.deleteThumbnail(removedMedia.thumbnailPath);
+      }
       final updatedList = List.of(state.selectedMediaFiles)..removeAt(event.index);
       emit(state.copyWith(
         selectedMediaFiles: updatedList,
@@ -212,8 +222,23 @@ class IncidentReportBloc extends Bloc<IncidentReportEvent, IncidentReportState> 
     ResetWizardState event,
     Emitter<IncidentReportState> emit,
   ) {
+    for (final media in state.selectedMediaFiles) {
+      if (media.thumbnailPath != null) {
+        _thumbnailGeneratorService.deleteThumbnail(media.thumbnailPath);
+      }
+    }
     emit(IncidentReportState(
       emergencyCodes: state.emergencyCodes,
     ));
+  }
+
+  @override
+  Future<void> close() {
+    for (final media in state.selectedMediaFiles) {
+      if (media.thumbnailPath != null) {
+        _thumbnailGeneratorService.deleteThumbnail(media.thumbnailPath);
+      }
+    }
+    return super.close();
   }
 }
