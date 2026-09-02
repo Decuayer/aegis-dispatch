@@ -200,3 +200,6 @@ app.MapHub<LocationHub>("/hubs/location");
 app.MapControllers();
 
 app.Run();
+
+// Expose Program class for WebApplicationFactory integration tests
+public partial class Program { }
