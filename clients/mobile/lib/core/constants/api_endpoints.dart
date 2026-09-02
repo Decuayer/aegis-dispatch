@@ -28,6 +28,10 @@ class ApiEndpoints {
   // Media endpoints
   static const String uploadMedia = '/api/v1/media/upload';
 
+  // Feedback endpoints
+  static const String feedbacks = '/api/v1/feedbacks';
+  static const String myFeedbacks = '/api/v1/feedbacks/my';
+
   // Incident & Emergency Endpoints
   static const String emergencyCodes = '/api/v1/emergency-codes';
   static const String incidents = '/api/v1/incidents';
@@ -44,4 +48,6 @@ class ApiEndpoints {
   static String teamMember(String teamId, String userId) => '/api/v1/teams/$teamId/members/$userId';
   static String teamMemberStatus(String teamId, String userId) => '/api/v1/teams/$teamId/members/$userId/status';
   static const String teamLocation = '/api/v1/teams/location';
+
+
 }

@@ -24,6 +24,7 @@ import 'features/team_tasks/data/repositories/task_repository.dart';
 import 'features/team_tasks/services/route_service.dart';
 import 'features/tracking/data/location_stream_repository.dart';
 import 'core/storage/map_settings_repository.dart';
+import 'features/feedback/data/feedback_repository.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -80,6 +81,9 @@ void main() async {
   final employeeIncidentRepository = EmployeeIncidentRepository(
     apiClient: apiClient,
   );
+  final feedbackRepository = FeedbackRepository(
+    apiClient: apiClient,
+  );
 
   runApp(
     SocarDispatchApp(
@@ -100,6 +104,7 @@ void main() async {
       teamPortalRepository: teamPortalRepository,
       employeeIncidentRepository: employeeIncidentRepository,
       employeeTrackingHubService: employeeTrackingHubService,
+      feedbackRepository: feedbackRepository,
     ),
   );
 }

@@ -39,6 +39,7 @@ import 'features/team_tasks/services/route_service.dart';
 import 'features/tracking/data/location_stream_repository.dart';
 import 'core/storage/map_settings_repository.dart';
 import 'features/profile/presentation/cubit/map_settings_cubit.dart';
+import 'features/feedback/data/feedback_repository.dart';
 
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -61,6 +62,7 @@ class SocarDispatchApp extends StatelessWidget {
   final TeamPortalRepository teamPortalRepository;
   final EmployeeIncidentRepository employeeIncidentRepository;
   final EmployeeTrackingHubService employeeTrackingHubService;
+  final FeedbackRepository feedbackRepository;
 
   const SocarDispatchApp({
     super.key,
@@ -81,6 +83,7 @@ class SocarDispatchApp extends StatelessWidget {
     required this.teamPortalRepository,
     required this.employeeIncidentRepository,
     required this.employeeTrackingHubService,
+    required this.feedbackRepository,
   });
 
   @override
@@ -104,6 +107,7 @@ class SocarDispatchApp extends StatelessWidget {
         RepositoryProvider.value(value: teamPortalRepository),
         RepositoryProvider.value(value: employeeIncidentRepository),
         RepositoryProvider.value(value: employeeTrackingHubService),
+        RepositoryProvider.value(value: feedbackRepository),
       ],
       child: MultiBlocProvider(
         providers: [
