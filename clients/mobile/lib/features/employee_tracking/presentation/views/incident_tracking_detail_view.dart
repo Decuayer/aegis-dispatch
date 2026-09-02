@@ -9,6 +9,7 @@ import '../bloc/employee_tracking_state.dart';
 import '../widgets/assigned_team_info_card.dart';
 import '../widgets/live_route_mini_map.dart';
 import 'edit_incident_view.dart';
+import '../../../../core/widgets/entity_id_badge.dart';
 
 class IncidentTrackingDetailView extends StatefulWidget {
   final String incidentId;
@@ -96,13 +97,9 @@ class _IncidentTrackingDetailViewState extends State<IncidentTrackingDetailView>
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              '#INC-${incident.id.substring(0, 8).toUpperCase()}',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
-                              ),
+                            EntityIdBadge(
+                              id: incident.id,
+                              type: EntityBadgeType.incident,
                             ),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -162,6 +159,7 @@ class _IncidentTrackingDetailViewState extends State<IncidentTrackingDetailView>
                 if (hasAssignedTeam)
                   AssignedTeamInfoCard(
                     teamName: incident.assignedTeamName!,
+                    teamId: incident.assignedTeamId,
                     leaderFullName: incident.assignedTeamLeaderName,
                     leaderPhone: incident.assignedTeamLeaderPhone,
                     memberCount: incident.assignedTeamMemberCount,

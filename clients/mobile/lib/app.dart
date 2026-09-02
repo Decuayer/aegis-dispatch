@@ -37,6 +37,9 @@ import 'features/team_tasks/presentation/bloc/task_bloc.dart';
 import 'features/team_tasks/presentation/bloc/task_event.dart';
 import 'features/team_tasks/services/route_service.dart';
 import 'features/tracking/data/location_stream_repository.dart';
+import 'core/storage/map_settings_repository.dart';
+import 'features/profile/presentation/cubit/map_settings_cubit.dart';
+
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -53,6 +56,7 @@ class SocarDispatchApp extends StatelessWidget {
   final FcmNotificationService fcmNotificationService;
   final LocationStreamRepository locationStreamRepository;
   final OnboardingRepository onboardingRepository;
+  final MapSettingsRepository mapSettingsRepository;
   final OnboardingPermissionService onboardingPermissionService;
   final TeamPortalRepository teamPortalRepository;
   final EmployeeIncidentRepository employeeIncidentRepository;
@@ -72,6 +76,7 @@ class SocarDispatchApp extends StatelessWidget {
     required this.fcmNotificationService,
     required this.locationStreamRepository,
     required this.onboardingRepository,
+    required this.mapSettingsRepository,
     required this.onboardingPermissionService,
     required this.teamPortalRepository,
     required this.employeeIncidentRepository,
@@ -94,6 +99,7 @@ class SocarDispatchApp extends StatelessWidget {
         RepositoryProvider.value(value: fcmNotificationService),
         RepositoryProvider.value(value: locationStreamRepository),
         RepositoryProvider.value(value: onboardingRepository),
+        RepositoryProvider.value(value: mapSettingsRepository),
         RepositoryProvider.value(value: onboardingPermissionService),
         RepositoryProvider.value(value: teamPortalRepository),
         RepositoryProvider.value(value: employeeIncidentRepository),
@@ -144,6 +150,11 @@ class SocarDispatchApp extends StatelessWidget {
               onboardingRepository: onboardingRepository,
               permissionService: onboardingPermissionService,
             )..add(const OnboardingCheckRequested()),
+          ),
+          BlocProvider(
+            create: (ctx) => MapSettingsCubit(
+              repository: mapSettingsRepository,
+            ),
           ),
           BlocProvider(
             create: (ctx) => EmployeeTrackingBloc(

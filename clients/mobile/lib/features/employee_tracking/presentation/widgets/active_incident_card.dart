@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../data/models/tracked_incident_model.dart';
+import '../../../../core/widgets/entity_id_badge.dart';
+
 
 class ActiveIncidentCard extends StatelessWidget {
   final TrackedIncidentModel incident;
@@ -88,29 +90,39 @@ class ActiveIncidentCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Emergency Code Pill
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: codeColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: codeColor.withValues(alpha: 0.4)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(categoryIcon, size: 14, color: codeColor),
-                        const SizedBox(width: 4),
-                        Text(
-                          incident.emergencyCode,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: codeColor,
-                          ),
+                  Row(
+                    children: [
+                      // Emergency Code Pill
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: codeColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: codeColor.withValues(alpha: 0.4)),
                         ),
-                      ],
-                    ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(categoryIcon, size: 14, color: codeColor),
+                            const SizedBox(width: 4),
+                            Text(
+                              incident.emergencyCode,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: codeColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      EntityIdBadge(
+                        id: incident.id,
+                        type: EntityBadgeType.incident,
+                        isCompact: true,
+                      ),
+                    ],
                   ),
 
                   // Status Pill

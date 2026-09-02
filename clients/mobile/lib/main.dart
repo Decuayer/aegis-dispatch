@@ -23,6 +23,7 @@ import 'features/team_portal/data/repositories/team_portal_repository.dart';
 import 'features/team_tasks/data/repositories/task_repository.dart';
 import 'features/team_tasks/services/route_service.dart';
 import 'features/tracking/data/location_stream_repository.dart';
+import 'core/storage/map_settings_repository.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,6 +42,7 @@ void main() async {
   // Storage & Persistent Preferences
   final prefs = await SharedPreferences.getInstance();
   final onboardingRepository = OnboardingRepository(prefs: prefs);
+  final mapSettingsRepository = MapSettingsRepository(prefs: prefs); 
   const onboardingPermissionService = OnboardingPermissionService();
 
   // Core Services
@@ -93,6 +95,7 @@ void main() async {
       fcmNotificationService: fcmNotificationService,
       locationStreamRepository: locationStreamRepository,
       onboardingRepository: onboardingRepository,
+      mapSettingsRepository: mapSettingsRepository,
       onboardingPermissionService: onboardingPermissionService,
       teamPortalRepository: teamPortalRepository,
       employeeIncidentRepository: employeeIncidentRepository,
