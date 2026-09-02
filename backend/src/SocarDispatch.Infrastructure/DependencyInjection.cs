@@ -38,11 +38,13 @@ public static class DependencyInjection
             AccessKey = configuration["MINIO_ROOT_USER"] ?? configuration["Minio:AccessKey"] ?? "minioadmin",
             SecretKey = configuration["MINIO_ROOT_PASSWORD"] ?? configuration["Minio:SecretKey"] ?? "miniopassword",
             BucketName = configuration["MINIO_DEFAULT_BUCKET"] ?? configuration["Minio:BucketName"] ?? "socar-dispatch-media",
-            UseSSL = bool.TryParse(configuration["MINIO_USE_SSL"], out var useSsl) && useSsl,
+            FeedbackBucketName = configuration["MINIO_FEEDBACK_BUCKET"] ?? configuration["Minio:FeedbackBucketName"] ?? "socar-dispatch-feedbacks",
+            UseSSL = bool.TryParse(configuration["MINIO_USE_SSL"] ?? configuration["Minio:UseSSL"], out var useSsl) && useSsl,
             PublicEndpoint = configuration["MINIO_PUBLIC_ENDPOINT"] ?? configuration["Minio:PublicEndpoint"] ?? "http://localhost:9000"
         };
         services.AddSingleton(minioSettings);
         services.AddScoped<IMediaStorageService, MinioStorageService>();
+        services.AddScoped<IStorageInitializer, SocarDispatch.Infrastructure.Storage.MinioBucketInitializer>();
 
 
         // Firebase Admin Initialization & Push Notification Service Registration
