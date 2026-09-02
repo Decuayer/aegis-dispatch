@@ -34,21 +34,37 @@ class _TaskRouteMapViewState extends State<TaskRouteMapView> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _fitRouteBounds());
   }
 
-  void _fitRouteBounds() {
-    final points = widget.routePoints.isNotEmpty
-        ? widget.routePoints
-        : [widget.teamLocation, widget.incidentLocation];
+    void _fitRouteBounds() {
+    try {
+      final points = widget.routePoints.isNotEmpty
+          ? widget.routePoints
+          : [widget.teamLocation, widget.incidentLocation];
 
-    if (points.length >= 2) {
-      final bounds = LatLngBounds.fromPoints(points);
-      _mapController.fitCamera(
-        CameraFit.bounds(
-          bounds: bounds,
-          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 50),
-        ),
-      );
+      if (points.length >= 2) {
+        final bounds = LatLngBounds.fromPoints(points);
+        final latDelta = (bounds.northEast.latitude - bounds.southWest.latitude).abs();
+        final lngDelta = (bounds.northEast.longitude - bounds.southWest.longitude).abs();
+
+        // Prevent division-by-zero Infinity zoom when points are identical or extremely close
+        if (latDelta < 0.0005 && lngDelta < 0.0005) {
+          _mapController.move(widget.incidentLocation, 15.0);
+        } else {
+          _mapController.fitCamera(
+            CameraFit.bounds(
+              bounds: bounds,
+              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 50),
+              maxZoom: 16.0,
+            ),
+          );
+        }
+      } else {
+        _mapController.move(widget.incidentLocation, 15.0);
+      }
+    } catch (_) {
+      _mapController.move(widget.incidentLocation, 15.0);
     }
   }
+
 
   void _centerOnTeam() {
     _mapController.move(widget.teamLocation, 16);
@@ -68,6 +84,8 @@ class _TaskRouteMapViewState extends State<TaskRouteMapView> {
               options: MapOptions(
                 initialCenter: widget.incidentLocation,
                 initialZoom: 14.5,
+                minZoom: 3.0,
+                maxZoom: 18.0,
               ),
               children: [
                 TileLayer(

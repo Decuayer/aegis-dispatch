@@ -86,10 +86,12 @@ class TaskFailure extends TaskState {
   final String message;
   final bool isOffline;
   final TeamTaskModel? cachedTask;
+  final TeamStatus? failedStatus;
 
   const TaskFailure(
     this.message, {
     this.isOffline = false,
     this.cachedTask,
+    this.failedStatus,
   });
 }

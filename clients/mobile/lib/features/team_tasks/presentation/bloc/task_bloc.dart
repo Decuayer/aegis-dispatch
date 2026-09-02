@@ -170,7 +170,11 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
 
       emit(currentState.copyWith(task: updatedTask));
     } catch (e) {
-      emit(TaskFailure('Failed to update status: ${e.toString()}', cachedTask: currentTask));
+      emit(TaskFailure(
+        'Failed to update status: ${e.toString()}',
+        cachedTask: currentTask,
+        failedStatus: event.newStatus,
+      ));
       emit(currentState);
     }
   }

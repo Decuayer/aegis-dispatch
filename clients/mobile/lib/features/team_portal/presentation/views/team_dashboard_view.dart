@@ -215,7 +215,45 @@ class _TeamDashboardViewState extends State<TeamDashboardView>
   }
 
   Widget _buildActiveTaskTab(BuildContext context) {
-    return BlocBuilder<TaskBloc, TaskState>(
+    return BlocConsumer<TaskBloc, TaskState>(
+      listenWhen: (prev, current) => current is TaskFailure || current is TaskDebriefSuccess,
+      listener: (context, state) {
+        if (state is TaskFailure) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              behavior: SnackBarBehavior.floating,
+              content: Text(state.message),
+              backgroundColor: AppColors.error,
+              duration: const Duration(seconds: 4),
+              action: state.failedStatus != null
+                  ? SnackBarAction(
+                      label: 'Retry',
+                      textColor: Colors.white,
+                      onPressed: () {
+                        context.read<TaskBloc>().add(
+                              UpdateOperationalStatus(
+                                teamId: widget.team.id,
+                                userId: widget.user.id,
+                                newStatus: state.failedStatus!,
+                              ),
+                            );
+                      },
+                    )
+                  : null,
+            ),
+          );
+        } else if (state is TaskDebriefSuccess) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              behavior: SnackBarBehavior.floating,
+              content: Text(state.message),
+              backgroundColor: AppColors.success,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      },
       builder: (context, state) {
         if (state is TaskLoading) {
           return const Center(child: CircularProgressIndicator());
@@ -265,6 +303,7 @@ class _TeamDashboardViewState extends State<TeamDashboardView>
       },
     );
   }
+
 
   Widget _buildIdleStandbyView(BuildContext context) {
     return Center(
