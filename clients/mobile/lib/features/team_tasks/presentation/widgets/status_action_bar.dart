@@ -53,31 +53,30 @@ class StatusActionBar extends StatelessWidget {
         label = 'Depart Now (En Route)';
         icon = Icons.directions_car_filled_outlined;
         buttonColor = AppColors.warning;
-        onPressed = () => _confirmAndExecute(
-              context,
-              title: 'Start Response Journey',
-              message: 'Confirm departing for the incident site now?',
-              action: () => onStatusChangeRequested(TeamStatus.enRoute),
-            );
+        onPressed = () {
+          HapticFeedback.mediumImpact();
+          onStatusChangeRequested(TeamStatus.enRoute);
+        };
         break;
 
       case TeamStatus.enRoute:
         label = 'Confirm On Scene';
         icon = Icons.place_rounded;
         buttonColor = AppColors.accent;
-        onPressed = () => _confirmAndExecute(
-              context,
-              title: 'Arrived On Scene',
-              message: 'Confirm your response unit has arrived at the incident site?',
-              action: () => onStatusChangeRequested(TeamStatus.onScene),
-            );
+        onPressed = () {
+          HapticFeedback.mediumImpact();
+          onStatusChangeRequested(TeamStatus.onScene);
+        };
         break;
 
       case TeamStatus.onScene:
         label = 'Complete Task & Debrief';
         icon = Icons.task_alt_rounded;
         buttonColor = AppColors.secondary;
-        onPressed = onResolveRequested;
+        onPressed = () {
+          HapticFeedback.mediumImpact();
+          onResolveRequested();
+        };
         break;
 
       default:
@@ -120,40 +119,6 @@ class StatusActionBar extends StatelessWidget {
                   ),
                 ],
               ),
-      ),
-    );
-  }
-
-  void _confirmAndExecute(
-    BuildContext context, {
-    required String title,
-    required String message,
-    required VoidCallback action,
-  }) {
-    HapticFeedback.mediumImpact();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () {
-              Navigator.pop(ctx);
-              action();
-            },
-            child: const Text('Confirm'),
-          ),
-        ],
       ),
     );
   }
