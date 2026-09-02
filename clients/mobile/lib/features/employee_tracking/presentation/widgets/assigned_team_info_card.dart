@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/entity_id_badge.dart';
 
 class AssignedTeamInfoCard extends StatelessWidget {
   final String teamName;
+  final String? teamId;
   final String? leaderFullName;
   final String? leaderPhone;
   final int? memberCount;
   final String? operationalStatus; // Forwarded, EnRoute, OnScene, Busy
-
+  
   const AssignedTeamInfoCard({
     super.key,
     required this.teamName,
+    this.teamId, // <-- EKLENDİ
     this.leaderFullName,
     this.leaderPhone,
     this.memberCount,
@@ -110,6 +113,14 @@ class AssignedTeamInfoCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      if (teamId != null && teamId!.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        EntityIdBadge(
+                          id: teamId!,
+                          type: EntityBadgeType.team,
+                          isCompact: true,
+                        ),
+                      ],
                     ],
                   ),
                 ),

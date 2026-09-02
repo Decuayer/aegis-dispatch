@@ -9,6 +9,8 @@ import '../../data/models/user_model.dart';
 import '../cubit/profile_cubit.dart';
 import '../cubit/profile_state.dart';
 import 'widgets/avatar_picker_widget.dart';
+import '../widgets/map_settings_tile.dart';
+
 
 class ProfileView extends StatefulWidget {
   final UserModel currentUser;
@@ -299,6 +301,8 @@ class _ProfileViewState extends State<ProfileView> {
                       ],
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  const MapSettingsTile(),
                   const SizedBox(height: 24),
 
                   // Save Button

@@ -8,6 +8,8 @@ import '../widgets/incident_media_carousel.dart';
 import '../widgets/reporter_contact_card.dart';
 import '../widgets/status_action_bar.dart';
 import 'task_route_map_view.dart';
+import '../../../../core/widgets/entity_id_badge.dart';
+
 
 class ActiveTaskView extends StatelessWidget {
   final TeamTaskModel task;
@@ -56,6 +58,8 @@ class ActiveTaskView extends StatelessWidget {
                   distanceKm: distanceKm,
                   estimatedMinutes: estimatedMinutes,
                   isRouteFallback: isRouteFallback,
+                  incidentId: task.id,
+                  teamId: task.assignedTeamId,
                 ),
                 const SizedBox(height: 16),
                 _buildIncidentDetailsCard(),
@@ -96,52 +100,74 @@ class ActiveTaskView extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.border),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.accent,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      task.emergencyCode,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    task.category,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ],
+              ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.accent,
+                  color: status.color.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  task.emergencyCode,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  status.label,
+                  style: TextStyle(
+                    color: status.color,
                     fontWeight: FontWeight.bold,
-                    fontSize: 13,
+                    fontSize: 12,
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              Text(
-                task.category,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
             ],
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: status.color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              status.label,
-              style: TextStyle(
-                color: status.color,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              EntityIdBadge(
+                id: task.id,
+                type: EntityBadgeType.incident,
               ),
-            ),
+              if (task.assignedTeamId != null && task.assignedTeamId!.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                EntityIdBadge(
+                  id: task.assignedTeamId!,
+                  type: EntityBadgeType.team,
+                ),
+              ],
+            ],
           ),
         ],
       ),
     );
   }
+
 
   Widget _buildIncidentDetailsCard() {
     return Container(
