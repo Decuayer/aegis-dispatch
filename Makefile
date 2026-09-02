@@ -1,4 +1,4 @@
-.PHONY: help up down restart logs status build test lint format migrate run-api run-web run-mobile clean
+.PHONY: help up down restart logs status build test test-load lint format migrate run-api run-web run-mobile clean
 
 # Default Target
 .DEFAULT_GOAL := help
@@ -38,6 +38,10 @@ test: ## Run backend and Flutter test suites
 	cd backend && dotnet test SocarDispatch.slnx --verbosity normal
 	@echo "📱 Running Mobile Tests..."
 	cd clients/mobile && flutter test
+
+test-load: ## Run k6 emergency load and WebSocket stress tests
+	@echo "🔥 Executing k6 Emergency Load Tests..."
+	./load-testing/k6/run-load-tests.sh
 
 lint: ## Run formatting check and Flutter analyzer
 	@echo "🔍 Checking Backend Formatting..."

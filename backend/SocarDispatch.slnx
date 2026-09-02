@@ -9,5 +9,6 @@
     <Project Path="tests/SocarDispatch.Application.Tests/SocarDispatch.Application.Tests.csproj" />
     <Project Path="tests/SocarDispatch.Infrastructure.Tests/SocarDispatch.Infrastructure.Tests.csproj" />
     <Project Path="tests/SocarDispatch.IntegrationTests/SocarDispatch.IntegrationTests.csproj" />
+    <Project Path="tests/SocarDispatch.UnitTests/SocarDispatch.UnitTests.csproj" />
   </Folder>
 </Solution>
