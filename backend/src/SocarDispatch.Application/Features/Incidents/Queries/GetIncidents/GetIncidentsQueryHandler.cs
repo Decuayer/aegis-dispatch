@@ -8,7 +8,9 @@ using SocarDispatch.Domain.Enums;
 
 namespace SocarDispatch.Application.Features.Incidents.Queries.GetIncidents;
 
-public class GetIncidentsQueryHandler : IRequestHandler<GetIncidentsQuery, ApiResponse<PagedResult<IncidentDto>>>
+public class GetIncidentsQueryHandler :
+    IRequestHandler<GetIncidentsQuery, ApiResponse<PagedResult<IncidentDto>>>,
+    IRequestHandler<GetIncidentsWithFiltersQuery, ApiResponse<PagedResult<IncidentDto>>>
 {
     private readonly IApplicationDbContext _context;
 
@@ -116,47 +118,65 @@ public class GetIncidentsQueryHandler : IRequestHandler<GetIncidentsQuery, ApiRe
             query = query.Where(i => i.CreatedAt <= request.ToDate.Value);
         }
 
-        // Ordering and DTO projection
-        var projectedQuery = query
-            .OrderByDescending(i => i.CreatedAt)
-            .Select(i => new IncidentDto
+        // Dynamic ordering (SDDC-50)
+        var sortBy = (request.SortBy ?? "createdAt").Trim().ToLowerInvariant();
+        var sortDir = (request.SortDir ?? "desc").Trim().ToLowerInvariant();
+        var isAsc = sortDir == "asc";
+
+        query = sortBy switch
+        {
+            "createdat" => isAsc ? query.OrderBy(i => i.CreatedAt) : query.OrderByDescending(i => i.CreatedAt),
+            "status" => isAsc
+                ? query.OrderBy(i => i.Status).ThenByDescending(i => i.CreatedAt)
+                : query.OrderByDescending(i => i.Status).ThenByDescending(i => i.CreatedAt),
+            "category" => isAsc
+                ? query.OrderBy(i => i.Category).ThenByDescending(i => i.CreatedAt)
+                : query.OrderByDescending(i => i.Category).ThenByDescending(i => i.CreatedAt),
+            "emergencycode" => isAsc
+                ? query.OrderBy(i => i.EmergencyCode).ThenByDescending(i => i.CreatedAt)
+                : query.OrderByDescending(i => i.EmergencyCode).ThenByDescending(i => i.CreatedAt),
+            _ => query.OrderByDescending(i => i.CreatedAt)
+        };
+
+        // DTO projection
+        var projectedQuery = query.Select(i => new IncidentDto
+        {
+            Id = i.Id,
+            ReporterId = i.ReporterId,
+            ReporterFullName = $"{i.Reporter.FirstName} {i.Reporter.LastName}".Trim(),
+            ReporterPhone = i.Reporter.Phone ?? string.Empty,
+            ReporterDepartment = i.Reporter.Department ?? string.Empty,
+            ReporterEmail = i.Reporter.Email ?? string.Empty,
+            ReporterSubRole = i.Reporter.SubRole ?? string.Empty,
+            ReporterAvatarUrl = i.Reporter.AvatarUrl ?? string.Empty,
+            Category = i.Category,
+            EmergencyCode = i.EmergencyCode,
+            Description = i.Description,
+            MediaAttachments = i.MediaAttachments.Select(m => new IncidentMediaDto
             {
-                Id = i.Id,
-                ReporterId = i.ReporterId,
-                ReporterFullName = $"{i.Reporter.FirstName} {i.Reporter.LastName}".Trim(),
-                ReporterPhone = i.Reporter.Phone ?? string.Empty,
-                ReporterDepartment = i.Reporter.Department ?? string.Empty,
-                ReporterEmail = i.Reporter.Email ?? string.Empty,
-                ReporterSubRole = i.Reporter.SubRole ?? string.Empty,
-                ReporterAvatarUrl = i.Reporter.AvatarUrl ?? string.Empty,
-                Category = i.Category,
-                EmergencyCode = i.EmergencyCode,
-                Description = i.Description,
-                MediaAttachments = i.MediaAttachments.Select(m => new IncidentMediaDto
-                {
-                    Id = m.Id,
-                    MediaUrl = m.MediaUrl,
-                    MediaType = m.MediaType,
-                    CreatedAt = m.CreatedAt
-                }).ToList(),
-                Status = i.Status.ToString(),
-                Latitude = i.Latitude,
-                Longitude = i.Longitude,
-                CreatedAt = i.CreatedAt,
-                IsDeleted = i.IsDeleted,
-                DeletedAt = i.DeletedAt,
-                AssignedAt = i.Status == IncidentStatus.Open ? null : i.Assignments.OrderBy(a => a.AssignedAt).Select(a => (DateTime?)a.AssignedAt).FirstOrDefault(),
-                CompletedAt = i.Status == IncidentStatus.Open ? null : i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => a.CompletedAt).FirstOrDefault(),
-                AssignedTeamId = i.Status == IncidentStatus.Open ? null : i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => (Guid?)a.TeamId).FirstOrDefault(),
-                AssignedTeamName = i.Status == IncidentStatus.Open ? null : i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => a.Team.TeamName).FirstOrDefault(),
-                AssignedTeamLeaderName = i.Status == IncidentStatus.Open ? null : i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => a.Team.Leader != null ? (a.Team.Leader.FirstName + " " + a.Team.Leader.LastName).Trim() : null).FirstOrDefault(),
-                AssignedTeamLeaderPhone = i.Status == IncidentStatus.Open ? null : i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => a.Team.Leader != null ? a.Team.Leader.Phone : null).FirstOrDefault(),
-                AssignedTeamStatus = i.Status == IncidentStatus.Open ? null : i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => a.Team.Status.ToString()).FirstOrDefault(),
-                AssignedTeamMemberCount = i.Status == IncidentStatus.Open ? null : i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => (int?)a.Team.Members.Count).FirstOrDefault(),
-                CompletionNotes = (i.Status == IncidentStatus.Resolved || i.Status == IncidentStatus.Canceled)
-                    ? i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => a.CompletionNotes).FirstOrDefault()
-                    : null
-            });
+                Id = m.Id,
+                MediaUrl = m.MediaUrl,
+                MediaType = m.MediaType,
+                CreatedAt = m.CreatedAt
+            }).ToList(),
+            Status = i.Status.ToString(),
+            Latitude = i.Latitude,
+            Longitude = i.Longitude,
+            CreatedAt = i.CreatedAt,
+            IsDeleted = i.IsDeleted,
+            DeletedAt = i.DeletedAt,
+            AssignedAt = i.Status == IncidentStatus.Open ? null : i.Assignments.OrderBy(a => a.AssignedAt).Select(a => (DateTime?)a.AssignedAt).FirstOrDefault(),
+            CompletedAt = i.Status == IncidentStatus.Open ? null : i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => a.CompletedAt).FirstOrDefault(),
+            AssignedTeamId = i.Status == IncidentStatus.Open ? null : i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => (Guid?)a.TeamId).FirstOrDefault(),
+            AssignedTeamName = i.Status == IncidentStatus.Open ? null : i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => a.Team.TeamName).FirstOrDefault(),
+            AssignedTeamLeaderName = i.Status == IncidentStatus.Open ? null : i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => a.Team.Leader != null ? (a.Team.Leader.FirstName + " " + a.Team.Leader.LastName).Trim() : null).FirstOrDefault(),
+            AssignedTeamLeaderPhone = i.Status == IncidentStatus.Open ? null : i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => a.Team.Leader != null ? a.Team.Leader.Phone : null).FirstOrDefault(),
+            AssignedTeamStatus = i.Status == IncidentStatus.Open ? null : i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => a.Team.Status.ToString()).FirstOrDefault(),
+            AssignedTeamMemberCount = i.Status == IncidentStatus.Open ? null : i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => (int?)a.Team.Members.Count).FirstOrDefault(),
+            CompletionNotes = (i.Status == IncidentStatus.Resolved || i.Status == IncidentStatus.Canceled)
+                ? i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => a.CompletionNotes).FirstOrDefault()
+                : null
+        });
 
         // Execute server-side pagination
         var pagedResult = await projectedQuery.ToPagedResultAsync(
@@ -167,5 +187,10 @@ public class GetIncidentsQueryHandler : IRequestHandler<GetIncidentsQuery, ApiRe
         return ApiResponse<PagedResult<IncidentDto>>.SuccessResult(
             pagedResult,
             "Incidents retrieved successfully.");
+    }
+
+    public async Task<ApiResponse<PagedResult<IncidentDto>>> Handle(GetIncidentsWithFiltersQuery request, CancellationToken cancellationToken)
+    {
+        return await Handle((GetIncidentsQuery)request, cancellationToken);
     }
 }

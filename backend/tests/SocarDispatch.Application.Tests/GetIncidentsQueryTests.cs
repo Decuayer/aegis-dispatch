@@ -575,5 +575,110 @@ public class GetIncidentsQueryTests
         largeResult.Data.Items.Should().HaveCount(25);
     }
 
+    [Fact]
+    public async Task Handle_WithSortByCategoryAsc_ReturnsAlphabeticallyOrdered()
+    {
+        // Arrange
+        using var context = CreateInMemoryDbContext();
+        var reporter = await SeedReporterAsync(context);
+
+        context.Incidents.AddRange(
+            new Incident { ReporterId = reporter.Id, Category = "Medical", EmergencyCode = "M-01", Location = new Point(49.8, 40.4) { SRID = 4326 } },
+            new Incident { ReporterId = reporter.Id, Category = "Fire", EmergencyCode = "F-01", Location = new Point(49.8, 40.4) { SRID = 4326 } },
+            new Incident { ReporterId = reporter.Id, Category = "Chemical", EmergencyCode = "C-01", Location = new Point(49.8, 40.4) { SRID = 4326 } }
+        );
+        await context.SaveChangesAsync();
+
+        var handler = new GetIncidentsQueryHandler(context);
+        var query = new GetIncidentsQuery { SortBy = "category", SortDir = "asc" };
+
+        // Act
+        var result = await handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        result.Data.Items.Should().HaveCount(3);
+        result.Data.Items.Select(i => i.Category).Should().ContainInConsecutiveOrder("Chemical", "Fire", "Medical");
+    }
+
+    [Fact]
+    public async Task Handle_WithSortByStatusDesc_ReturnsOrderedByStatus()
+    {
+        // Arrange
+        using var context = CreateInMemoryDbContext();
+        var reporter = await SeedReporterAsync(context);
+
+        context.Incidents.AddRange(
+            new Incident { ReporterId = reporter.Id, Category = "Fire", EmergencyCode = "F-01", Status = IncidentStatus.Open, Location = new Point(49.8, 40.4) { SRID = 4326 } },
+            new Incident { ReporterId = reporter.Id, Category = "Fire", EmergencyCode = "F-02", Status = IncidentStatus.Assigned, Location = new Point(49.8, 40.4) { SRID = 4326 } },
+            new Incident { ReporterId = reporter.Id, Category = "Fire", EmergencyCode = "F-03", Status = IncidentStatus.Resolved, Location = new Point(49.8, 40.4) { SRID = 4326 } }
+        );
+        await context.SaveChangesAsync();
+
+        var handler = new GetIncidentsQueryHandler(context);
+        var query = new GetIncidentsQuery { SortBy = "status", SortDir = "desc" };
+
+        // Act
+        var result = await handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        result.Data.Items.Should().HaveCount(3);
+        result.Data.Items[0].Status.Should().Be(IncidentStatus.Resolved.ToString());
+    }
+
+    [Fact]
+    public async Task Handle_WithDateFromAndDateTo_FiltersDateRangeAccurately()
+    {
+        // Arrange
+        using var context = CreateInMemoryDbContext();
+        var reporter = await SeedReporterAsync(context);
+        var baseDate = DateTime.UtcNow;
+
+        context.Incidents.AddRange(
+            new Incident { ReporterId = reporter.Id, Category = "Fire", EmergencyCode = "F-01", CreatedAt = baseDate.AddDays(-5), Location = new Point(49.8, 40.4) { SRID = 4326 } },
+            new Incident { ReporterId = reporter.Id, Category = "Fire", EmergencyCode = "F-02", CreatedAt = baseDate.AddDays(-2), Location = new Point(49.8, 40.4) { SRID = 4326 } },
+            new Incident { ReporterId = reporter.Id, Category = "Fire", EmergencyCode = "F-03", CreatedAt = baseDate.AddDays(-1), Location = new Point(49.8, 40.4) { SRID = 4326 } },
+            new Incident { ReporterId = reporter.Id, Category = "Fire", EmergencyCode = "F-04", CreatedAt = baseDate.AddHours(2), Location = new Point(49.8, 40.4) { SRID = 4326 } }
+        );
+        await context.SaveChangesAsync();
+
+        var handler = new GetIncidentsQueryHandler(context);
+        var query = new GetIncidentsQuery
+        {
+            DateFrom = baseDate.AddDays(-3),
+            DateTo = baseDate
+        };
+
+        // Act
+        var result = await handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        result.Data.Items.Should().HaveCount(2);
+        result.Data.Items.Select(i => i.EmergencyCode).Should().Contain(["F-02", "F-03"]);
+    }
+
+    [Fact]
+    public void Validator_WithInvalidSortBy_ShouldHaveValidationError()
+    {
+        var validator = new GetIncidentsQueryValidator();
+        var query = new GetIncidentsQuery { SortBy = "invalidField" };
+
+        var result = validator.Validate(query);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == nameof(GetIncidentsQuery.SortBy));
+    }
+
+    [Fact]
+    public void Validator_WithInvalidSortDir_ShouldHaveValidationError()
+    {
+        var validator = new GetIncidentsQueryValidator();
+        var query = new GetIncidentsQuery { SortDir = "sideways" };
+
+        var result = validator.Validate(query);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == nameof(GetIncidentsQuery.SortDir));
+    }
+
 
 }

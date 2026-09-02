@@ -11,6 +11,8 @@ using SocarDispatch.Application.Features.Incidents.DTOs;
 using SocarDispatch.Application.Features.Incidents.Queries.GetIncidentById;
 using SocarDispatch.Application.Features.Incidents.Queries.GetIncidents;
 using SocarDispatch.Domain.Exceptions;
+using SocarDispatch.Application.Features.Incidents.Queries.GetRecentIncidents;
+
 
 namespace SocarDispatch.API.Controllers;
 
@@ -60,6 +62,18 @@ public class IncidentsController : ControllerBase
         var result = await _sender.Send(query);
         return Ok(result);
     }
+
+    // GET /api/v1/incidents/recent
+    // Retrieves a bounded list of recent active/unresolved incidents ordered by createdAt descending.
+    [HttpGet("recent")]
+    [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<IncidentDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<IReadOnlyList<IncidentDto>>>> GetRecent([FromQuery] int limit = 10)
+    {
+        var clampedLimit = Math.Clamp(limit, 1, 50);
+        var result = await _sender.Send(new GetRecentIncidentsQuery(clampedLimit));
+        return Ok(result);
+    }
+
 
     // GET /api/v1/incidents/{id}
     // Retrieves all details of a specific event.

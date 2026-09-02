@@ -4,6 +4,9 @@ namespace SocarDispatch.Application.Features.Incidents.Queries.GetIncidents;
 
 public class GetIncidentsQueryValidator : AbstractValidator<GetIncidentsQuery>
 {
+    private static readonly string[] AllowedSortFields = ["createdat", "status", "category", "emergencycode"];
+    private static readonly string[] AllowedSortDirections = ["asc", "desc"];
+
     public GetIncidentsQueryValidator()
     {
         RuleFor(x => x.PageNumber)
@@ -25,6 +28,14 @@ public class GetIncidentsQueryValidator : AbstractValidator<GetIncidentsQuery>
         RuleFor(x => x.EmergencyCode)
             .MaximumLength(20)
             .WithMessage("Emergency code cannot exceed 20 characters.");
+
+        RuleFor(x => x.SortBy)
+            .Must(s => string.IsNullOrWhiteSpace(s) || AllowedSortFields.Contains(s.Trim().ToLowerInvariant()))
+            .WithMessage("SortBy must be one of: createdAt, status, category, emergencyCode.");
+
+        RuleFor(x => x.SortDir)
+            .Must(s => string.IsNullOrWhiteSpace(s) || AllowedSortDirections.Contains(s.Trim().ToLowerInvariant()))
+            .WithMessage("SortDir must be 'asc' or 'desc'.");
 
         When(x => x.FromDate.HasValue && x.ToDate.HasValue, () =>
         {

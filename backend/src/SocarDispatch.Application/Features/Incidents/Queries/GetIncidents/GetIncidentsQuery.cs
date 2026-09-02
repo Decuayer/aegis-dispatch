@@ -41,6 +41,13 @@ public record GetIncidentsQuery : PaginationFilter, IRequest<ApiResponse<PagedRe
         init => _fromDate = value;
     }
 
+    // Alias for FromDate (SDDC-50)
+    public DateTime? DateFrom
+    {
+        get => _fromDate;
+        init => _fromDate = value;
+    }
+
     public DateTime? ToDate
     {
         get => _toDate;
@@ -52,6 +59,17 @@ public record GetIncidentsQuery : PaginationFilter, IRequest<ApiResponse<PagedRe
         get => _toDate;
         init => _toDate = value;
     }
+
+    // Alias for ToDate (SDDC-50)
+    public DateTime? DateTo
+    {
+        get => _toDate;
+        init => _toDate = value;
+    }
+
+    // Dynamic sorting parameters (SDDC-50)
+    public string SortBy { get; init; } = "createdAt";
+    public string SortDir { get; init; } = "desc";
 
     // Page alias for PageNumber (SDDC-45)
     public int Page
@@ -90,5 +108,27 @@ public record GetIncidentsQuery : PaginationFilter, IRequest<ApiResponse<PagedRe
         _fromDate = from;
         _toDate = to;
         PageSize = 20;
+    }
+
+    public GetIncidentsQuery(
+        string? status,
+        string? category,
+        string? emergencyCode,
+        DateTime? dateFrom,
+        DateTime? dateTo,
+        string sortBy = "createdAt",
+        string sortDir = "desc",
+        int page = 1,
+        int pageSize = 20)
+    {
+        Status = status;
+        Category = category;
+        EmergencyCode = emergencyCode;
+        _fromDate = dateFrom;
+        _toDate = dateTo;
+        SortBy = sortBy;
+        SortDir = sortDir;
+        Page = page;
+        PageSize = pageSize;
     }
 }
