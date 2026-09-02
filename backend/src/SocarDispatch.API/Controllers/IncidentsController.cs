@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using SocarDispatch.Application.Common.Models;
 using SocarDispatch.Application.Features.Incidents.Commands.ChangeIncidentStatus;
 using SocarDispatch.Application.Features.Incidents.Commands.CreateIncident;
+using SocarDispatch.Application.Features.Incidents.Commands.DeleteIncident;
 using SocarDispatch.Application.Features.Incidents.Commands.UpdateIncident;
 using SocarDispatch.Application.Features.Incidents.DTOs;
 using SocarDispatch.Application.Features.Incidents.Queries.GetIncidentById;
@@ -109,6 +110,28 @@ public class IncidentsController : ControllerBase
         }
         var userRoleClaim = User.FindFirstValue(ClaimTypes.Role) ?? User.FindFirstValue("role") ?? string.Empty;
         var command = new ChangeIncidentStatusCommand(id, request.Status, requesterId, userRoleClaim, request.CompletionNotes);
+        var result = await _sender.Send(command);
+        return Ok(result);
+    }
+
+    // DELETE /api/v1/incidents/{id}
+    // Soft-deletes an incident while preserving audit history and relations.
+    [HttpDelete("{id:guid}")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<ApiResponse<bool>>> Delete(Guid id)
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var requesterId))
+        {
+            throw new DomainException("Invalid user session. Token is missing or invalid.");
+        }
+
+        var userRoleClaim = User.FindFirstValue(ClaimTypes.Role) ?? User.FindFirstValue("role");
+        var command = new DeleteIncidentCommand(id, requesterId, userRoleClaim);
+
         var result = await _sender.Send(command);
         return Ok(result);
     }

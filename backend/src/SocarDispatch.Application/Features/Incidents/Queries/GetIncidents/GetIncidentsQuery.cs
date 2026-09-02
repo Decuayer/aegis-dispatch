@@ -53,7 +53,25 @@ public record GetIncidentsQuery : PaginationFilter, IRequest<ApiResponse<PagedRe
         init => _toDate = value;
     }
 
-    public GetIncidentsQuery() { }
+    // Page alias for PageNumber (SDDC-45)
+    public int Page
+    {
+        get => PageNumber;
+        init => PageNumber = value;
+    }
+
+    public GetIncidentsQuery()
+    {
+        PageSize = 20;
+    }
+
+    public GetIncidentsQuery(string? status, string? category, int page = 1, int pageSize = 20)
+    {
+        Status = status;
+        Category = category;
+        Page = page;
+        PageSize = pageSize;
+    }
 
     public GetIncidentsQuery(string? status, string? category, DateTime? from, DateTime? to)
     {
@@ -61,6 +79,7 @@ public record GetIncidentsQuery : PaginationFilter, IRequest<ApiResponse<PagedRe
         Category = category;
         _fromDate = from;
         _toDate = to;
+        PageSize = 20;
     }
 
     public GetIncidentsQuery(Guid? reporterId, string? status, string? category, DateTime? from, DateTime? to)
@@ -70,5 +89,6 @@ public record GetIncidentsQuery : PaginationFilter, IRequest<ApiResponse<PagedRe
         Category = category;
         _fromDate = from;
         _toDate = to;
+        PageSize = 20;
     }
 }

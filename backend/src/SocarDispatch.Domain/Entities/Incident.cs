@@ -21,6 +21,10 @@ public class Incident
     public Point? Location { get; set; } = null!;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    // Soft-delete audit fields
+    public bool IsDeleted { get; set; } = false;
+    public DateTime? DeletedAt { get; set; }
+
     // Navigation Properties
     public ICollection<Assignment> Assignments { get; set; } = new List<Assignment>();
     public ICollection<IncidentReport> Reports { get; set; } = new List<IncidentReport>();
