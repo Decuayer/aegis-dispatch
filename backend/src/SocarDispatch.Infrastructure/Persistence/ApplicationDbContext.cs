@@ -23,7 +23,6 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<Feedback> Feedbacks => Set<Feedback>();
     public DbSet<FeedbackMedia> FeedbackMedia => Set<FeedbackMedia>();
 
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         // Report the PostGIS extension to EF Core
@@ -32,6 +31,9 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 
         // Automatically apply all IEntityTypeConfiguration classes
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+
+        // Global Query Filter for Soft-Delete (SDDC-45)
+        modelBuilder.Entity<Incident>().HasQueryFilter(i => !i.IsDeleted);
 
         base.OnModelCreating(modelBuilder);
     }

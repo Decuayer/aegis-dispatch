@@ -143,6 +143,8 @@ public class GetIncidentsQueryHandler : IRequestHandler<GetIncidentsQuery, ApiRe
                 Latitude = i.Latitude,
                 Longitude = i.Longitude,
                 CreatedAt = i.CreatedAt,
+                IsDeleted = i.IsDeleted,
+                DeletedAt = i.DeletedAt,
                 AssignedAt = i.Status == IncidentStatus.Open ? null : i.Assignments.OrderBy(a => a.AssignedAt).Select(a => (DateTime?)a.AssignedAt).FirstOrDefault(),
                 CompletedAt = i.Status == IncidentStatus.Open ? null : i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => a.CompletedAt).FirstOrDefault(),
                 AssignedTeamId = i.Status == IncidentStatus.Open ? null : i.Assignments.OrderByDescending(a => a.AssignedAt).Select(a => (Guid?)a.TeamId).FirstOrDefault(),

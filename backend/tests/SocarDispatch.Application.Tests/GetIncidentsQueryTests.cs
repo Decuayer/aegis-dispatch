@@ -486,4 +486,94 @@ public class GetIncidentsQueryTests
         result.Data.Items.First().ReporterId.Should().Be(reporter1.Id);
     }
 
+    [Fact]
+    public async Task Handle_WithSoftDeletedIncidents_ExcludesThemFromResults()
+    {
+        // Arrange
+        using var context = CreateInMemoryDbContext();
+        var reporter = await SeedReporterAsync(context);
+
+        var activeIncident = new Incident
+        {
+            ReporterId = reporter.Id,
+            Category = "Fire",
+            EmergencyCode = "RED-1",
+            Status = IncidentStatus.Open,
+            Location = new Point(49.8671, 40.4093) { SRID = 4326 },
+            IsDeleted = false
+        };
+        var deletedIncident = new Incident
+        {
+            ReporterId = reporter.Id,
+            Category = "Gas",
+            EmergencyCode = "YELLOW-1",
+            Status = IncidentStatus.Open,
+            Location = new Point(49.8671, 40.4093) { SRID = 4326 },
+            IsDeleted = true,
+            DeletedAt = DateTime.UtcNow
+        };
+        context.Incidents.AddRange(activeIncident, deletedIncident);
+        await context.SaveChangesAsync();
+
+        var handler = new GetIncidentsQueryHandler(context);
+        var query = new GetIncidentsQuery();
+
+        // Act
+        var result = await handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Data.TotalCount.Should().Be(1);
+        result.Data.Items.Should().ContainSingle();
+        result.Data.Items.First().Id.Should().Be(activeIncident.Id);
+    }
+
+    [Fact]
+    public void Handle_DefaultPagination_DefaultsToPage1AndSize20()
+    {
+        // Act
+        var query = new GetIncidentsQuery();
+
+        // Assert
+        query.PageNumber.Should().Be(1);
+        query.Page.Should().Be(1);
+        query.PageSize.Should().Be(20);
+    }
+
+    [Fact]
+    public async Task Handle_PaginationEdgeCases_ConstrainsGracefully()
+    {
+        // Arrange
+        using var context = CreateInMemoryDbContext();
+        var reporter = await SeedReporterAsync(context);
+
+        for (int i = 0; i < 25; i++)
+        {
+            context.Incidents.Add(new Incident
+            {
+                ReporterId = reporter.Id,
+                Category = "Fire",
+                EmergencyCode = $"CODE-{i}",
+                Status = IncidentStatus.Open,
+                Location = new Point(49.8671, 40.4093) { SRID = 4326 }
+            });
+        }
+        await context.SaveChangesAsync();
+
+        var handler = new GetIncidentsQueryHandler(context);
+
+        // Negative page number should be constrained to 1
+        var negativePageQuery = new GetIncidentsQuery { PageNumber = -5, PageSize = 10 };
+        var negativeResult = await handler.Handle(negativePageQuery, CancellationToken.None);
+        negativeResult.Data.PageNumber.Should().Be(1);
+        negativeResult.Data.Items.Should().HaveCount(10);
+
+        // PageSize over 100 should be constrained to 100
+        var largePageSizeQuery = new GetIncidentsQuery { PageSize = 500 };
+        var largeResult = await handler.Handle(largePageSizeQuery, CancellationToken.None);
+        largeResult.Data.PageSize.Should().Be(100);
+        largeResult.Data.Items.Should().HaveCount(25);
+    }
+
+
 }

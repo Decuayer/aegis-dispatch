@@ -26,6 +26,13 @@ public class IncidentConfiguration : IEntityTypeConfiguration<Incident>
 
         builder.Property(i => i.CreatedAt).HasDefaultValueSql("NOW()");
 
+        // Soft-delete fields
+        builder.Property(i => i.IsDeleted).HasDefaultValue(false).IsRequired();
+        builder.Property(i => i.DeletedAt).IsRequired(false);
+
+        // B-Tree index for soft-delete filtering performance
+        builder.HasIndex(i => i.IsDeleted).HasDatabaseName("IX_Incidents_IsDeleted");
+
         // Composite index for chronological sorting and status/category filtering
         builder.HasIndex(i => new { i.CreatedAt, i.Status, i.Category })
             .IsDescending(true, false, false)
