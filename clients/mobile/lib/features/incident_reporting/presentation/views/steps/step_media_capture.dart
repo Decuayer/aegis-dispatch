@@ -15,49 +15,132 @@ class StepMediaCapture extends StatelessWidget {
     required this.mediaPickerService,
   });
 
-  Future<void> _handleTakePhoto(BuildContext context) async {
+  void _showErrorMessage(BuildContext context, Object error) {
+    if (!context.mounted) return;
+    final message = error.toString().replaceAll('Exception: ', '');
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.error,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+    Future<void> _handleTakePhoto(BuildContext context) async {
     try {
       final photo = await mediaPickerService.pickImageFromCamera();
-      if (photo != null && context.mounted) {
+      if (!context.mounted) return;
+      if (photo != null) {
         context.read<IncidentReportBloc>().add(MediaFilesAdded([photo]));
       }
     } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
-        );
-      }
+      if (!context.mounted) return;
+      _showErrorMessage(context, e);
     }
   }
 
   Future<void> _handleRecordVideo(BuildContext context) async {
     try {
       final video = await mediaPickerService.recordVideoFromCamera();
-      if (video != null && context.mounted) {
+      if (!context.mounted) return;
+      if (video != null) {
         context.read<IncidentReportBloc>().add(MediaFilesAdded([video]));
       }
     } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
-        );
-      }
+      if (!context.mounted) return;
+      _showErrorMessage(context, e);
     }
   }
 
-  Future<void> _handlePickGallery(BuildContext context) async {
+  Future<void> _handlePickMultipleMedia(BuildContext context) async {
+    try {
+      final media = await mediaPickerService.pickMultipleMedia();
+      if (!context.mounted) return;
+      if (media.isNotEmpty) {
+        context.read<IncidentReportBloc>().add(MediaFilesAdded(media));
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+      _showErrorMessage(context, e);
+    }
+  }
+
+  Future<void> _handlePickVideoFromGallery(BuildContext context) async {
+    try {
+      final video = await mediaPickerService.pickVideoFromGallery();
+      if (!context.mounted) return;
+      if (video != null) {
+        context.read<IncidentReportBloc>().add(MediaFilesAdded([video]));
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+      _showErrorMessage(context, e);
+    }
+  }
+
+  Future<void> _handlePickPhotosFromGallery(BuildContext context) async {
     try {
       final photos = await mediaPickerService.pickImagesFromGallery();
-      if (photos.isNotEmpty && context.mounted) {
+      if (!context.mounted) return;
+      if (photos.isNotEmpty) {
         context.read<IncidentReportBloc>().add(MediaFilesAdded(photos));
       }
     } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
-        );
-      }
+      if (!context.mounted) return;
+      _showErrorMessage(context, e);
     }
+  }
+
+
+  void _showGalleryPickerOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.perm_media_rounded, color: AppColors.primary),
+                  title: const Text('Photos & Videos (Batch)'),
+                  subtitle: const Text('Select multiple photos and videos together'),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _handlePickMultipleMedia(context);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.photo_library_rounded, color: AppColors.primary),
+                  title: const Text('Photos Only'),
+                  subtitle: const Text('Select photos from gallery'),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _handlePickPhotosFromGallery(context);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.video_library_rounded, color: AppColors.primary),
+                  title: const Text('Video Only'),
+                  subtitle: const Text('Select a video file from gallery'),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _handlePickVideoFromGallery(context);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -115,7 +198,7 @@ class StepMediaCapture extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () => _handlePickGallery(context),
+                      onPressed: () => _showGalleryPickerOptions(context),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
@@ -183,7 +266,7 @@ class StepMediaCapture extends StatelessWidget {
                             .read<IncidentReportBloc>()
                             .add(MediaFileRemoved(index));
                       },
-                    ),
+                    ),  
                   ],
                 ),
             ],
