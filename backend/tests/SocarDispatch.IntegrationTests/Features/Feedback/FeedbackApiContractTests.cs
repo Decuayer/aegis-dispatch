@@ -15,17 +15,63 @@ public class FeedbackApiContractTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task GetFeedbacks_EndpointNotYetPublished_ReturnsNotFound()
+    public async Task GetFeedbacks_AsEmployee_ReturnsForbidden()
     {
-        // Arrange
-        var user = await SeedUserAsync("Test", "User", role: RoleType.Employee);
-        var client = Factory.CreateAuthenticatedClient(user);
+        // Arrange: Only Operators are authorized to list all feedbacks
+        var employee = await SeedUserAsync("Employee", "Worker", role: RoleType.Employee);
+        var client = Factory.CreateAuthenticatedClient(employee);
 
         // Act
         var response = await client.GetAsync("/api/v1/feedbacks");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task GetFeedbacks_AsOperator_ReturnsOkAndPagedResult()
+    {
+        // Arrange
+        var @operator = await SeedUserAsync("Central", "Operator", role: RoleType.Operator);
+        var client = Factory.CreateAuthenticatedClient(@operator);
+
+        // Act
+        var response = await client.GetAsync("/api/v1/feedbacks?pageNumber=1&pageSize=10");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task GetMyFeedbacks_AsEmployee_ReturnsOkAndUserFeedbacks()
+    {
+        // Arrange
+        var employee = await SeedUserAsync("Field", "Technician", role: RoleType.Employee);
+        var client = Factory.CreateAuthenticatedClient(employee);
+
+        // Act
+        var response = await client.GetAsync("/api/v1/feedbacks/my");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task CreateFeedback_WithEmptyTitle_ReturnsBadRequest()
+    {
+        // Arrange
+        var employee = await SeedUserAsync("Test", "Reporter", role: RoleType.Employee);
+        var client = Factory.CreateAuthenticatedClient(employee);
+
+        using var content = new MultipartFormDataContent();
+        content.Add(new StringContent(""), "Title");
+        content.Add(new StringContent("Valid description content"), "Description");
+
+        // Act
+        var response = await client.PostAsync("/api/v1/feedbacks", content);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
