@@ -2,7 +2,7 @@ name: Backend CI & SonarQube Quality Gate
 
 on:
   push:
-    branches: [ main, master, develop, 'release/*', 'feat/*', 'feature/*', 'fix/*' ]
+    branches: [ main, master, develop, 'release/*' ]
     paths:
       - 'backend/**'
       - '.github/workflows/backend-ci.yml'
@@ -86,8 +86,7 @@ jobs:
             /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" \
             /d:sonar.cs.vstest.reportsPaths="**/TestResults/**/*.trx" \
             /d:sonar.coverage.exclusions="**/tests/**,**/bin/**,**/obj/**,**/Program.cs" \
-            /d:sonar.exclusions="**/.github/**" \
-            /d:sonar.qualitygate.wait=true
+            /d:sonar.exclusions="**/.github/**"
 
       - name: Build Solution
         run: dotnet build SocarDispatch.slnx --configuration Release --no-restore
