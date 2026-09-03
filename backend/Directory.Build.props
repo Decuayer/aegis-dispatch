@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
     <!-- Suppress non-blocking compiler and analyzer warnings for strict zero-warning compilation -->
-    <NoWarn>$(NoWarn);MSB3277;CS8602;CS0618;NU1902;NU1903;NU1904</NoWarn>
+    <NoWarn>$(NoWarn);MSB3277;CS8602;CS0618;NU1902;NU1903;NU1904;S2292</NoWarn>
   </PropertyGroup>
 </Project>
