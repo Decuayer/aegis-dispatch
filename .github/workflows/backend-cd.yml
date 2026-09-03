@@ -1,0 +1,134 @@
+name: Backend CD & Container Registry Release
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      target_environment:
+        description: 'Target Deployment Environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - staging
+          - production
+
+env:
+  REGISTRY_IMAGE: ${{ secrets.DOCKERHUB_USERNAME || 'decuayer' }}/socar-dispatch-api
+
+jobs:
+  # Stage 1: Verify and bundle database migrations before container release
+  database-migration-guard:
+    name: Prepare Database Migration Bundle
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install dotnet-ef CLI Tool
+        run: dotnet tool install --global dotnet-ef || dotnet tool update --global dotnet-ef
+
+      - name: Generate Idempotent EF Core Migration Bundle
+        run: |
+          dotnet ef migrations bundle \
+            --project src/SocarDispatch.Infrastructure \
+            --startup-project src/SocarDispatch.API \
+            --output efbundle \
+            --self-contained -r linux-x64 \
+            --configuration Release \
+            --force
+
+      - name: Upload Migration Bundle Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ef-migration-bundle
+          path: backend/efbundle
+          retention-days: 7
+
+  # Stage 2: Docker Buildx, Trivy vulnerability scan, and secure registry publish
+  build-scan-and-publish:
+    name: Build Container, Trivy Scan & Publish to Registry
+    needs: database-migration-guard
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract Docker Metadata & Tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY_IMAGE }}
+          flavor: |
+            latest=auto
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=sha,prefix=sha-,format=short
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Build Container Image Locally for Security Scan
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          file: backend/Dockerfile
+          load: true
+          tags: ${{ env.REGISTRY_IMAGE }}:test-scan
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run Trivy Vulnerability Scanner (Container Security)
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          image-ref: ${{ env.REGISTRY_IMAGE }}:test-scan
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Log in to Docker Hub Registry
+        if: ${{ secrets.DOCKERHUB_TOKEN != '' }}
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # (Optional: AWS ECR OIDC Login alternative)
+      # - name: Configure AWS Credentials (OIDC)
+      #   if: ${{ secrets.AWS_ROLE_TO_ASSUME != '' }}
+      #   uses: aws-actions/configure-aws-credentials@v4
+      #   with:
+      #     role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+      #     aws-region: eu-central-1
+      # - name: Log in to Amazon ECR
+      #   uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Publish Production Image to Container Registry
+        if: ${{ secrets.DOCKERHUB_TOKEN != '' }}
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          file: backend/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

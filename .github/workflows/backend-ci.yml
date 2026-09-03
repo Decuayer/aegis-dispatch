@@ -1,21 +1,21 @@
-name: Backend CI
+name: Backend CI & SonarQube Quality Gate
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [ main, master, develop, 'release/*' ]
     paths:
       - 'backend/**'
       - '.github/workflows/backend-ci.yml'
   pull_request:
-    branches: [ main, master, develop ]
+    branches: [ main, master, develop, 'release/*' ]
     paths:
       - 'backend/**'
       - '.github/workflows/backend-ci.yml'
   workflow_dispatch:
 
 jobs:
-  build-and-test:
-    name: Build, Format & Test (.NET 10)
+  build-test-and-sonar:
+    name: Build, Format, Test & SonarQube Scan (.NET 10)
     runs-on: ubuntu-latest
 
     defaults:
@@ -23,8 +23,16 @@ jobs:
         working-directory: backend
 
     steps:
-      - name: Checkout Code
+      - name: Checkout Repository (Full History for SAST)
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java 17 (SonarScanner Prerequisite)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
 
       - name: Setup .NET 10 SDK
         uses: actions/setup-dotnet@v4
@@ -39,14 +47,64 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Restore Dependencies
+      - name: Cache SonarQube Packages & Scanner
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: Install SonarScanner Global Tool
+        run: dotnet tool install --global dotnet-sonarscanner || dotnet tool update --global dotnet-sonarscanner
+
+      - name: Restore Solution Dependencies
         run: dotnet restore SocarDispatch.slnx
 
       - name: Verify Code Formatting
         run: dotnet format --verify-no-changes --verbosity normal
 
-      - name: Build Solution (Release)
-        run: dotnet build SocarDispatch.slnx --configuration Release --no-restore
+      - name: Begin SonarQube Analysis
+        if: ${{ secrets.SONAR_TOKEN != '' }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL || 'https://sonarcloud.io' }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          dotnet sonarscanner begin \
+            /k:"socar-dispatch-backend" \
+            /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
+            /d:sonar.host.url="${{ env.SONAR_HOST_URL }}" \
+            /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" \
+            /d:sonar.cs.vstest.reportsPaths="**/TestResults/**/*.trx" \
+            /d:sonar.coverage.exclusions="**/tests/**,**/bin/**,**/obj/**,**/Program.cs" \
+            /d:sonar.qualitygate.wait=true
 
-      - name: Run Automated Test Suite
-        run: dotnet test SocarDispatch.slnx --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=backend-test-results.trx"
+      - name: Build Solution (Strict Zero Warnings)
+        run: dotnet build SocarDispatch.slnx --configuration Release --warnaserror --no-restore
+
+      - name: Run Automated Test Suite with Code Coverage
+        run: |
+          dotnet test SocarDispatch.slnx \
+            --configuration Release \
+            --no-build \
+            --verbosity normal \
+            --logger "trx;LogFileName=backend-test-results.trx" \
+            --collect:"XPlat Code Coverage;Format=opencover,cobertura" \
+            --results-directory ./TestResults
+
+      - name: End SonarQube Analysis & Quality Gate Check
+        if: ${{ secrets.SONAR_TOKEN != '' }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+
+      - name: Upload Test Results & Code Coverage Artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-test-and-coverage-reports
+          path: |
+            backend/TestResults/**/*.trx
+            backend/TestResults/**/coverage.cobertura.xml
+            backend/TestResults/**/coverage.opencover.xml
+          retention-days: 14
