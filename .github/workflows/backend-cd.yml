@@ -1,0 +1,135 @@
+name: Backend CD & Container Registry Release
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      target_environment:
+        description: 'Target Deployment Environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  # Stage 1: Verify and bundle database migrations before container release
+  database-migration-guard:
+    name: Prepare Database Migration Bundle
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@39504282830ea95861f654844f6f39dd60a8722f # v4.1.0
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install dotnet-ef CLI Tool
+        run: dotnet tool install --global dotnet-ef || dotnet tool update --global dotnet-ef
+
+      - name: Generate Idempotent EF Core Migration Bundle
+        run: |
+          dotnet ef migrations bundle \
+            --project src/SocarDispatch.Infrastructure \
+            --startup-project src/SocarDispatch.API \
+            --output efbundle \
+            --self-contained -r linux-x64 \
+            --configuration Release \
+            --force
+
+      - name: Upload Migration Bundle Artifact
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name: ef-migration-bundle
+          path: backend/efbundle
+          retention-days: 7
+
+  # Stage 2: Docker Buildx, Trivy vulnerability scan, and secure registry publish
+  build-scan-and-publish:
+    name: Build Container, Trivy Scan & Publish to Registry
+    needs: database-migration-guard
+    runs-on: ubuntu-latest
+    env:
+      REGISTRY_IMAGE: ${{ secrets.DOCKERHUB_USERNAME || 'decuayer' }}/socar-dispatch-api
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@c47758b77c9736f4b2ef4073d4d51994fabfe349 # v3.7.1
+
+      - name: Extract Docker Metadata & Tags
+        id: meta
+        uses: docker/metadata-action@8e5442c4ef9f78752691e2d8f8d19755c6f78e81 # v5.5.1
+        with:
+          images: ${{ env.REGISTRY_IMAGE }}
+          flavor: |
+            latest=auto
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=sha,prefix=sha-,format=short
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Build Container Image Locally for Security Scan
+        uses: docker/build-push-action@4f58ea79222b3b9dc2c8bbdd6debcef730109a75 # v6.9.0
+        with:
+          context: backend
+          file: backend/Dockerfile
+          load: true
+          tags: ${{ env.REGISTRY_IMAGE }}:test-scan
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run Trivy Vulnerability Scanner (Container Security)
+        uses: aquasecurity/trivy-action@18f2510ee396bbf400402947b394f2dd8c87dbb0 # 0.29.0
+        with:
+          image-ref: ${{ env.REGISTRY_IMAGE }}:test-scan
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Log in to Docker Hub Registry
+        if: env.DOCKERHUB_TOKEN != ''
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+        with:
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ env.DOCKERHUB_TOKEN }}
+
+      # (Optional: AWS ECR OIDC Login alternative)
+      # - name: Configure AWS Credentials (OIDC)
+      #   if: ${{ secrets.AWS_ROLE_TO_ASSUME != '' }}
+      #   uses: aws-actions/configure-aws-credentials@v4
+      #   with:
+      #     role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+      #     aws-region: eu-central-1
+      # - name: Log in to Amazon ECR
+      #   uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Publish Production Image to Container Registry
+        if: env.DOCKERHUB_TOKEN != ''
+        uses: docker/build-push-action@4f58ea79222b3b9dc2c8bbdd6debcef730109a75 # v6.9.0
+        with:
+          context: backend
+          file: backend/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

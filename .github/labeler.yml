@@ -1,0 +1,29 @@
+backend:
+  - changed-files:
+      - any-glob-to-any-file: 'backend/**'
+
+mobile:
+  - changed-files:
+      - any-glob-to-any-file: 'clients/mobile/**'
+
+web:
+  - changed-files:
+      - any-glob-to-any-file: 'clients/web/**'
+
+infra:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'docker/**'
+          - 'load-testing/**'
+          - 'Makefile'
+          - 'docker-compose*.yml'
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file: '.github/**'
+
+docs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'docs/**'
+          - '*.md'
