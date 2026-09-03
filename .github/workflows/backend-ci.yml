@@ -2,7 +2,7 @@ name: Backend CI & SonarQube Quality Gate
 
 on:
   push:
-    branches: [ main, master, develop, 'release/*' ]
+    branches: [ main, master, develop, 'release/*', 'feat/*', 'feature/*', 'fix/*' ]
     paths:
       - 'backend/**'
       - '.github/workflows/backend-ci.yml'
@@ -73,7 +73,7 @@ jobs:
           dotnet sonarscanner begin \
             /k:"socar-dispatch-backend" \
             /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
-            /d:sonar.host.url="${{ env.SONAR_HOST_URL }}" \
+            /d:sonar.host.url="$SONAR_HOST_URL" \
             /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" \
             /d:sonar.cs.vstest.reportsPaths="**/TestResults/**/*.trx" \
             /d:sonar.coverage.exclusions="**/tests/**,**/bin/**,**/obj/**,**/Program.cs" \

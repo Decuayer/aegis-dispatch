@@ -17,9 +17,6 @@ on:
           - staging
           - production
 
-env:
-  REGISTRY_IMAGE: ${{ secrets.DOCKERHUB_USERNAME || 'decuayer' }}/socar-dispatch-api
-
 jobs:
   # Stage 1: Verify and bundle database migrations before container release
   database-migration-guard:
@@ -63,6 +60,8 @@ jobs:
     name: Build Container, Trivy Scan & Publish to Registry
     needs: database-migration-guard
     runs-on: ubuntu-latest
+    env:
+      REGISTRY_IMAGE: ${{ secrets.DOCKERHUB_USERNAME || 'decuayer' }}/socar-dispatch-api
 
     steps:
       - name: Checkout Repository
