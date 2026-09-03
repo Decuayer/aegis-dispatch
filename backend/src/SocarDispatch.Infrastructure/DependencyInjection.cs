@@ -17,8 +17,8 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("DefaultConnection")
-            ?? configuration["DB_CONNECTION_STRING"]
+        var connectionString = configuration["DB_CONNECTION_STRING"]
+            ?? configuration.GetConnectionString("DefaultConnection")
             ?? Environment.GetEnvironmentVariable("DB_CONNECTION_STRING");
 
         services.AddDbContext<ApplicationDbContext>(options =>

@@ -33,7 +33,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, ApiResponse<Aut
 
         if (user == null)
         {
-            throw new DomainException("E-posta adresi veya şifre hatalı.");
+            throw new DomainException("Incorrect email address or password.");
         }
 
         // 2. Verifying the password with BCrypt
@@ -41,7 +41,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, ApiResponse<Aut
 
         if (!isPasswordValid)
         {
-            throw new DomainException("E-posta adresi veya şifre hatalı.");
+            throw new DomainException("Incorrect email address or password.");
         }
 
         // 3. JWT generation and DTO mapping
