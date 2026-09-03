@@ -140,5 +140,19 @@ public class UserService : IUserService
             return ApiResponse<UserDto>.FailureResult($"Failed to update user role: {ex.Message}");
         }
     }
+
+    public async Task<ApiResponse<bool>?> DeleteUserAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await _http.DeleteAsync($"api/v1/users/{userId}", cancellationToken);
+            var result = await response.Content.ReadFromJsonAsync<ApiResponse<bool>>(cancellationToken: cancellationToken);
+            return result ?? ApiResponse<bool>.FailureResult("Failed to delete user.");
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<bool>.FailureResult($"Failed to delete user: {ex.Message}");
+        }
+    }
 }
 

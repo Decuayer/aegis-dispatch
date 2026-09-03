@@ -5,6 +5,7 @@ import '../../../../core/utils/validators.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
+import 'register_view.dart';
 import 'widgets/custom_text_field.dart';
 import 'widgets/social_login_button.dart';
 
@@ -212,6 +213,38 @@ class _LoginViewState extends State<LoginView> {
                                   ),
                                 );
                               },
+                            ),
+                            const SizedBox(height: 18),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Text(
+                                  "Don't have an account? ",
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: isLoading
+                                      ? null
+                                      : () {
+                                          Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                              builder: (_) => const RegisterView(),
+                                            ),
+                                          );
+                                        },
+                                  child: const Text(
+                                    'Register as Employee',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),

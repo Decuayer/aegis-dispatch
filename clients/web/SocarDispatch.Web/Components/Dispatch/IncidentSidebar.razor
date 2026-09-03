@@ -409,7 +409,7 @@
         display: flex;
         align-items: center;
         gap: 8px;
-        color: #38bdf8;
+        color: var(--color-accent);
         font-size: 1.05rem;
         font-weight: 700;
     }
@@ -427,9 +427,9 @@
     }
 
     .badge-count-pill {
-        background: #1e293b;
-        border: 1px solid #334155;
-        color: #38bdf8;
+        background: var(--color-surface-3);
+        border: 1px solid var(--color-border);
+        color: var(--color-accent);
         font-size: 0.75rem;
         font-weight: 700;
         padding: 2px 8px;
@@ -443,13 +443,15 @@
     }
 
     .report-timeline-card {
-        background: #182234;
-        border: 1px solid #233149;
+        background: var(--color-surface-2);
+        border: 1px solid var(--color-border);
+        border-left: 3px solid var(--color-accent);
         border-radius: 8px;
         padding: 10px 12px;
         display: flex;
         flex-direction: column;
         gap: 6px;
+        transition: background-color 0.2s ease, border-color 0.2s ease;
     }
 
     .report-timeline-header {
@@ -462,25 +464,26 @@
         display: flex;
         align-items: center;
         gap: 6px;
-        color: #f8fafc;
+        color: var(--color-text-primary);
         font-size: 0.82rem;
     }
 
     .report-time {
         font-size: 0.72rem;
-        color: #94a3b8;
+        color: var(--color-text-muted);
     }
 
     .report-author {
         font-size: 0.75rem;
-        color: #94a3b8;
+        color: var(--color-text-secondary);
+        font-weight: 500;
     }
 
     .report-text-content {
         margin: 0;
         font-size: 0.85rem;
-        color: #cbd5e1;
-        line-height: 1.4;
+        color: var(--color-text-primary);
+        line-height: 1.45;
     }
 
     .report-media-wrap {
@@ -492,7 +495,7 @@
         max-height: 120px;
         border-radius: 6px;
         object-fit: cover;
-        border: 1px solid #334155;
+        border: 1px solid var(--color-border);
     }
 
     .empty-reports-box {
@@ -500,10 +503,13 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding: 20px 12px;
-        color: #64748b;
+        padding: 24px 16px;
+        background: var(--color-surface-2);
+        border: 1px dashed var(--color-border);
+        border-radius: 8px;
+        color: var(--color-text-muted);
         font-size: 0.82rem;
-        gap: 6px;
+        gap: 8px;
         text-align: center;
     }
 
@@ -798,35 +804,6 @@
     }
 
     .notes-content {
-        margin: 0;
-        font-size: 0.8rem;
-        color: var(--color-text-primary);
-    }
-
-    .field-reports-timeline {
-        margin-top: 0.75rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    .report-item {
-        background: var(--color-surface-3);
-        border: 1px solid var(--color-border);
-        padding: 0.5rem 0.7rem;
-        border-radius: 6px;
-        border-left: 2px solid var(--color-accent);
-    }
-
-    .report-meta {
-        display: flex;
-        justify-content: space-between;
-        font-size: 0.75rem;
-        color: var(--color-text-muted);
-        margin-bottom: 0.2rem;
-    }
-
-    .report-text {
         margin: 0;
         font-size: 0.8rem;
         color: var(--color-text-primary);
