@@ -1,0 +1,95 @@
+{
+  "family": "socar-dispatch-api",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "1024",
+  "memory": "2048",
+  "executionRoleArn": "arn:aws:iam::123456789012:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::123456789012:role/socarDispatchTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "socar-dispatch-api",
+      "image": "decuayer/socar-dispatch-api:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "hostPort": 8080,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "ASPNETCORE_ENVIRONMENT",
+          "value": "Production"
+        },
+        {
+          "name": "ASPNETCORE_URLS",
+          "value": "http://+:8080"
+        },
+        {
+          "name": "MINIO_DEFAULT_BUCKET",
+          "value": "socar-dispatch-media"
+        },
+        {
+          "name": "MINIO_FEEDBACK_BUCKET",
+          "value": "socar-dispatch-feedbacks"
+        },
+        {
+          "name": "JWT_ISSUER",
+          "value": "socar-dispatch-api"
+        },
+        {
+          "name": "JWT_AUDIENCE",
+          "value": "socar-dispatch-clients"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "DB_CONNECTION_STRING",
+          "valueFrom": "arn:aws:ssm:eu-central-1:123456789012:parameter/socar-dispatch/prod/db-connection-string"
+        },
+        {
+          "name": "REDIS_CONNECTION_STRING",
+          "valueFrom": "arn:aws:ssm:eu-central-1:123456789012:parameter/socar-dispatch/prod/redis-connection-string"
+        },
+        {
+          "name": "JWT_SECRET_KEY",
+          "valueFrom": "arn:aws:ssm:eu-central-1:123456789012:parameter/socar-dispatch/prod/jwt-secret-key"
+        },
+        {
+          "name": "MINIO_ENDPOINT",
+          "valueFrom": "arn:aws:ssm:eu-central-1:123456789012:parameter/socar-dispatch/prod/minio-endpoint"
+        },
+        {
+          "name": "MINIO_ROOT_USER",
+          "valueFrom": "arn:aws:ssm:eu-central-1:123456789012:parameter/socar-dispatch/prod/minio-root-user"
+        },
+        {
+          "name": "MINIO_ROOT_PASSWORD",
+          "valueFrom": "arn:aws:ssm:eu-central-1:123456789012:parameter/socar-dispatch/prod/minio-root-password"
+        }
+      ],
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "curl -f http://localhost:8080/healthz || exit 1"
+        ],
+        "interval": 15,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 30
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/socar-dispatch-api",
+          "awslogs-region": "eu-central-1",
+          "awslogs-stream-prefix": "api"
+        }
+      }
+    }
+  ]
+}

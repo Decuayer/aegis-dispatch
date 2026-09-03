@@ -1,0 +1,14 @@
+aws_region          = "eu-central-1"
+environment         = "production"
+project_name        = "socar-dispatch"
+vpc_cidr            = "10.0.0.0/16"
+availability_zones  = ["eu-central-1a", "eu-central-1b"]
+container_image     = "decuayer/socar-dispatch-api:latest"
+container_port      = 8080
+acm_certificate_arn = "arn:aws:acm:eu-central-1:123456789012:certificate/abcdef01-2345-6789-abcd-ef0123456789"
+db_instance_class   = "db.t4g.medium"
+db_allocated_storage = 50
+db_name             = "socar_dispatch"
+db_username         = "socar_admin"
+db_password         = "ChangeThisSecurePassword2026!"
+redis_node_type     = "cache.t4g.medium"

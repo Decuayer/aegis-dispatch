@@ -1,0 +1,36 @@
+{
+  "serviceName": "socar-dispatch-api-service",
+  "cluster": "socar-dispatch-cluster",
+  "taskDefinition": "socar-dispatch-api",
+  "desiredCount": 2,
+  "launchType": "FARGATE",
+  "platformVersion": "LATEST",
+  "healthCheckGracePeriodSeconds": 60,
+  "deploymentConfiguration": {
+    "maximumPercent": 200,
+    "minimumHealthyPercent": 100,
+    "deploymentCircuitBreaker": {
+      "enable": true,
+      "rollback": true
+    }
+  },
+  "networkConfiguration": {
+    "awsvpcConfiguration": {
+      "subnets": [
+        "subnet-0123456789abcdef0",
+        "subnet-0123456789abcdef1"
+      ],
+      "securityGroups": [
+        "sg-0123456789abcdef0"
+      ],
+      "assignPublicIp": "DISABLED"
+    }
+  },
+  "loadBalancers": [
+    {
+      "targetGroupArn": "arn:aws:elasticloadbalancing:eu-central-1:123456789012:targetgroup/socar-dispatch-api-tg/abcdef0123456789",
+      "containerName": "socar-dispatch-api",
+      "containerPort": 8080
+    }
+  ]
+}
