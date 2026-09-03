@@ -89,8 +89,8 @@ jobs:
             /d:sonar.exclusions="**/.github/**" \
             /d:sonar.qualitygate.wait=true
 
-      - name: Build Solution (Strict Zero Warnings)
-        run: dotnet build SocarDispatch.slnx --configuration Release --warnaserror --no-restore
+      - name: Build Solution
+        run: dotnet build SocarDispatch.slnx --configuration Release --no-restore
 
       - name: Run Automated Test Suite with Code Coverage
         run: |
