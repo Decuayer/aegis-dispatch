@@ -5,10 +5,10 @@ FROM mcr.microsoft.com/dotnet/aspnet:${DOTNET_VERSION}-alpine AS base
 
 RUN apk update && apk upgrade --no-cache && \
     apk add --no-cache \
-    icu-libs \
-    tzdata \
+    ca-certificates \
     curl \
-    ca-certificates
+    icu-libs \
+    tzdata
 
 ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false \
     ASPNETCORE_URLS=http://+:8080
