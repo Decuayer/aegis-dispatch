@@ -76,7 +76,7 @@ jobs:
           TARGET_URL="${SONAR_HOST_URL:-https://sonarcloud.io}"
           ORG_PARAM=""
           if [[ "$TARGET_URL" == *"sonarcloud.io"* || -n "$SONAR_ORGANIZATION" ]]; then
-            ORG_PARAM="/o:\"${SONAR_ORGANIZATION:-decuayer}\""
+            ORG_PARAM="/o:${SONAR_ORGANIZATION:-decuayer}"
           fi
           dotnet sonarscanner begin \
             /k:"${SONAR_PROJECT_KEY:-socar-dispatch-backend}" \
