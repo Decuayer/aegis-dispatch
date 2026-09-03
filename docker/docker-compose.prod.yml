@@ -1,18 +1,25 @@
-version: '3.8'
+networks:
+  socar_dispatch_net:
+    driver: bridge
+
+volumes:
+  socar_dispatch_pgdata_prod:
+  socar_dispatch_redisdata_prod:
+  socar_dispatch_miniodata_prod:
 
 services:
   postgres:
-    image: postgis/postgis:16-3.4
+    image: postgis/postgis:16-3.4-alpine
     container_name: socar_dispatch_db_prod
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-socar_dispatch_prod}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Required production database password}
     volumes:
-      - pgdata_prod:/var/lib/postgresql/data
-      - ./init-db:/docker-entrypoint-initdb.d:ro
+      - socar_dispatch_pgdata_prod:/var/lib/postgresql/data
+      - ./init-scripts/01-init-postgis.sh:/docker-entrypoint-initdb.d/01-init-postgis.sh:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-socar_dispatch_prod}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-socar_dispatch_prod}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -22,19 +29,23 @@ services:
         limits:
           cpus: '2.0'
           memory: 4G
+    networks:
+      - socar_dispatch_net
 
   redis:
     image: redis:7-alpine
     container_name: socar_dispatch_redis_prod
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redispassword}
     volumes:
-      - redisdata_prod:/data
+      - socar_dispatch_redisdata_prod:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
     restart: always
+    networks:
+      - socar_dispatch_net
 
   minio:
     image: minio/minio:latest
@@ -44,32 +55,68 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Required production storage access key}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Required production storage secret key}
     volumes:
-      - miniodata_prod:/data
+      - socar_dispatch_miniodata_prod:/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
       interval: 15s
       timeout: 5s
       retries: 3
     restart: always
+    networks:
+      - socar_dispatch_net
 
   createbuckets:
     image: minio/mc:latest
     container_name: socar_dispatch_minio_init_prod
     depends_on:
-      - minio
-    entrypoint: >
-      /bin/sh -c "
-      sleep 5;
-      /usr/bin/mc alias set prodminio http://minio:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD};
-      /usr/bin/mc mb --ignore-existing prodminio/$${MINIO_DEFAULT_BUCKET:-socar-dispatch-media};
-      /usr/bin/mc anonymous set download prodminio/$${MINIO_DEFAULT_BUCKET:-socar-dispatch-media};
-      /usr/bin/mc mb --ignore-existing prodminio/socar-dispatch-feedbacks;
-      /usr/bin/mc anonymous set download prodminio/socar-dispatch-feedbacks;
-      exit 0;
-      "
+      minio:
+        condition: service_healthy
+    volumes:
+      - ./init-scripts/02-init-minio-buckets.sh:/scripts/02-init-minio-buckets.sh:ro
+    entrypoint: [ "/bin/sh", "/scripts/02-init-minio-buckets.sh" ]
     restart: "no"
+    networks:
+      - socar_dispatch_net
 
-volumes:
-  pgdata_prod:
-  redisdata_prod:
-  miniodata_prod:
+  api:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: socar_dispatch_api_prod
+    ports:
+      - "${API_PORT:-8080}:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - DB_CONNECTION_STRING=Host=postgres;Port=5432;Database=${POSTGRES_DB:-socar_dispatch_prod};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}
+      - REDIS_CONNECTION_STRING=redis:6379
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MINIO_DEFAULT_BUCKET=${MINIO_DEFAULT_BUCKET:-socar-dispatch-media}
+      - MINIO_FEEDBACK_BUCKET=${MINIO_FEEDBACK_BUCKET:-socar-dispatch-feedbacks}
+      - MINIO_PUBLIC_ENDPOINT=${MINIO_PUBLIC_ENDPOINT}
+      - JWT_SECRET_KEY=${JWT_SECRET}
+      - JWT_ISSUER=${JWT_ISSUER:-socar-dispatch-api}
+      - JWT_AUDIENCE=${JWT_AUDIENCE:-socar-dispatch-clients}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8080/healthz || exit 1" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+    networks:
+      - socar_dispatch_net

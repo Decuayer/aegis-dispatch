@@ -87,6 +87,7 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddHealthChecks();
 
 // 2. Swagger & Bearer Auth Configuration (Filter-based)
 builder.Services.AddSwaggerGen(options =>
@@ -198,6 +199,7 @@ app.MapHub<IncidentsHub>("/hubs/incidents");
 app.MapHub<LocationHub>("/hubs/location");
 
 app.MapControllers();
+app.MapHealthChecks("/healthz");
 
 app.Run();
 

@@ -1,4 +1,4 @@
-.PHONY: help up down restart logs status build test test-load lint format migrate run-api run-web run-mobile clean
+.PHONY: help up down restart logs status infra-only build test test-load lint format migrate run-api run-web run-mobile clean
 
 # Default Target
 .DEFAULT_GOAL := help
@@ -12,15 +12,18 @@ help: ## Display this help message
 # -----------------------------------------------------------------------------
 # 🐳 Infrastructure & Containers
 # -----------------------------------------------------------------------------
-up: ## Start PostgreSQL/PostGIS, Redis, and MinIO containers in background
-	docker compose up -d
+up: ## Start full stack (API, PostgreSQL, Redis, MinIO) with build
+	docker compose up --build -d
 
-down: ## Stop and remove infrastructure containers
+down: ## Stop and remove all containers
 	docker compose down
 
-restart: down up ## Restart all infrastructure containers
+restart: down up ## Restart all containers with fresh build
 
-logs: ## Follow logs from all infrastructure containers
+infra-only: ## Start backing services only (PostgreSQL, Redis, MinIO) without API
+	docker compose up -d postgres redis minio createbuckets
+
+logs: ## Follow logs from all containers
 	docker compose logs -f
 
 status: ## Show container health and port status
