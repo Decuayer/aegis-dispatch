@@ -3,7 +3,8 @@ ARG DOTNET_VERSION=10.0
 # Stage 1: Runtime base with security hardening
 FROM mcr.microsoft.com/dotnet/aspnet:${DOTNET_VERSION}-alpine AS base
 
-RUN apk add --no-cache \
+RUN apk update && apk upgrade --no-cache && \
+    apk add --no-cache \
     icu-libs \
     tzdata \
     curl \
