@@ -173,24 +173,36 @@ using (var scope = app.Services.CreateScope())
         logger.LogWarning(ex, "Object storage initialization encountered an issue. Startup will continue.");
     }
 
-    // 4. Default Seed Data
-    if (!await context.Teams.AnyAsync())
+    // 4. Default Operator Seed Data (ensure operator@socar.az exists on startup)
+    const string defaultOperatorEmail = "operator@socar.az";
+    var existingOperator = await context.Users.FirstOrDefaultAsync(u => u.Email == defaultOperatorEmail);
+    var passwordHasher = services.GetRequiredService<SocarDispatch.Application.Common.Interfaces.IPasswordHasher>();
+
+    if (existingOperator == null)
     {
-        context.Teams.AddRange(
-            new SocarDispatch.Domain.Entities.Team
-            {
-                Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
-                TeamName = "A Blok İSG ve İtfaiye Ekibi",
-                Status = SocarDispatch.Domain.Enums.TeamStatus.Idle
-            },
-            new SocarDispatch.Domain.Entities.Team
-            {
-                Id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
-                TeamName = "B Blok Kurtarma ve İlk Yardım Ekibi",
-                Status = SocarDispatch.Domain.Enums.TeamStatus.Idle
-            }
-        );
+        var defaultOperator = new SocarDispatch.Domain.Entities.User
+        {
+            Id = Guid.NewGuid(),
+            FirstName = "SOCAR",
+            LastName = "Operator",
+            Email = defaultOperatorEmail,
+            Phone = "+994501234567",
+            PasswordHash = passwordHasher.HashPassword("Operator123!"),
+            Department = "Dispatch & Emergency Operations",
+            RoleType = SocarDispatch.Domain.Enums.RoleType.Operator,
+            SubRole = "Head Dispatcher",
+            CreatedAt = DateTime.UtcNow
+        };
+
+        context.Users.Add(defaultOperator);
         await context.SaveChangesAsync();
+        logger.LogInformation("Default operator account successfully created ({Email}).", defaultOperator.Email);
+    }
+    else if (existingOperator.RoleType != SocarDispatch.Domain.Enums.RoleType.Operator)
+    {
+        existingOperator.RoleType = SocarDispatch.Domain.Enums.RoleType.Operator;
+        await context.SaveChangesAsync();
+        logger.LogInformation("Updated operator role for account ({Email}).", existingOperator.Email);
     }
 }
 

@@ -38,12 +38,24 @@ public partial class Users : ComponentBase, IDisposable
     private UserDto? _selectedUserForEdit;
     private UpdateUserRoleRequestDto _editRoleModel = new();
 
+    // Delete User Modal State
+    private Guid? _currentUserId;
+    private bool _isDeleteModalOpen = false;
+    private UserDto? _selectedUserForDelete;
+    private bool _isDeletingUser = false;
+
     private bool HasActiveFilters => !string.IsNullOrWhiteSpace(_searchQuery) ||
                                      !string.IsNullOrWhiteSpace(_selectedRoleFilter) ||
                                      !string.IsNullOrWhiteSpace(_selectedDeptFilter);
 
     protected override async Task OnInitializedAsync()
     {
+        var me = await UserService.GetCurrentUserAsync();
+        if (me?.Success == true && me.Data != null)
+        {
+            _currentUserId = me.Data.Id;
+        }
+
         await LoadUsersAsync();
         await LoadUserStatsAsync();
     }
@@ -277,6 +289,49 @@ public partial class Users : ComponentBase, IDisposable
         finally
         {
             _isSavingRole = false;
+        }
+    }
+
+    public void OpenDeleteModal(UserDto user)
+    {
+        _selectedUserForDelete = user;
+        _isDeleteModalOpen = true;
+    }
+
+    public void CloseDeleteModal()
+    {
+        _selectedUserForDelete = null;
+        _isDeleteModalOpen = false;
+        _isDeletingUser = false;
+    }
+
+    public async Task ConfirmDeleteUserAsync()
+    {
+        if (_selectedUserForDelete == null) return;
+        _isDeletingUser = true;
+
+        try
+        {
+            var response = await UserService.DeleteUserAsync(_selectedUserForDelete.Id);
+            if (response?.Success == true)
+            {
+                ToastService.Show("User Deleted", $"User {_selectedUserForDelete.FirstName} {_selectedUserForDelete.LastName} was successfully deleted.", ToastLevel.Success);
+                CloseDeleteModal();
+                await LoadUsersAsync();
+                await LoadUserStatsAsync();
+            }
+            else
+            {
+                ToastService.Show("Delete Failed", response?.Message ?? "Could not delete user account.", ToastLevel.Danger);
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.Show("Error", ex.Message, ToastLevel.Danger);
+        }
+        finally
+        {
+            _isDeletingUser = false;
         }
     }
 

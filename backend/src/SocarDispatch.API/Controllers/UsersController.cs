@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SocarDispatch.Application.Common.Models;
 using SocarDispatch.Application.Features.Auth.DTOs;
+using SocarDispatch.Application.Features.Users.Commands.DeleteUser;
 using SocarDispatch.Application.Features.Users.Commands.UpdateDeviceToken;
 using SocarDispatch.Application.Features.Users.Commands.UpdateUserProfile;
 using SocarDispatch.Application.Features.Users.Commands.UpdateUserRole;
@@ -108,6 +109,18 @@ public class UsersController : ControllerBase
             operatorId
         );
 
+        var result = await _sender.Send(command);
+        return Ok(result);
+    }
+
+    // DELETE /api/v1/users/{id}
+    // Deletes a user account (Operator only).
+    [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "Operator")]
+    public async Task<ActionResult<ApiResponse<bool>>> DeleteUser([FromRoute] Guid id)
+    {
+        var operatorId = GetCurrentUserId();
+        var command = new DeleteUserCommand(id, operatorId);
         var result = await _sender.Send(command);
         return Ok(result);
     }

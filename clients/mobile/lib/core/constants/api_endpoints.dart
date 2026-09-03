@@ -6,12 +6,12 @@ class ApiEndpoints {
 
   static String get baseUrl {
     if (kIsWeb) {
-      return 'http://localhost:5233';
+      return 'http://localhost:8080';
     }
     if (Platform.isAndroid) {
-      return 'http://10.0.2.2:5233';
+      return 'http://10.0.2.2:8080';
     }
-    return 'http://localhost:5233';
+    return 'http://localhost:8080';
   }
 
   // Auth endpoints

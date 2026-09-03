@@ -1,3 +1,4 @@
+import '../../data/models/register_request_model.dart';
 import '../../../profile/data/models/user_model.dart';
 
 abstract class AuthEvent {
@@ -16,6 +17,12 @@ class AuthLoginRequested extends AuthEvent {
     required this.email,
     required this.password,
   });
+}
+
+class AuthRegisterRequested extends AuthEvent {
+  final RegisterRequestModel request;
+
+  const AuthRegisterRequested(this.request);
 }
 
 class AuthGoogleLoginRequested extends AuthEvent {

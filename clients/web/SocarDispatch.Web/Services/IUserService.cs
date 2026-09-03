@@ -30,4 +30,5 @@ public interface IUserService
     Task<ApiResponse<UserDto>?> GetCurrentUserAsync(CancellationToken cancellationToken = default);
     Task<ApiResponse<UserDto>?> UpdateCurrentUserProfileAsync(UpdateUserProfileRequestDto request, CancellationToken cancellationToken = default);
     Task<ApiResponse<UserDto>?> UpdateUserRoleAsync(Guid userId, UpdateUserRoleRequestDto request, CancellationToken cancellationToken = default);
+    Task<ApiResponse<bool>?> DeleteUserAsync(Guid userId, CancellationToken cancellationToken = default);
 }
