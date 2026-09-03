@@ -38,6 +38,9 @@ jobs:
       - name: Install dotnet-ef CLI Tool
         run: dotnet tool install --global dotnet-ef || dotnet tool update --global dotnet-ef
 
+      - name: Restore Solution Dependencies
+        run: dotnet restore SocarDispatch.slnx
+
       - name: Generate Idempotent EF Core Migration Bundle
         run: |
           dotnet ef migrations bundle \
