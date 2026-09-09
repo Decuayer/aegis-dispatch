@@ -57,7 +57,9 @@ class _RegisterViewState extends State<RegisterView> {
       if (_passwordController.text != _confirmPasswordController.text) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Passwords do not match / Şifreler eşleşmiyor.'),
+            content: const Text(
+              'Passwords do not match / Şifreler eşleşmiyor.',
+            ),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -88,17 +90,22 @@ class _RegisterViewState extends State<RegisterView> {
       if (idToken == null) return;
       if (!mounted) return;
       context.read<AuthBloc>().add(
-            AuthGoogleRegisterRequested(
-              idToken: idToken,
-              phone: _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null,
-              department: _selectedDepartment,
-            ),
-          );
+        AuthGoogleRegisterRequested(
+          idToken: idToken,
+          phone:
+              _phoneController.text.trim().isNotEmpty
+                  ? _phoneController.text.trim()
+                  : null,
+          department: _selectedDepartment,
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Google Sign-Up failed: ${e.toString().replaceAll('Exception: ', '')}'),
+          content: Text(
+            'Google Sign-Up failed: ${e.toString().replaceAll('Exception: ', '')}',
+          ),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
         ),
@@ -114,7 +121,10 @@ class _RegisterViewState extends State<RegisterView> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.primaryDark),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: AppColors.primaryDark,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -142,7 +152,10 @@ class _RegisterViewState extends State<RegisterView> {
 
             return Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 8,
+                ),
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -215,15 +228,28 @@ class _RegisterViewState extends State<RegisterView> {
                           children: [
                             // Role Pill
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
                               decoration: BoxDecoration(
-                                color: AppColors.primary.withValues(alpha: 0.08),
+                                color: AppColors.primary.withValues(
+                                  alpha: 0.08,
+                                ),
                                 borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
+                                border: Border.all(
+                                  color: AppColors.primary.withValues(
+                                    alpha: 0.25,
+                                  ),
+                                ),
                               ),
                               child: Row(
                                 children: const [
-                                  Icon(Icons.badge_outlined, size: 18, color: AppColors.primary),
+                                  Icon(
+                                    Icons.badge_outlined,
+                                    size: 18,
+                                    color: AppColors.primary,
+                                  ),
                                   SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
@@ -249,7 +275,11 @@ class _RegisterViewState extends State<RegisterView> {
                                     labelText: 'First Name',
                                     hintText: 'Ali',
                                     prefixIcon: Icons.person_outline_rounded,
-                                    validator: (v) => Validators.validateRequired(v, 'First Name'),
+                                    validator:
+                                        (v) => Validators.validateRequired(
+                                          v,
+                                          'First Name',
+                                        ),
                                     enabled: !isLoading,
                                   ),
                                 ),
@@ -260,7 +290,11 @@ class _RegisterViewState extends State<RegisterView> {
                                     labelText: 'Last Name',
                                     hintText: 'Mammadov',
                                     prefixIcon: Icons.badge_outlined,
-                                    validator: (v) => Validators.validateRequired(v, 'Last Name'),
+                                    validator:
+                                        (v) => Validators.validateRequired(
+                                          v,
+                                          'Last Name',
+                                        ),
                                     enabled: !isLoading,
                                   ),
                                 ),
@@ -297,24 +331,32 @@ class _RegisterViewState extends State<RegisterView> {
                               initialValue: _selectedDepartment,
                               decoration: const InputDecoration(
                                 labelText: 'Department / Departman',
-                                prefixIcon: Icon(Icons.business_rounded, color: AppColors.textSecondary, size: 20),
+                                prefixIcon: Icon(
+                                  Icons.business_rounded,
+                                  color: AppColors.textSecondary,
+                                  size: 20,
+                                ),
                               ),
-                              items: _departments.map((dept) {
-                                return DropdownMenuItem<String>(
-                                  value: dept,
-                                  child: Text(
-                                    dept,
-                                    style: const TextStyle(fontSize: 13),
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: isLoading ? null : (v) {
-                                if (v != null) {
-                                  setState(() {
-                                    _selectedDepartment = v;
-                                  });
-                                }
-                              },
+                              items:
+                                  _departments.map((dept) {
+                                    return DropdownMenuItem<String>(
+                                      value: dept,
+                                      child: Text(
+                                        dept,
+                                        style: const TextStyle(fontSize: 13),
+                                      ),
+                                    );
+                                  }).toList(),
+                              onChanged:
+                                  isLoading
+                                      ? null
+                                      : (v) {
+                                        if (v != null) {
+                                          setState(() {
+                                            _selectedDepartment = v;
+                                          });
+                                        }
+                                      },
                             ),
                             const SizedBox(height: 14),
 
@@ -371,7 +413,8 @@ class _RegisterViewState extends State<RegisterView> {
                                 ),
                                 onPressed: () {
                                   setState(() {
-                                    _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                                    _isConfirmPasswordVisible =
+                                        !_isConfirmPasswordVisible;
                                   });
                                 },
                               ),
@@ -381,21 +424,24 @@ class _RegisterViewState extends State<RegisterView> {
                             // Register Button
                             ElevatedButton(
                               onPressed: isLoading ? null : _onRegisterPressed,
-                              child: isLoading
-                                  ? const SizedBox(
-                                      height: 22,
-                                      width: 22,
-                                      child: CircularProgressIndicator(
-                                        color: Colors.white,
-                                        strokeWidth: 2.2,
-                                      ),
-                                    )
-                                  : const Text('Create Employee Account'),
+                              child:
+                                  isLoading
+                                      ? const SizedBox(
+                                        height: 22,
+                                        width: 22,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2.2,
+                                        ),
+                                      )
+                                      : const Text('Create Employee Account'),
                             ),
                             const SizedBox(height: 20),
                             Row(
                               children: const [
-                                Expanded(child: Divider(color: AppColors.border)),
+                                Expanded(
+                                  child: Divider(color: AppColors.border),
+                                ),
                                 Padding(
                                   padding: EdgeInsets.symmetric(horizontal: 12),
                                   child: Text(
@@ -407,7 +453,9 @@ class _RegisterViewState extends State<RegisterView> {
                                     ),
                                   ),
                                 ),
-                                Expanded(child: Divider(color: AppColors.border)),
+                                Expanded(
+                                  child: Divider(color: AppColors.border),
+                                ),
                               ],
                             ),
                             const SizedBox(height: 20),

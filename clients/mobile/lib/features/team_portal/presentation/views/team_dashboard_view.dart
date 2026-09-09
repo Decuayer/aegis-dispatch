@@ -47,26 +47,39 @@ class _TeamDashboardViewState extends State<TeamDashboardView>
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
 
-    _dispatchedSub = context.read<EmployeeTrackingHubService>().onTeamDispatched.listen((update) {
-      if (!mounted) return;
-      if (update.teamId.toLowerCase() == widget.team.id.toLowerCase()) {
-        LocalNotificationService().showEmergencyNotification(
-          id: update.incidentId.hashCode,
-          title: 'Acil Görev Ataması / Emergency Dispatch',
-          body: 'Müdahale ekibiniz bir acil durum görevine atandı.',
-          payload: {'teamId': widget.team.id, 'incidentId': update.incidentId},
-        );
-        context.read<TaskBloc>().add(LoadActiveTask(widget.team.id, isRefresh: true));
-        _tabController.animateTo(0);
-        context.read<TeamPortalBloc>().add(LoadTeamPortal(widget.user.id));
-      }
-    });
+    _dispatchedSub = context
+        .read<EmployeeTrackingHubService>()
+        .onTeamDispatched
+        .listen((update) {
+          if (!mounted) return;
+          if (update.teamId.toLowerCase() == widget.team.id.toLowerCase()) {
+            LocalNotificationService().showEmergencyNotification(
+              id: update.incidentId.hashCode,
+              title: 'Acil Görev Ataması / Emergency Dispatch',
+              body: 'Müdahale ekibiniz bir acil durum görevine atandı.',
+              payload: {
+                'teamId': widget.team.id,
+                'incidentId': update.incidentId,
+              },
+            );
+            context.read<TaskBloc>().add(
+              LoadActiveTask(widget.team.id, isRefresh: true),
+            );
+            _tabController.animateTo(0);
+            context.read<TeamPortalBloc>().add(LoadTeamPortal(widget.user.id));
+          }
+        });
 
-    _statusSub = context.read<EmployeeTrackingHubService>().onIncidentStatusChanged.listen((update) {
-      if (!mounted) return;
-      context.read<TaskBloc>().add(LoadActiveTask(widget.team.id, isRefresh: true));
-      context.read<TeamPortalBloc>().add(LoadTeamPortal(widget.user.id));
-    });
+    _statusSub = context
+        .read<EmployeeTrackingHubService>()
+        .onIncidentStatusChanged
+        .listen((update) {
+          if (!mounted) return;
+          context.read<TaskBloc>().add(
+            LoadActiveTask(widget.team.id, isRefresh: true),
+          );
+          context.read<TeamPortalBloc>().add(LoadTeamPortal(widget.user.id));
+        });
   }
 
   @override
@@ -94,39 +107,40 @@ class _TeamDashboardViewState extends State<TeamDashboardView>
     final controller = TextEditingController(text: widget.team.teamName);
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Rename Response Team'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(
-            labelText: 'New Team Name',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final newName = controller.text.trim();
-              if (newName.isNotEmpty && newName != widget.team.teamName) {
-                Navigator.pop(ctx);
-                context.read<TeamPortalBloc>().add(
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Rename Response Team'),
+            content: TextField(
+              controller: controller,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'New Team Name',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  final newName = controller.text.trim();
+                  if (newName.isNotEmpty && newName != widget.team.teamName) {
+                    Navigator.pop(ctx);
+                    context.read<TeamPortalBloc>().add(
                       RenameTeamRequested(
                         teamId: widget.team.id,
                         newTeamName: newName,
                         leaderId: widget.team.leaderId,
                       ),
                     );
-              }
-            },
-            child: const Text('Save'),
+                  }
+                },
+                child: const Text('Save'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -137,48 +151,56 @@ class _TeamDashboardViewState extends State<TeamDashboardView>
     if (hasActiveDispatch || widget.team.status != TeamStatus.idle) {
       showDialog(
         context: context,
-        builder: (ctx) => AlertDialog(
-          icon: const Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 36),
-          title: const Text('Active Emergency Dispatch'),
-          content: const Text(
-            'Cannot leave unit while an emergency dispatch mission is active. Complete or hand over the mission before departing.',
-          ),
-          actions: [
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Understood'),
+        builder:
+            (ctx) => AlertDialog(
+              icon: const Icon(
+                Icons.warning_amber_rounded,
+                color: AppColors.error,
+                size: 36,
+              ),
+              title: const Text('Active Emergency Dispatch'),
+              content: const Text(
+                'Cannot leave unit while an emergency dispatch mission is active. Complete or hand over the mission before departing.',
+              ),
+              actions: [
+                FilledButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Understood'),
+                ),
+              ],
             ),
-          ],
-        ),
       );
       return;
     }
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Leave Team'),
-        content: Text('Are you sure you want to depart from "${widget.team.teamName}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              context.read<TeamPortalBloc>().add(
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Leave Team'),
+            content: Text(
+              'Are you sure you want to depart from "${widget.team.teamName}"?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  context.read<TeamPortalBloc>().add(
                     LeaveTeamRequested(
                       teamId: widget.team.id,
                       userId: widget.user.id,
                     ),
                   );
-            },
-            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('Leave Unit'),
+                },
+                style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+                child: const Text('Leave Unit'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -212,7 +234,10 @@ class _TeamDashboardViewState extends State<TeamDashboardView>
             builder: (context, state) {
               final isTracking = state is TaskActiveLoaded;
               return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 4,
+                ),
                 child: TrackingStatusChip(isTracking: isTracking),
               );
             },
@@ -244,7 +269,9 @@ class _TeamDashboardViewState extends State<TeamDashboardView>
 
   Widget _buildActiveTaskTab(BuildContext context) {
     return BlocConsumer<TaskBloc, TaskState>(
-      listenWhen: (prev, current) => current is TaskFailure || current is TaskDebriefSuccess,
+      listenWhen:
+          (prev, current) =>
+              current is TaskFailure || current is TaskDebriefSuccess,
       listener: (context, state) {
         if (state is TaskFailure) {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -254,21 +281,22 @@ class _TeamDashboardViewState extends State<TeamDashboardView>
               content: Text(state.message),
               backgroundColor: AppColors.error,
               duration: const Duration(seconds: 4),
-              action: state.failedStatus != null
-                  ? SnackBarAction(
-                      label: 'Retry',
-                      textColor: Colors.white,
-                      onPressed: () {
-                        context.read<TaskBloc>().add(
-                              UpdateOperationalStatus(
-                                teamId: widget.team.id,
-                                userId: widget.user.id,
-                                newStatus: state.failedStatus!,
-                              ),
-                            );
-                      },
-                    )
-                  : null,
+              action:
+                  state.failedStatus != null
+                      ? SnackBarAction(
+                        label: 'Retry',
+                        textColor: Colors.white,
+                        onPressed: () {
+                          context.read<TaskBloc>().add(
+                            UpdateOperationalStatus(
+                              teamId: widget.team.id,
+                              userId: widget.user.id,
+                              newStatus: state.failedStatus!,
+                            ),
+                          );
+                        },
+                      )
+                      : null,
             ),
           );
         } else if (state is TaskDebriefSuccess) {
@@ -288,14 +316,19 @@ class _TeamDashboardViewState extends State<TeamDashboardView>
         }
 
         if (state is TaskActiveLoaded || state is TaskStatusUpdating) {
-          final task = state is TaskActiveLoaded
-              ? state.task
-              : (state as TaskStatusUpdating).currentTask;
-          final routePoints = state is TaskActiveLoaded ? state.routePoints : const [];
+          final task =
+              state is TaskActiveLoaded
+                  ? state.task
+                  : (state as TaskStatusUpdating).currentTask;
+          final routePoints =
+              state is TaskActiveLoaded ? state.routePoints : const [];
           final distanceKm = state is TaskActiveLoaded ? state.distanceKm : 0.0;
-          final estimatedMinutes = state is TaskActiveLoaded ? state.estimatedMinutes : 0;
-          final teamLocation = state is TaskActiveLoaded ? state.teamLocation : null;
-          final isRouteFallback = state is TaskActiveLoaded ? state.isRouteFallback : false;
+          final estimatedMinutes =
+              state is TaskActiveLoaded ? state.estimatedMinutes : 0;
+          final teamLocation =
+              state is TaskActiveLoaded ? state.teamLocation : null;
+          final isRouteFallback =
+              state is TaskActiveLoaded ? state.isRouteFallback : false;
 
           return ActiveTaskView(
             task: task,
@@ -307,22 +340,22 @@ class _TeamDashboardViewState extends State<TeamDashboardView>
             isStatusUpdating: state is TaskStatusUpdating,
             onStatusChange: (newStatus) {
               context.read<TaskBloc>().add(
-                    UpdateOperationalStatus(
-                      teamId: widget.team.id,
-                      userId: widget.user.id,
-                      newStatus: newStatus,
-                    ),
-                  );
+                UpdateOperationalStatus(
+                  teamId: widget.team.id,
+                  userId: widget.user.id,
+                  newStatus: newStatus,
+                ),
+              );
             },
             onDebriefSubmit: (notes, photo) async {
               context.read<TaskBloc>().add(
-                    SubmitTaskDebrief(
-                      incidentId: task.id,
-                      teamId: widget.team.id,
-                      notes: notes,
-                      photo: photo is File ? photo : null,
-                    ),
-                  );
+                SubmitTaskDebrief(
+                  incidentId: task.id,
+                  teamId: widget.team.id,
+                  notes: notes,
+                  photo: photo is File ? photo : null,
+                ),
+              );
             },
           );
         }
@@ -331,7 +364,6 @@ class _TeamDashboardViewState extends State<TeamDashboardView>
       },
     );
   }
-
 
   Widget _buildIdleStandbyView(BuildContext context) {
     return Center(
@@ -346,7 +378,11 @@ class _TeamDashboardViewState extends State<TeamDashboardView>
                 color: AppColors.secondary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.verified_outlined, color: AppColors.secondary, size: 64),
+              child: const Icon(
+                Icons.verified_outlined,
+                color: AppColors.secondary,
+                size: 64,
+              ),
             ),
             const SizedBox(height: 20),
             const Text(
@@ -362,7 +398,9 @@ class _TeamDashboardViewState extends State<TeamDashboardView>
             const SizedBox(height: 24),
             OutlinedButton.icon(
               onPressed: () {
-                context.read<TaskBloc>().add(LoadActiveTask(widget.team.id, isRefresh: true));
+                context.read<TaskBloc>().add(
+                  LoadActiveTask(widget.team.id, isRefresh: true),
+                );
               },
               icon: const Icon(Icons.refresh),
               label: const Text('Check for Assignments'),
@@ -382,12 +420,12 @@ class _TeamDashboardViewState extends State<TeamDashboardView>
             isClaiming: widget.isActionInProgress,
             onClaim: () {
               context.read<TeamPortalBloc>().add(
-                    ClaimLeadershipRequested(
-                      teamId: widget.team.id,
-                      userId: widget.user.id,
-                      teamName: widget.team.teamName,
-                    ),
-                  );
+                ClaimLeadershipRequested(
+                  teamId: widget.team.id,
+                  userId: widget.user.id,
+                  teamName: widget.team.teamName,
+                ),
+              );
             },
           ),
         if (_isLeader) _buildLeaderAdminCard(context),
@@ -395,12 +433,12 @@ class _TeamDashboardViewState extends State<TeamDashboardView>
           currentStatus: _currentUserMemberStatus,
           onStatusChanged: (newStatus) {
             context.read<TeamPortalBloc>().add(
-                  ToggleMemberStatusRequested(
-                    teamId: widget.team.id,
-                    userId: widget.user.id,
-                    status: newStatus,
-                  ),
-                );
+              ToggleMemberStatusRequested(
+                teamId: widget.team.id,
+                userId: widget.user.id,
+                status: newStatus,
+              ),
+            );
           },
         ),
         Padding(
@@ -422,16 +460,18 @@ class _TeamDashboardViewState extends State<TeamDashboardView>
         ...widget.team.members.map(
           (m) => TeamRosterTile(
             member: m,
-            isLeader: m.userId.toLowerCase() == widget.team.leaderId?.toLowerCase(),
-            isCurrentUser: m.userId.toLowerCase() == widget.user.id.toLowerCase(),
+            isLeader:
+                m.userId.toLowerCase() == widget.team.leaderId?.toLowerCase(),
+            isCurrentUser:
+                m.userId.toLowerCase() == widget.user.id.toLowerCase(),
             canManage: _isLeader,
             onRemove: () {
               context.read<TeamPortalBloc>().add(
-                    RemoveMemberRequested(
-                      teamId: widget.team.id,
-                      memberId: m.userId,
-                    ),
-                  );
+                RemoveMemberRequested(
+                  teamId: widget.team.id,
+                  memberId: m.userId,
+                ),
+              );
             },
           ),
         ),
@@ -444,10 +484,15 @@ class _TeamDashboardViewState extends State<TeamDashboardView>
               foregroundColor: AppColors.error,
               side: const BorderSide(color: AppColors.error),
               padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
             icon: const Icon(Icons.logout_outlined),
-            label: const Text('Leave Response Team', style: TextStyle(fontWeight: FontWeight.bold)),
+            label: const Text(
+              'Leave Response Team',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
         ),
         const SizedBox(height: 32),
@@ -481,7 +526,11 @@ class _TeamDashboardViewState extends State<TeamDashboardView>
             children: [
               const Row(
                 children: [
-                  Icon(Icons.admin_panel_settings_outlined, color: AppColors.primary, size: 22),
+                  Icon(
+                    Icons.admin_panel_settings_outlined,
+                    color: AppColors.primary,
+                    size: 22,
+                  ),
                   SizedBox(width: 8),
                   Text(
                     'Leader Administration',
@@ -508,8 +557,13 @@ class _TeamDashboardViewState extends State<TeamDashboardView>
                     style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                   ),
                   Text(
-                    isIdle ? 'Available for new dispatches' : 'Marked as Busy / Inactive',
-                    style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                    isIdle
+                        ? 'Available for new dispatches'
+                        : 'Marked as Busy / Inactive',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -518,11 +572,11 @@ class _TeamDashboardViewState extends State<TeamDashboardView>
                 activeTrackColor: AppColors.secondary,
                 onChanged: (val) {
                   context.read<TeamPortalBloc>().add(
-                        ToggleTeamStatusRequested(
-                          teamId: widget.team.id,
-                          status: val ? TeamStatus.idle : TeamStatus.busy,
-                        ),
-                      );
+                    ToggleTeamStatusRequested(
+                      teamId: widget.team.id,
+                      status: val ? TeamStatus.idle : TeamStatus.busy,
+                    ),
+                  );
                 },
               ),
             ],

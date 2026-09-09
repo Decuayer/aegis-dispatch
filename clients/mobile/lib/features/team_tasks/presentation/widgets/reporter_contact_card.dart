@@ -45,10 +45,13 @@ class ReporterContactCard extends StatelessWidget {
             radius: 22,
             backgroundColor: AppColors.primaryLight.withValues(alpha: 0.15),
             backgroundImage:
-                reporterAvatarUrl != null ? NetworkImage(reporterAvatarUrl!) : null,
-            child: reporterAvatarUrl == null
-                ? const Icon(Icons.person, color: AppColors.primary)
-                : null,
+                reporterAvatarUrl != null
+                    ? NetworkImage(reporterAvatarUrl!)
+                    : null,
+            child:
+                reporterAvatarUrl == null
+                    ? const Icon(Icons.person, color: AppColors.primary)
+                    : null,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -57,11 +60,17 @@ class ReporterContactCard extends StatelessWidget {
               children: [
                 Text(
                   reporterName,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
                 ),
                 Text(
                   reporterDepartment,
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),
@@ -73,7 +82,10 @@ class ReporterContactCard extends StatelessWidget {
               onPressed: () => _makeCall(context),
             ),
             IconButton(
-              icon: const Icon(Icons.message_outlined, color: AppColors.primary),
+              icon: const Icon(
+                Icons.message_outlined,
+                color: AppColors.primary,
+              ),
               tooltip: 'SMS Reporter',
               onPressed: () => _sendSms(context),
             ),

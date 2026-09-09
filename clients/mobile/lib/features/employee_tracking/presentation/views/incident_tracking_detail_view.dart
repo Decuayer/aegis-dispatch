@@ -14,22 +14,21 @@ import '../../../../core/widgets/entity_id_badge.dart';
 class IncidentTrackingDetailView extends StatefulWidget {
   final String incidentId;
 
-  const IncidentTrackingDetailView({
-    super.key,
-    required this.incidentId,
-  });
+  const IncidentTrackingDetailView({super.key, required this.incidentId});
 
   @override
-  State<IncidentTrackingDetailView> createState() => _IncidentTrackingDetailViewState();
+  State<IncidentTrackingDetailView> createState() =>
+      _IncidentTrackingDetailViewState();
 }
 
-class _IncidentTrackingDetailViewState extends State<IncidentTrackingDetailView> {
+class _IncidentTrackingDetailViewState
+    extends State<IncidentTrackingDetailView> {
   @override
   void initState() {
     super.initState();
     context.read<EmployeeTrackingBloc>().add(
-          SelectIncidentForTracking(widget.incidentId),
-        );
+      SelectIncidentForTracking(widget.incidentId),
+    );
   }
 
   @override
@@ -44,8 +43,8 @@ class _IncidentTrackingDetailViewState extends State<IncidentTrackingDetailView>
             tooltip: 'Refresh',
             onPressed: () {
               context.read<EmployeeTrackingBloc>().add(
-                    SelectIncidentForTracking(widget.incidentId),
-                  );
+                SelectIncidentForTracking(widget.incidentId),
+              );
             },
           ),
         ],
@@ -60,7 +59,9 @@ class _IncidentTrackingDetailViewState extends State<IncidentTrackingDetailView>
                   backgroundColor: AppColors.success,
                 ),
               );
-              context.read<EmployeeTrackingBloc>().add(const ClearTrackingFeedback());
+              context.read<EmployeeTrackingBloc>().add(
+                const ClearTrackingFeedback(),
+              );
             } else if (state.updateErrorMessage != null) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -68,17 +69,22 @@ class _IncidentTrackingDetailViewState extends State<IncidentTrackingDetailView>
                   backgroundColor: AppColors.error,
                 ),
               );
-              context.read<EmployeeTrackingBloc>().add(const ClearTrackingFeedback());
+              context.read<EmployeeTrackingBloc>().add(
+                const ClearTrackingFeedback(),
+              );
             }
           }
         },
         builder: (context, state) {
-          if (state is! EmployeeTrackingLoaded || state.selectedIncident == null) {
+          if (state is! EmployeeTrackingLoaded ||
+              state.selectedIncident == null) {
             return const Center(child: CircularProgressIndicator());
           }
 
           final incident = state.selectedIncident!;
-          final hasAssignedTeam = incident.assignedTeamName != null && incident.assignedTeamName!.isNotEmpty;
+          final hasAssignedTeam =
+              incident.assignedTeamName != null &&
+              incident.assignedTeamName!.isNotEmpty;
 
           return SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -88,7 +94,9 @@ class _IncidentTrackingDetailViewState extends State<IncidentTrackingDetailView>
                 // Top Meta Card
                 Card(
                   elevation: 1,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -102,11 +110,17 @@ class _IncidentTrackingDetailViewState extends State<IncidentTrackingDetailView>
                               type: EntityBadgeType.incident,
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
-                                color: incident.isEditable
-                                    ? AppColors.info.withValues(alpha: 0.15)
-                                    : AppColors.success.withValues(alpha: 0.15),
+                                color:
+                                    incident.isEditable
+                                        ? AppColors.info.withValues(alpha: 0.15)
+                                        : AppColors.success.withValues(
+                                          alpha: 0.15,
+                                        ),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
@@ -114,7 +128,10 @@ class _IncidentTrackingDetailViewState extends State<IncidentTrackingDetailView>
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
-                                  color: incident.isEditable ? AppColors.info : AppColors.success,
+                                  color:
+                                      incident.isEditable
+                                          ? AppColors.info
+                                          : AppColors.success,
                                 ),
                               ),
                             ),
@@ -132,7 +149,10 @@ class _IncidentTrackingDetailViewState extends State<IncidentTrackingDetailView>
                         const SizedBox(height: 4),
                         Text(
                           'Emergency Code: ${incident.emergencyCode}',
-                          style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                       ],
                     ),
@@ -143,10 +163,18 @@ class _IncidentTrackingDetailViewState extends State<IncidentTrackingDetailView>
 
                 // Live Route Mini-Map
                 LiveRouteMiniMap(
-                  incidentLocation: LatLng(incident.latitude, incident.longitude),
-                  teamLocation: incident.teamLatitude != null && incident.teamLongitude != null
-                      ? LatLng(incident.teamLatitude!, incident.teamLongitude!)
-                      : null,
+                  incidentLocation: LatLng(
+                    incident.latitude,
+                    incident.longitude,
+                  ),
+                  teamLocation:
+                      incident.teamLatitude != null &&
+                              incident.teamLongitude != null
+                          ? LatLng(
+                            incident.teamLatitude!,
+                            incident.teamLongitude!,
+                          )
+                          : null,
                   routePoints: state.activeRoute,
                   distanceKm: state.distanceKm,
                   etaMinutes: state.etaMinutes,
@@ -175,12 +203,18 @@ class _IncidentTrackingDetailViewState extends State<IncidentTrackingDetailView>
                     ),
                     child: const Row(
                       children: [
-                        Icon(Icons.hourglass_empty_rounded, color: AppColors.warning),
+                        Icon(
+                          Icons.hourglass_empty_rounded,
+                          color: AppColors.warning,
+                        ),
                         SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             'Dispatch operator is assigning an emergency response unit...',
-                            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
                         ),
                       ],
@@ -192,7 +226,9 @@ class _IncidentTrackingDetailViewState extends State<IncidentTrackingDetailView>
                 // Situation Description
                 Card(
                   elevation: 1,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -208,10 +244,14 @@ class _IncidentTrackingDetailViewState extends State<IncidentTrackingDetailView>
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          incident.description != null && incident.description!.isNotEmpty
+                          incident.description != null &&
+                                  incident.description!.isNotEmpty
                               ? incident.description!
                               : 'No description provided.',
-                          style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                       ],
                     ),
@@ -246,11 +286,14 @@ class _IncidentTrackingDetailViewState extends State<IncidentTrackingDetailView>
                             width: 100,
                             height: 100,
                             fit: BoxFit.cover,
-                            placeholder: (_, __) => Container(color: AppColors.surfaceMuted),
-                            errorWidget: (_, __, ___) => Container(
-                              color: AppColors.surfaceMuted,
-                              child: const Icon(Icons.broken_image_rounded),
-                            ),
+                            placeholder:
+                                (_, __) =>
+                                    Container(color: AppColors.surfaceMuted),
+                            errorWidget:
+                                (_, __, ___) => Container(
+                                  color: AppColors.surfaceMuted,
+                                  child: const Icon(Icons.broken_image_rounded),
+                                ),
                           ),
                         );
                       },
@@ -262,31 +305,47 @@ class _IncidentTrackingDetailViewState extends State<IncidentTrackingDetailView>
                 // Edit Incident Button
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: incident.isEditable ? AppColors.primary : AppColors.surfaceMuted,
-                    foregroundColor: incident.isEditable ? Colors.white : AppColors.textMuted,
+                    backgroundColor:
+                        incident.isEditable
+                            ? AppColors.primary
+                            : AppColors.surfaceMuted,
+                    foregroundColor:
+                        incident.isEditable
+                            ? Colors.white
+                            : AppColors.textMuted,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                   icon: const Icon(Icons.edit_note_rounded),
                   label: Text(
                     incident.isEditable
                         ? 'Edit Incident Details / Attachments'
                         : 'Incident Resolved — Editing Locked',
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  onPressed: incident.isEditable
-                      ? () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => BlocProvider.value(
-                                value: context.read<EmployeeTrackingBloc>(),
-                                child: EditIncidentView(incident: incident),
+                  onPressed:
+                      incident.isEditable
+                          ? () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (_) => BlocProvider.value(
+                                      value:
+                                          context.read<EmployeeTrackingBloc>(),
+                                      child: EditIncidentView(
+                                        incident: incident,
+                                      ),
+                                    ),
                               ),
-                            ),
-                          );
-                        }
-                      : null,
+                            );
+                          }
+                          : null,
                 ),
                 const SizedBox(height: 20),
               ],

@@ -7,8 +7,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthRepository _authRepository;
 
   AuthBloc({required AuthRepository authRepository})
-      : _authRepository = authRepository,
-        super(const AuthInitial()) {
+    : _authRepository = authRepository,
+      super(const AuthInitial()) {
     on<AuthCheckRequested>(_onAuthCheckRequested);
     on<AuthLoginRequested>(_onAuthLoginRequested);
     on<AuthRegisterRequested>(_onAuthRegisterRequested);
@@ -94,10 +94,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  void _onAuthUserUpdated(
-    AuthUserUpdated event,
-    Emitter<AuthState> emit,
-  ) {
+  void _onAuthUserUpdated(AuthUserUpdated event, Emitter<AuthState> emit) {
     if (state is Authenticated) {
       emit(Authenticated(event.updatedUser));
     }

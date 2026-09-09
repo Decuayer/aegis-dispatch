@@ -16,9 +16,11 @@ class TrackedIncidentMediaModel {
       id: (json['id'] ?? json['Id'] ?? '').toString(),
       mediaUrl: (json['mediaUrl'] ?? json['MediaUrl'] ?? '').toString(),
       mediaType: (json['mediaType'] ?? json['MediaType'] as num?)?.toInt() ?? 1,
-      createdAt: json['createdAt'] != null
-          ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
-          : DateTime.now(),
+      createdAt:
+          json['createdAt'] != null
+              ? DateTime.tryParse(json['createdAt'].toString()) ??
+                  DateTime.now()
+              : DateTime.now(),
     );
   }
 
@@ -95,35 +97,66 @@ class TrackedIncidentModel {
     return TrackedIncidentModel(
       id: (json['id'] ?? json['Id'] ?? '').toString(),
       reporterId: (json['reporterId'] ?? json['ReporterId'] ?? '').toString(),
-      reporterFullName: (json['reporterFullName'] ?? json['ReporterFullName'] ?? '').toString(),
+      reporterFullName:
+          (json['reporterFullName'] ?? json['ReporterFullName'] ?? '')
+              .toString(),
       category: (json['category'] ?? json['Category'] ?? '').toString(),
-      emergencyCode: (json['emergencyCode'] ?? json['EmergencyCode'] ?? '').toString(),
-      description: json['description'] as String? ?? json['Description'] as String?,
+      emergencyCode:
+          (json['emergencyCode'] ?? json['EmergencyCode'] ?? '').toString(),
+      description:
+          json['description'] as String? ?? json['Description'] as String?,
       status: (json['status'] ?? json['Status'] ?? 'Open').toString(),
-      latitude: (json['latitude'] ?? json['Latitude'] as num?)?.toDouble() ?? 0.0,
-      longitude: (json['longitude'] ?? json['Longitude'] as num?)?.toDouble() ?? 0.0,
-      createdAt: json['createdAt'] != null
-          ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
-          : DateTime.now(),
-      assignedAt: json['assignedAt'] != null
-          ? DateTime.tryParse(json['assignedAt'].toString())
-          : null,
-      completedAt: json['completedAt'] != null
-          ? DateTime.tryParse(json['completedAt'].toString())
-          : null,
-      mediaAttachments: json['mediaAttachments'] != null
-          ? (json['mediaAttachments'] as List)
-              .map((item) => TrackedIncidentMediaModel.fromJson(item as Map<String, dynamic>))
-              .toList()
-          : const [],
-      assignedTeamId: json['assignedTeamId']?.toString() ?? json['AssignedTeamId']?.toString(),
-      assignedTeamName: json['assignedTeamName'] as String? ?? json['AssignedTeamName'] as String?,
-      assignedTeamLeaderName: json['assignedTeamLeaderName'] as String? ?? json['AssignedTeamLeaderName'] as String?,
-      assignedTeamLeaderPhone: json['assignedTeamLeaderPhone'] as String? ?? json['AssignedTeamLeaderPhone'] as String?,
-      assignedTeamStatus: json['assignedTeamStatus'] as String? ?? json['AssignedTeamStatus'] as String?,
-      assignedTeamMemberCount: (json['assignedTeamMemberCount'] ?? json['AssignedTeamMemberCount'] as num?)?.toInt(),
-      teamLatitude: (json['teamLatitude'] ?? json['currentLatitude'] as num?)?.toDouble(),
-      teamLongitude: (json['teamLongitude'] ?? json['currentLongitude'] as num?)?.toDouble(),
+      latitude:
+          (json['latitude'] ?? json['Latitude'] as num?)?.toDouble() ?? 0.0,
+      longitude:
+          (json['longitude'] ?? json['Longitude'] as num?)?.toDouble() ?? 0.0,
+      createdAt:
+          json['createdAt'] != null
+              ? DateTime.tryParse(json['createdAt'].toString()) ??
+                  DateTime.now()
+              : DateTime.now(),
+      assignedAt:
+          json['assignedAt'] != null
+              ? DateTime.tryParse(json['assignedAt'].toString())
+              : null,
+      completedAt:
+          json['completedAt'] != null
+              ? DateTime.tryParse(json['completedAt'].toString())
+              : null,
+      mediaAttachments:
+          json['mediaAttachments'] != null
+              ? (json['mediaAttachments'] as List)
+                  .map(
+                    (item) => TrackedIncidentMediaModel.fromJson(
+                      item as Map<String, dynamic>,
+                    ),
+                  )
+                  .toList()
+              : const [],
+      assignedTeamId:
+          json['assignedTeamId']?.toString() ??
+          json['AssignedTeamId']?.toString(),
+      assignedTeamName:
+          json['assignedTeamName'] as String? ??
+          json['AssignedTeamName'] as String?,
+      assignedTeamLeaderName:
+          json['assignedTeamLeaderName'] as String? ??
+          json['AssignedTeamLeaderName'] as String?,
+      assignedTeamLeaderPhone:
+          json['assignedTeamLeaderPhone'] as String? ??
+          json['AssignedTeamLeaderPhone'] as String?,
+      assignedTeamStatus:
+          json['assignedTeamStatus'] as String? ??
+          json['AssignedTeamStatus'] as String?,
+      assignedTeamMemberCount:
+          (json['assignedTeamMemberCount'] ??
+                  json['AssignedTeamMemberCount'] as num?)
+              ?.toInt(),
+      teamLatitude:
+          (json['teamLatitude'] ?? json['currentLatitude'] as num?)?.toDouble(),
+      teamLongitude:
+          (json['teamLongitude'] ?? json['currentLongitude'] as num?)
+              ?.toDouble(),
     );
   }
 
@@ -166,10 +199,13 @@ class TrackedIncidentModel {
       mediaAttachments: mediaAttachments ?? this.mediaAttachments,
       assignedTeamId: assignedTeamId ?? this.assignedTeamId,
       assignedTeamName: assignedTeamName ?? this.assignedTeamName,
-      assignedTeamLeaderName: assignedTeamLeaderName ?? this.assignedTeamLeaderName,
-      assignedTeamLeaderPhone: assignedTeamLeaderPhone ?? this.assignedTeamLeaderPhone,
+      assignedTeamLeaderName:
+          assignedTeamLeaderName ?? this.assignedTeamLeaderName,
+      assignedTeamLeaderPhone:
+          assignedTeamLeaderPhone ?? this.assignedTeamLeaderPhone,
       assignedTeamStatus: assignedTeamStatus ?? this.assignedTeamStatus,
-      assignedTeamMemberCount: assignedTeamMemberCount ?? this.assignedTeamMemberCount,
+      assignedTeamMemberCount:
+          assignedTeamMemberCount ?? this.assignedTeamMemberCount,
       teamLatitude: teamLatitude ?? this.teamLatitude,
       teamLongitude: teamLongitude ?? this.teamLongitude,
     );

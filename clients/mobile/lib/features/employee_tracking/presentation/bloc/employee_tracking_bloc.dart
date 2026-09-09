@@ -26,10 +26,10 @@ class EmployeeTrackingBloc
     required EmployeeIncidentRepository repository,
     required RouteService routeService,
     required EmployeeTrackingHubService hubService,
-  })  : _repository = repository,
-        _routeService = routeService,
-        _hubService = hubService,
-        super(const EmployeeTrackingInitial()) {
+  }) : _repository = repository,
+       _routeService = routeService,
+       _hubService = hubService,
+       super(const EmployeeTrackingInitial()) {
     on<LoadMyIncidents>(_onLoadMyIncidents);
     on<RefreshMyIncidents>(_onRefreshMyIncidents);
     on<SelectIncidentForTracking>(_onSelectIncidentForTracking);
@@ -48,25 +48,31 @@ class EmployeeTrackingBloc
     });
 
     _statusSub = _hubService.onIncidentStatusChanged.listen((update) {
-      add(IncidentStatusReceived(
-        incidentId: update.incidentId,
-        status: update.status,
-      ));
+      add(
+        IncidentStatusReceived(
+          incidentId: update.incidentId,
+          status: update.status,
+        ),
+      );
     });
 
     _dispatchSub = _hubService.onTeamDispatched.listen((update) {
-      add(TeamAssignedReceived(
-        incidentId: update.incidentId,
-        teamId: update.teamId,
-      ));
+      add(
+        TeamAssignedReceived(
+          incidentId: update.incidentId,
+          teamId: update.teamId,
+        ),
+      );
     });
 
     _locationSub = _hubService.onTeamLocationUpdated.listen((update) {
-      add(TeamLocationReceived(
-        teamId: update.teamId,
-        latitude: update.latitude,
-        longitude: update.longitude,
-      ));
+      add(
+        TeamLocationReceived(
+          teamId: update.teamId,
+          latitude: update.latitude,
+          longitude: update.longitude,
+        ),
+      );
     });
 
     _incidentUpdatedSub = _hubService.onIncidentUpdated.listen((_) {
@@ -114,10 +120,12 @@ class EmployeeTrackingBloc
           }
         }
 
-        emit(current.copyWith(
-          incidents: incidents,
-          selectedIncident: updatedSelected,
-        ));
+        emit(
+          current.copyWith(
+            incidents: incidents,
+            selectedIncident: updatedSelected,
+          ),
+        );
       } else {
         emit(EmployeeTrackingLoaded(incidents: incidents));
       }
@@ -157,17 +165,17 @@ class EmployeeTrackingBloc
         isFallback = routeResult.isFallback;
       }
 
-      emit(current.copyWith(
-        selectedIncident: incident,
-        activeRoute: routePoints,
-        distanceKm: distance,
-        etaMinutes: eta,
-        isRouteFallback: isFallback,
-      ));
+      emit(
+        current.copyWith(
+          selectedIncident: incident,
+          activeRoute: routePoints,
+          distanceKm: distance,
+          etaMinutes: eta,
+          isRouteFallback: isFallback,
+        ),
+      );
     } catch (e) {
-      emit(current.copyWith(
-        updateErrorMessage: _cleanErrorMessage(e),
-      ));
+      emit(current.copyWith(updateErrorMessage: _cleanErrorMessage(e)));
     }
   }
 
@@ -178,22 +186,25 @@ class EmployeeTrackingBloc
     if (state is! EmployeeTrackingLoaded) return;
     final current = state as EmployeeTrackingLoaded;
 
-    final updatedIncidents = current.incidents.map((inc) {
-      if (inc.id == event.incidentId) {
-        return inc.copyWith(status: event.status);
-      }
-      return inc;
-    }).toList();
+    final updatedIncidents =
+        current.incidents.map((inc) {
+          if (inc.id == event.incidentId) {
+            return inc.copyWith(status: event.status);
+          }
+          return inc;
+        }).toList();
 
     TrackedIncidentModel? updatedSelected = current.selectedIncident;
     if (updatedSelected != null && updatedSelected.id == event.incidentId) {
       updatedSelected = updatedSelected.copyWith(status: event.status);
     }
 
-    emit(current.copyWith(
-      incidents: updatedIncidents,
-      selectedIncident: updatedSelected,
-    ));
+    emit(
+      current.copyWith(
+        incidents: updatedIncidents,
+        selectedIncident: updatedSelected,
+      ),
+    );
   }
 
   Future<void> _onTeamAssignedReceived(
@@ -230,13 +241,15 @@ class EmployeeTrackingBloc
       destination: destination,
     );
 
-    emit(current.copyWith(
-      selectedIncident: updatedIncident,
-      activeRoute: routeResult.points,
-      distanceKm: routeResult.distanceKm,
-      etaMinutes: routeResult.durationMinutes,
-      isRouteFallback: routeResult.isFallback,
-    ));
+    emit(
+      current.copyWith(
+        selectedIncident: updatedIncident,
+        activeRoute: routeResult.points,
+        distanceKm: routeResult.distanceKm,
+        etaMinutes: routeResult.durationMinutes,
+        isRouteFallback: routeResult.isFallback,
+      ),
+    );
   }
 
   Future<void> _onUpdateIncidentDetailsRequested(
@@ -248,9 +261,12 @@ class EmployeeTrackingBloc
     final selected = current.selectedIncident;
 
     if (selected == null || !selected.isEditable) {
-      emit(current.copyWith(
-        updateErrorMessage: 'Cannot edit an incident that is resolved or closed.',
-      ));
+      emit(
+        current.copyWith(
+          updateErrorMessage:
+              'Cannot edit an incident that is resolved or closed.',
+        ),
+      );
       return;
     }
 
@@ -265,10 +281,7 @@ class EmployeeTrackingBloc
 
       for (final file in event.newFiles) {
         final mediaUrl = await _repository.uploadSupplementaryMedia(file);
-        uploadedMedia.add({
-          'mediaUrl': mediaUrl,
-          'mediaType': 1,
-        });
+        uploadedMedia.add({'mediaUrl': mediaUrl, 'mediaType': 1});
       }
 
       // 2. Send PUT request to update description and media attachments
@@ -282,21 +295,26 @@ class EmployeeTrackingBloc
         longitude: selected.longitude,
       );
 
-      final updatedList = current.incidents.map((i) {
-        return i.id == updated.id ? updated : i;
-      }).toList();
+      final updatedList =
+          current.incidents.map((i) {
+            return i.id == updated.id ? updated : i;
+          }).toList();
 
-      emit(current.copyWith(
-        incidents: updatedList,
-        selectedIncident: updated,
-        isUpdating: false,
-        updateSuccessMessage: 'Incident details updated successfully.',
-      ));
+      emit(
+        current.copyWith(
+          incidents: updatedList,
+          selectedIncident: updated,
+          isUpdating: false,
+          updateSuccessMessage: 'Incident details updated successfully.',
+        ),
+      );
     } catch (e) {
-      emit(current.copyWith(
-        isUpdating: false,
-        updateErrorMessage: _cleanErrorMessage(e),
-      ));
+      emit(
+        current.copyWith(
+          isUpdating: false,
+          updateErrorMessage: _cleanErrorMessage(e),
+        ),
+      );
     }
   }
 

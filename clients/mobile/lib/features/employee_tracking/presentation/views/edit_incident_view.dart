@@ -25,7 +25,9 @@ class _EditIncidentViewState extends State<EditIncidentView> {
   @override
   void initState() {
     super.initState();
-    _descController = TextEditingController(text: widget.incident.description ?? '');
+    _descController = TextEditingController(
+      text: widget.incident.description ?? '',
+    );
   }
 
   @override
@@ -62,48 +64,47 @@ class _EditIncidentViewState extends State<EditIncidentView> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (ctx) => SafeArea(
-        child: Wrap(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.camera_alt_outlined),
-              title: const Text('Take Photo'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _pickImage(ImageSource.camera);
-              },
+      builder:
+          (ctx) => SafeArea(
+            child: Wrap(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.camera_alt_outlined),
+                  title: const Text('Take Photo'),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _pickImage(ImageSource.camera);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.photo_library_outlined),
+                  title: const Text('Choose from Gallery'),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _pickMultipleImages();
+                  },
+                ),
+              ],
             ),
-            ListTile(
-              leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Choose from Gallery'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _pickMultipleImages();
-              },
-            ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
   void _submitUpdate() {
     context.read<EmployeeTrackingBloc>().add(
-          UpdateIncidentDetailsRequested(
-            incidentId: widget.incident.id,
-            description: _descController.text.trim(),
-            newFiles: _newMediaFiles,
-          ),
-        );
+      UpdateIncidentDetailsRequested(
+        incidentId: widget.incident.id,
+        description: _descController.text.trim(),
+        newFiles: _newMediaFiles,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Edit Incident Details'),
-      ),
+      appBar: AppBar(title: const Text('Edit Incident Details')),
       body: BlocConsumer<EmployeeTrackingBloc, EmployeeTrackingState>(
         listener: (context, state) {
           if (state is EmployeeTrackingLoaded) {
@@ -113,7 +114,8 @@ class _EditIncidentViewState extends State<EditIncidentView> {
           }
         },
         builder: (context, state) {
-          final isUpdating = state is EmployeeTrackingLoaded && state.isUpdating;
+          final isUpdating =
+              state is EmployeeTrackingLoaded && state.isUpdating;
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(18),
@@ -141,8 +143,11 @@ class _EditIncidentViewState extends State<EditIncidentView> {
                   controller: _descController,
                   maxLines: 5,
                   decoration: InputDecoration(
-                    hintText: 'Enter any new details, hazards, or changes on the scene...',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    hintText:
+                        'Enter any new details, hazards, or changes on the scene...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     filled: true,
                     fillColor: Colors.white,
                   ),
@@ -155,7 +160,10 @@ class _EditIncidentViewState extends State<EditIncidentView> {
                   children: [
                     const Text(
                       'Attach Supplementary Photos',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     TextButton.icon(
                       icon: const Icon(Icons.add_a_photo_outlined, size: 18),
@@ -190,20 +198,25 @@ class _EditIncidentViewState extends State<EditIncidentView> {
                               top: 2,
                               right: 2,
                               child: GestureDetector(
-                                onTap: isUpdating
-                                    ? null
-                                    : () {
-                                        setState(() {
-                                          _newMediaFiles.removeAt(index);
-                                        });
-                                      },
+                                onTap:
+                                    isUpdating
+                                        ? null
+                                        : () {
+                                          setState(() {
+                                            _newMediaFiles.removeAt(index);
+                                          });
+                                        },
                                 child: Container(
                                   decoration: const BoxDecoration(
                                     color: Colors.black54,
                                     shape: BoxShape.circle,
                                   ),
                                   padding: const EdgeInsets.all(4),
-                                  child: const Icon(Icons.close, size: 14, color: Colors.white),
+                                  child: const Icon(
+                                    Icons.close,
+                                    size: 14,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
                             ),
@@ -222,7 +235,10 @@ class _EditIncidentViewState extends State<EditIncidentView> {
                     child: const Center(
                       child: Text(
                         'No new photos attached yet.',
-                        style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textMuted,
+                        ),
                       ),
                     ),
                   ),
@@ -235,19 +251,28 @@ class _EditIncidentViewState extends State<EditIncidentView> {
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                   onPressed: isUpdating ? null : _submitUpdate,
-                  child: isUpdating
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
-                        )
-                      : const Text(
-                          'Save Changes',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                        ),
+                  child:
+                      isUpdating
+                          ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: Colors.white,
+                            ),
+                          )
+                          : const Text(
+                            'Save Changes',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                 ),
               ],
             ),

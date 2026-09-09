@@ -27,10 +27,7 @@ class RapidIncidentSuccess extends RapidIncidentState {
     this.remainingSeconds = 5,
   });
 
-  RapidIncidentSuccess copyWith({
-    bool? isReversible,
-    int? remainingSeconds,
-  }) {
+  RapidIncidentSuccess copyWith({bool? isReversible, int? remainingSeconds}) {
     return RapidIncidentSuccess(
       incident: incident,
       preset: preset,

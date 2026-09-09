@@ -19,7 +19,8 @@ class StatusActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (currentStatus == TeamStatus.idle || currentStatus == TeamStatus.resolved) {
+    if (currentStatus == TeamStatus.idle ||
+        currentStatus == TeamStatus.resolved) {
       return const SizedBox.shrink();
     }
 
@@ -35,10 +36,7 @@ class StatusActionBar extends StatelessWidget {
           ),
         ],
       ),
-      child: SafeArea(
-        top: false,
-        child: _buildActionButton(context),
-      ),
+      child: SafeArea(top: false, child: _buildActionButton(context)),
     );
   }
 
@@ -95,30 +93,31 @@ class StatusActionBar extends StatelessWidget {
           ),
         ),
         onPressed: isLoading ? null : onPressed,
-        child: isLoading
-            ? const SizedBox(
-                height: 24,
-                width: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.5,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(icon, size: 22),
-                  const SizedBox(width: 10),
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.3,
-                    ),
+        child:
+            isLoading
+                ? const SizedBox(
+                  height: 24,
+                  width: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   ),
-                ],
-              ),
+                )
+                : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(icon, size: 22),
+                    const SizedBox(width: 10),
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ],
+                ),
       ),
     );
   }

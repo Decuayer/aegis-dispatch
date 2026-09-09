@@ -9,7 +9,9 @@ class FeedbackRepository {
 
   FeedbackRepository({required ApiClient apiClient}) : _apiClient = apiClient;
 
-  Future<FeedbackResponseModel> submitFeedback(CreateFeedbackRequest request) async {
+  Future<FeedbackResponseModel> submitFeedback(
+    CreateFeedbackRequest request,
+  ) async {
     try {
       final formData = FormData();
       formData.fields.add(MapEntry('Title', request.formattedTitle));
@@ -28,9 +30,7 @@ class FeedbackRepository {
       final response = await _apiClient.dio.post(
         ApiEndpoints.feedbacks,
         data: formData,
-        options: Options(
-          contentType: 'multipart/form-data',
-        ),
+        options: Options(contentType: 'multipart/form-data'),
       );
 
       final responseData = response.data as Map<String, dynamic>;
@@ -39,7 +39,8 @@ class FeedbackRepository {
           responseData['data'] as Map<String, dynamic>,
         );
       } else {
-        final message = responseData['message'] as String? ?? 'Feedback submission failed.';
+        final message =
+            responseData['message'] as String? ?? 'Feedback submission failed.';
         throw Exception(message);
       }
     } on DioException catch (e) {
@@ -47,8 +48,9 @@ class FeedbackRepository {
     }
   }
 
-   String _extractErrorMessage(DioException error) {
-    if (error.response?.data != null && error.response?.data is Map<String, dynamic>) {
+  String _extractErrorMessage(DioException error) {
+    if (error.response?.data != null &&
+        error.response?.data is Map<String, dynamic>) {
       final data = error.response!.data as Map<String, dynamic>;
       if (data['errors'] != null && (data['errors'] as List).isNotEmpty) {
         return (data['errors'] as List).first.toString();
@@ -57,6 +59,7 @@ class FeedbackRepository {
         return data['message'].toString();
       }
     }
-    return error.message ?? 'Failed to submit feedback. Please check your connection.';
+    return error.message ??
+        'Failed to submit feedback. Please check your connection.';
   }
 }

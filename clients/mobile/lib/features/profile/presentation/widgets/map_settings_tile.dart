@@ -38,13 +38,18 @@ class MapSettingsTile extends StatelessWidget {
                   secondary: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: (isLocked ? AppColors.secondary : AppColors.textMuted)
+                      color: (isLocked
+                              ? AppColors.secondary
+                              : AppColors.textMuted)
                           .withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-                      isLocked ? Icons.lock_outline_rounded : Icons.lock_open_rounded,
-                      color: isLocked ? AppColors.secondary : AppColors.textMuted,
+                      isLocked
+                          ? Icons.lock_outline_rounded
+                          : Icons.lock_open_rounded,
+                      color:
+                          isLocked ? AppColors.secondary : AppColors.textMuted,
                       size: 22,
                     ),
                   ),

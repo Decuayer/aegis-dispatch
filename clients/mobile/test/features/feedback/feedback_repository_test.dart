@@ -51,70 +51,75 @@ void main() {
   });
 
   group('FeedbackRepository Unit Tests', () {
-    test('submitFeedback posts multipart/form-data and parses 201 Created successfully', () async {
-      final storage = MockSecureStorageService();
-      final apiClient = ApiClient(storageService: storage);
+    test(
+      'submitFeedback posts multipart/form-data and parses 201 Created successfully',
+      () async {
+        final storage = MockSecureStorageService();
+        final apiClient = ApiClient(storageService: storage);
 
-      apiClient.dio.httpClientAdapter = MockHttpClientAdapter((options) async {
-        expect(options.path, contains('/api/v1/feedbacks'));
-        expect(options.method, 'POST');
-        expect(options.contentType, contains('multipart/form-data'));
+        apiClient.dio.httpClientAdapter = MockHttpClientAdapter((
+          options,
+        ) async {
+          expect(options.path, contains('/api/v1/feedbacks'));
+          expect(options.method, 'POST');
+          expect(options.contentType, contains('multipart/form-data'));
 
-        final responseData = {
-          'success': true,
-          'message': 'Feedback created successfully.',
-          'data': {
-            'id': 'fb-999',
-            'userId': 'user-111',
-            'userFullName': 'Ali Veli',
-            'userEmail': 'ali@socar.az',
-            'title': '[Bug Report] Valve malfunction',
-            'description': 'Main valve pressure leaking in unit 4.',
-            'status': 'Pending',
-            'createdAt': '2026-09-03T10:00:00Z',
-            'mediaAttachments': [
-              {
-                'id': 'media-1',
-                'feedbackId': 'fb-999',
-                'mediaUrl': 'https://minio.socar.local/feedbacks/sample.jpg',
-                'mediaType': 'image/jpeg',
-                'createdAt': '2026-09-03T10:00:00Z',
-              }
-            ],
-          },
-        };
+          final responseData = {
+            'success': true,
+            'message': 'Feedback created successfully.',
+            'data': {
+              'id': 'fb-999',
+              'userId': 'user-111',
+              'userFullName': 'Ali Veli',
+              'userEmail': 'ali@socar.az',
+              'title': '[Bug Report] Valve malfunction',
+              'description': 'Main valve pressure leaking in unit 4.',
+              'status': 'Pending',
+              'createdAt': '2026-09-03T10:00:00Z',
+              'mediaAttachments': [
+                {
+                  'id': 'media-1',
+                  'feedbackId': 'fb-999',
+                  'mediaUrl': 'https://minio.socar.local/feedbacks/sample.jpg',
+                  'mediaType': 'image/jpeg',
+                  'createdAt': '2026-09-03T10:00:00Z',
+                },
+              ],
+            },
+          };
 
-        return ResponseBody.fromString(
-          jsonEncode(responseData),
-          201,
-          headers: {
-            Headers.contentTypeHeader: [Headers.jsonContentType],
-          },
+          return ResponseBody.fromString(
+            jsonEncode(responseData),
+            201,
+            headers: {
+              Headers.contentTypeHeader: [Headers.jsonContentType],
+            },
+          );
+        });
+
+        final repository = FeedbackRepository(apiClient: apiClient);
+        final request = CreateFeedbackRequest(
+          title: 'Valve malfunction',
+          description: 'Main valve pressure leaking in unit 4.',
+          category: FeedbackCategory.bugReport,
+          attachments: [
+            SelectedMediaFile(
+              file: samplePhoto,
+              mediaType: IncidentMediaType.photo,
+              fileSizeBytes: 10 * 1024,
+              fileName: 'sample.jpg',
+            ),
+          ],
         );
-      });
 
-      final repository = FeedbackRepository(apiClient: apiClient);
-      final request = CreateFeedbackRequest(
-        title: 'Valve malfunction',
-        description: 'Main valve pressure leaking in unit 4.',
-        category: FeedbackCategory.bugReport,
-        attachments: [
-          SelectedMediaFile(
-            file: samplePhoto,
-            mediaType: IncidentMediaType.photo,
-            fileSizeBytes: 10 * 1024,
-            fileName: 'sample.jpg',
-          ),
-        ],
-      );
+        final result = await repository.submitFeedback(request);
 
-      final result = await repository.submitFeedback(request);
-
-      expect(result.id, 'fb-999');
-      expect(result.title, '[Bug Report] Valve malfunction');
-      expect(result.mediaAttachments.length, 1);
-      expect(result.mediaAttachments.first.mediaUrl, contains('sample.jpg'));
-    });
+        expect(result.id, 'fb-999');
+        expect(result.title, '[Bug Report] Valve malfunction');
+        expect(result.mediaAttachments.length, 1);
+        expect(result.mediaAttachments.first.mediaUrl, contains('sample.jpg'));
+      },
+    );
 
     test('submitFeedback throws formatted error on 400 bad request', () async {
       final storage = MockSecureStorageService();
@@ -144,7 +149,12 @@ void main() {
 
       expect(
         () => repository.submitFeedback(request),
-        throwsA(predicate((e) => e.toString().contains('Title must not exceed 200 characters.'))),
+        throwsA(
+          predicate(
+            (e) =>
+                e.toString().contains('Title must not exceed 200 characters.'),
+          ),
+        ),
       );
     });
   });

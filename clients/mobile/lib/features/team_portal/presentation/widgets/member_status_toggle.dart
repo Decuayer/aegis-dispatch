@@ -32,12 +32,18 @@ class MemberStatusToggle extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: (isAvailable ? AppColors.secondary : AppColors.textMuted).withValues(alpha: 0.1),
+                  color: (isAvailable
+                          ? AppColors.secondary
+                          : AppColors.textMuted)
+                      .withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
-                  isAvailable ? Icons.radio_button_checked : Icons.do_not_disturb_on_outlined,
-                  color: isAvailable ? AppColors.secondary : AppColors.textMuted,
+                  isAvailable
+                      ? Icons.radio_button_checked
+                      : Icons.do_not_disturb_on_outlined,
+                  color:
+                      isAvailable ? AppColors.secondary : AppColors.textMuted,
                   size: 20,
                 ),
               ),
@@ -54,8 +60,13 @@ class MemberStatusToggle extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    isAvailable ? 'Ready to receive emergency dispatches' : 'Off-duty / Unavailable',
-                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    isAvailable
+                        ? 'Ready to receive emergency dispatches'
+                        : 'Off-duty / Unavailable',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -65,7 +76,9 @@ class MemberStatusToggle extends StatelessWidget {
             value: isAvailable,
             activeTrackColor: AppColors.secondary,
             onChanged: (val) {
-              onStatusChanged(val ? MemberStatus.available : MemberStatus.offDuty);
+              onStatusChanged(
+                val ? MemberStatus.available : MemberStatus.offDuty,
+              );
             },
           ),
         ],

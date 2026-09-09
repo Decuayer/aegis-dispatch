@@ -4,10 +4,7 @@ import '../../../../core/constants/app_colors.dart';
 class WizardStepProgressBar extends StatelessWidget {
   final int currentStep;
 
-  const WizardStepProgressBar({
-    super.key,
-    required this.currentStep,
-  });
+  const WizardStepProgressBar({super.key, required this.currentStep});
 
   static const List<String> _stepTitles = [
     'Category & Code',
@@ -42,7 +39,11 @@ class WizardStepProgressBar extends StatelessWidget {
 
           if (isCompleted) {
             badgeColor = AppColors.secondary;
-            badgeContent = const Icon(Icons.check, size: 16, color: Colors.white);
+            badgeContent = const Icon(
+              Icons.check,
+              size: 16,
+              color: Colors.white,
+            );
           } else if (isCurrent) {
             badgeColor = AppColors.primary;
             badgeContent = Text(
@@ -79,7 +80,8 @@ class WizardStepProgressBar extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-                  color: isCurrent ? AppColors.primary : AppColors.textSecondary,
+                  color:
+                      isCurrent ? AppColors.primary : AppColors.textSecondary,
                 ),
               ),
             ],

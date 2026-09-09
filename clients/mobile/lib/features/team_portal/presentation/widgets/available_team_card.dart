@@ -70,9 +70,14 @@ class AvailableTeamCard extends StatelessWidget {
                       Row(
                         children: [
                           Icon(
-                            team.hasLeader ? Icons.verified_user_outlined : Icons.warning_amber_rounded,
+                            team.hasLeader
+                                ? Icons.verified_user_outlined
+                                : Icons.warning_amber_rounded,
                             size: 14,
-                            color: team.hasLeader ? AppColors.secondary : AppColors.warning,
+                            color:
+                                team.hasLeader
+                                    ? AppColors.secondary
+                                    : AppColors.warning,
                           ),
                           const SizedBox(width: 4),
                           Text(
@@ -81,8 +86,14 @@ class AvailableTeamCard extends StatelessWidget {
                                 : 'Leadership Vacant',
                             style: TextStyle(
                               fontSize: 13,
-                              fontWeight: team.hasLeader ? FontWeight.normal : FontWeight.w600,
-                              color: team.hasLeader ? AppColors.textSecondary : AppColors.warning,
+                              fontWeight:
+                                  team.hasLeader
+                                      ? FontWeight.normal
+                                      : FontWeight.w600,
+                              color:
+                                  team.hasLeader
+                                      ? AppColors.textSecondary
+                                      : AppColors.warning,
                             ),
                           ),
                         ],
@@ -98,7 +109,10 @@ class AvailableTeamCard extends StatelessWidget {
               children: [
                 const Text(
                   'Unit Capacity',
-                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
                 Text(
                   '${team.memberCount} / $maxCapacity Members',
@@ -136,15 +150,21 @@ class AvailableTeamCard extends StatelessWidget {
                   ),
                   elevation: 0,
                 ),
-                icon: isJoining
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Icon(Icons.group_add_outlined, size: 20),
+                icon:
+                    isJoining
+                        ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                        : const Icon(Icons.group_add_outlined, size: 20),
                 label: Text(
-                  isFull ? 'Unit Full' : (isJoining ? 'Joining...' : 'Join Team'),
+                  isFull
+                      ? 'Unit Full'
+                      : (isJoining ? 'Joining...' : 'Join Team'),
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),

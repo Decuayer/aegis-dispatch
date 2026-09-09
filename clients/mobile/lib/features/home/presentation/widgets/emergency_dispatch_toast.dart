@@ -8,16 +8,14 @@ import '../../../incident_reporting/presentation/views/incident_report_wizard_vi
 class EmergencyDispatchToast extends StatelessWidget {
   final RapidIncidentSuccess state;
 
-  const EmergencyDispatchToast({
-    super.key,
-    required this.state,
-  });
+  const EmergencyDispatchToast({super.key, required this.state});
 
   @override
   Widget build(BuildContext context) {
-    final incidentIdSnippet = state.incident.id.length > 8
-        ? state.incident.id.substring(0, 8).toUpperCase()
-        : state.incident.id.toUpperCase();
+    final incidentIdSnippet =
+        state.incident.id.length > 8
+            ? state.incident.id.substring(0, 8).toUpperCase()
+            : state.incident.id.toUpperCase();
 
     return Material(
       color: Colors.transparent,
@@ -81,7 +79,11 @@ class EmergencyDispatchToast extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white54, size: 20),
+                  icon: const Icon(
+                    Icons.close,
+                    color: Colors.white54,
+                    size: 20,
+                  ),
                   onPressed: () {
                     context.read<RapidIncidentCubit>().resetState();
                   },
@@ -96,7 +98,10 @@ class EmergencyDispatchToast extends StatelessWidget {
                     child: OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.error,
-                        side: const BorderSide(color: AppColors.error, width: 1.2),
+                        side: const BorderSide(
+                          color: AppColors.error,
+                          width: 1.2,
+                        ),
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
@@ -105,10 +110,15 @@ class EmergencyDispatchToast extends StatelessWidget {
                       icon: const Icon(Icons.undo_rounded, size: 18),
                       label: Text(
                         'Cancel (${state.remainingSeconds}s)',
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       onPressed: () {
-                        context.read<RapidIncidentCubit>().cancelDispatchedIncident(state.incident.id);
+                        context
+                            .read<RapidIncidentCubit>()
+                            .cancelDispatchedIncident(state.incident.id);
                       },
                     ),
                   ),
@@ -126,7 +136,10 @@ class EmergencyDispatchToast extends StatelessWidget {
                     icon: const Icon(Icons.camera_alt_outlined, size: 18),
                     label: const Text(
                       'Attach Media',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     onPressed: () {
                       context.read<RapidIncidentCubit>().resetState();

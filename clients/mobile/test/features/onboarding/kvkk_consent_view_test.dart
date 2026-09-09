@@ -28,58 +28,69 @@ void main() {
       );
     }
 
-    testWidgets('continue button is disabled until consent checkbox is checked', (tester) async {
-      SharedPreferences.setMockInitialValues({});
-      final prefs = await SharedPreferences.getInstance();
-      final repository = OnboardingRepository(prefs: prefs);
-      final permissionService = MockPermissionService();
-      final bloc = OnboardingBloc(
-        onboardingRepository: repository,
-        permissionService: permissionService,
-      )..add(const OnboardingCheckRequested());
+    testWidgets(
+      'continue button is disabled until consent checkbox is checked',
+      (tester) async {
+        SharedPreferences.setMockInitialValues({});
+        final prefs = await SharedPreferences.getInstance();
+        final repository = OnboardingRepository(prefs: prefs);
+        final permissionService = MockPermissionService();
+        final bloc = OnboardingBloc(
+          onboardingRepository: repository,
+          permissionService: permissionService,
+        )..add(const OnboardingCheckRequested());
 
-      await tester.pumpWidget(buildTestWidget(bloc));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(buildTestWidget(bloc));
+        await tester.pumpAndSettle();
 
-      final buttonFinder = find.widgetWithText(ElevatedButton, 'Continue & Grant Permissions');
-      expect(buttonFinder, findsOneWidget);
+        final buttonFinder = find.widgetWithText(
+          ElevatedButton,
+          'Continue & Grant Permissions',
+        );
+        expect(buttonFinder, findsOneWidget);
 
-      final button = tester.widget<ElevatedButton>(buttonFinder);
-      expect(button.enabled, isFalse);
+        final button = tester.widget<ElevatedButton>(buttonFinder);
+        expect(button.enabled, isFalse);
 
-      final checkboxFinder = find.byType(Checkbox);
-      expect(checkboxFinder, findsOneWidget);
-      await tester.tap(checkboxFinder);
-      await tester.pumpAndSettle();
+        final checkboxFinder = find.byType(Checkbox);
+        expect(checkboxFinder, findsOneWidget);
+        await tester.tap(checkboxFinder);
+        await tester.pumpAndSettle();
 
-      final enabledButton = tester.widget<ElevatedButton>(buttonFinder);
-      expect(enabledButton.enabled, isTrue);
+        final enabledButton = tester.widget<ElevatedButton>(buttonFinder);
+        expect(enabledButton.enabled, isTrue);
 
-      bloc.close();
-    });
+        bloc.close();
+      },
+    );
 
-    testWidgets('tapping enabled continue button triggers permission flow and persists consent', (tester) async {
-      SharedPreferences.setMockInitialValues({});
-      final prefs = await SharedPreferences.getInstance();
-      final repository = OnboardingRepository(prefs: prefs);
-      final permissionService = MockPermissionService();
-      final bloc = OnboardingBloc(
-        onboardingRepository: repository,
-        permissionService: permissionService,
-      )..add(const OnboardingCheckRequested());
+    testWidgets(
+      'tapping enabled continue button triggers permission flow and persists consent',
+      (tester) async {
+        SharedPreferences.setMockInitialValues({});
+        final prefs = await SharedPreferences.getInstance();
+        final repository = OnboardingRepository(prefs: prefs);
+        final permissionService = MockPermissionService();
+        final bloc = OnboardingBloc(
+          onboardingRepository: repository,
+          permissionService: permissionService,
+        )..add(const OnboardingCheckRequested());
 
-      await tester.pumpWidget(buildTestWidget(bloc));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(buildTestWidget(bloc));
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.byType(Checkbox));
-      await tester.pumpAndSettle();
+        await tester.tap(find.byType(Checkbox));
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Continue & Grant Permissions'));
-      await tester.pumpAndSettle();
+        await tester.tap(
+          find.widgetWithText(ElevatedButton, 'Continue & Grant Permissions'),
+        );
+        await tester.pumpAndSettle();
 
-      expect(repository.hasAcceptedKvkk(), isTrue);
+        expect(repository.hasAcceptedKvkk(), isTrue);
 
-      bloc.close();
-    });
+        bloc.close();
+      },
+    );
   });
 }

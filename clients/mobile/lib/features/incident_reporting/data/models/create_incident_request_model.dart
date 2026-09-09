@@ -17,10 +17,7 @@ class CreateIncidentMediaItem {
   });
 
   Map<String, dynamic> toJson() {
-    return {
-      'mediaUrl': mediaUrl,
-      'mediaType': mediaType.value,
-    };
+    return {'mediaUrl': mediaUrl, 'mediaType': mediaType.value};
   }
 }
 
@@ -48,7 +45,8 @@ class CreateIncidentRequestModel {
       'description': description,
       'latitude': latitude,
       'longitude': longitude,
-      'mediaAttachments': mediaAttachments.map((item) => item.toJson()).toList(),
+      'mediaAttachments':
+          mediaAttachments.map((item) => item.toJson()).toList(),
     };
   }
 }

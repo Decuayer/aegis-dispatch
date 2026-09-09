@@ -16,10 +16,13 @@ class CompletionNotesModal extends StatefulWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-        child: CompletionNotesModal(onSubmit: onSubmit),
-      ),
+      builder:
+          (ctx) => Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            ),
+            child: CompletionNotesModal(onSubmit: onSubmit),
+          ),
     );
   }
 
@@ -46,7 +49,9 @@ class _CompletionNotesModalState extends State<CompletionNotesModal> {
     final notes = _notesController.text.trim();
     if (notes.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter completion / debrief notes.')),
+        const SnackBar(
+          content: Text('Please enter completion / debrief notes.'),
+        ),
       );
       return;
     }
@@ -96,7 +101,8 @@ class _CompletionNotesModalState extends State<CompletionNotesModal> {
             controller: _notesController,
             maxLines: 4,
             decoration: InputDecoration(
-              hintText: 'Enter incident resolution summary, actions taken, safety checks...',
+              hintText:
+                  'Enter incident resolution summary, actions taken, safety checks...',
               filled: true,
               fillColor: AppColors.surfaceMuted,
               border: OutlineInputBorder(
@@ -132,7 +138,9 @@ class _CompletionNotesModalState extends State<CompletionNotesModal> {
             OutlinedButton.icon(
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               icon: const Icon(Icons.camera_alt_outlined),
               label: const Text('Attach Field Debrief Photo'),
@@ -144,22 +152,28 @@ class _CompletionNotesModalState extends State<CompletionNotesModal> {
               backgroundColor: AppColors.secondary,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             onPressed: _isSubmitting ? null : _handleSubmission,
-            child: _isSubmitting
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            child:
+                _isSubmitting
+                    ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                    : const Text(
+                      'Submit Debrief & Close Task',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  )
-                : const Text(
-                    'Submit Debrief & Close Task',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
           ),
         ],
       ),

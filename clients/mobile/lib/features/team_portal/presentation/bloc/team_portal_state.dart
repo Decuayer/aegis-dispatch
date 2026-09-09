@@ -44,10 +44,7 @@ class TeamAssignedLoaded extends TeamPortalState {
     this.isActionInProgress = false,
   });
 
-  TeamAssignedLoaded copyWith({
-    TeamModel? team,
-    bool? isActionInProgress,
-  }) {
+  TeamAssignedLoaded copyWith({TeamModel? team, bool? isActionInProgress}) {
     return TeamAssignedLoaded(
       team: team ?? this.team,
       isActionInProgress: isActionInProgress ?? this.isActionInProgress,

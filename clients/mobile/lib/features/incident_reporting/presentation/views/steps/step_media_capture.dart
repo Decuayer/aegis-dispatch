@@ -10,10 +10,7 @@ import '../../widgets/media_preview_grid.dart';
 class StepMediaCapture extends StatelessWidget {
   final MediaPickerService mediaPickerService;
 
-  const StepMediaCapture({
-    super.key,
-    required this.mediaPickerService,
-  });
+  const StepMediaCapture({super.key, required this.mediaPickerService});
 
   void _showErrorMessage(BuildContext context, Object error) {
     if (!context.mounted) return;
@@ -28,7 +25,7 @@ class StepMediaCapture extends StatelessWidget {
     );
   }
 
-    Future<void> _handleTakePhoto(BuildContext context) async {
+  Future<void> _handleTakePhoto(BuildContext context) async {
     try {
       final photo = await mediaPickerService.pickImageFromCamera();
       if (!context.mounted) return;
@@ -93,7 +90,6 @@ class StepMediaCapture extends StatelessWidget {
     }
   }
 
-
   void _showGalleryPickerOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -109,16 +105,24 @@ class StepMediaCapture extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 ListTile(
-                  leading: const Icon(Icons.perm_media_rounded, color: AppColors.primary),
+                  leading: const Icon(
+                    Icons.perm_media_rounded,
+                    color: AppColors.primary,
+                  ),
                   title: const Text('Photos & Videos (Batch)'),
-                  subtitle: const Text('Select multiple photos and videos together'),
+                  subtitle: const Text(
+                    'Select multiple photos and videos together',
+                  ),
                   onTap: () {
                     Navigator.pop(sheetContext);
                     _handlePickMultipleMedia(context);
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.photo_library_rounded, color: AppColors.primary),
+                  leading: const Icon(
+                    Icons.photo_library_rounded,
+                    color: AppColors.primary,
+                  ),
                   title: const Text('Photos Only'),
                   subtitle: const Text('Select photos from gallery'),
                   onTap: () {
@@ -127,7 +131,10 @@ class StepMediaCapture extends StatelessWidget {
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.video_library_rounded, color: AppColors.primary),
+                  leading: const Icon(
+                    Icons.video_library_rounded,
+                    color: AppColors.primary,
+                  ),
                   title: const Text('Video Only'),
                   subtitle: const Text('Select a video file from gallery'),
                   onTap: () {
@@ -214,7 +221,10 @@ class StepMediaCapture extends StatelessWidget {
               const SizedBox(height: 24),
               if (state.selectedMediaFiles.isEmpty)
                 Container(
-                  padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 40,
+                    horizontal: 20,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.surface,
                     borderRadius: BorderRadius.circular(12),
@@ -241,7 +251,10 @@ class StepMediaCapture extends StatelessWidget {
                       SizedBox(height: 4),
                       Text(
                         'Media is optional but highly recommended.',
-                        style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textMuted,
+                        ),
                       ),
                     ],
                   ),
@@ -262,11 +275,11 @@ class StepMediaCapture extends StatelessWidget {
                     MediaPreviewGrid(
                       mediaFiles: state.selectedMediaFiles,
                       onRemove: (index) {
-                        context
-                            .read<IncidentReportBloc>()
-                            .add(MediaFileRemoved(index));
+                        context.read<IncidentReportBloc>().add(
+                          MediaFileRemoved(index),
+                        );
                       },
-                    ),  
+                    ),
                   ],
                 ),
             ],

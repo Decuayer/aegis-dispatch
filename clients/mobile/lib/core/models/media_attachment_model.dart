@@ -28,10 +28,7 @@ class MediaValidationRules {
     'webp',
   };
 
-  static const Set<String> allowedVideoExtensions = {
-    'mp4',
-    'mov',
-  };
+  static const Set<String> allowedVideoExtensions = {'mp4', 'mov'};
 }
 
 class MediaAttachmentModel {

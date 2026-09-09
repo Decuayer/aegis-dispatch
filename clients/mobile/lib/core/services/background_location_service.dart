@@ -25,15 +25,16 @@ void onStart(ServiceInstance service) async {
       await hubConnection?.stop();
     } catch (_) {}
 
-    hubConnection = HubConnectionBuilder()
-        .withUrl(
-          hubUrl,
-          options: HttpConnectionOptions(
-            accessTokenFactory: () async => currentToken!,
-          ),
-        )
-        .withAutomaticReconnect(retryDelays: [0, 2000, 5000, 10000, 30000])
-        .build();
+    hubConnection =
+        HubConnectionBuilder()
+            .withUrl(
+              hubUrl,
+              options: HttpConnectionOptions(
+                accessTokenFactory: () async => currentToken!,
+              ),
+            )
+            .withAutomaticReconnect(retryDelays: [0, 2000, 5000, 10000, 30000])
+            .build();
 
     try {
       await hubConnection!.start();
@@ -55,7 +56,8 @@ void onStart(ServiceInstance service) async {
     ).listen((Position position) async {
       // 1. Transmit telemetry via SignalR
       final teamId = currentTeamId;
-      if (hubConnection?.state == HubConnectionState.Connected && teamId != null) {
+      if (hubConnection?.state == HubConnectionState.Connected &&
+          teamId != null) {
         try {
           await hubConnection!.invoke(
             'StreamTeamLocation',
@@ -67,7 +69,8 @@ void onStart(ServiceInstance service) async {
       // 2. Update Android notification banner
       service.invoke('updateNotification', {
         'title': 'SOCAR Dispatch Active Tracking',
-        'content': 'Lat: ${position.latitude.toStringAsFixed(5)}, Lng: ${position.longitude.toStringAsFixed(5)}',
+        'content':
+            'Lat: ${position.latitude.toStringAsFixed(5)}, Lng: ${position.longitude.toStringAsFixed(5)}',
       });
 
       // 3. Emit position to main application UI
@@ -80,7 +83,6 @@ void onStart(ServiceInstance service) async {
       });
     });
   }
-
 
   service.on('setTeamData').listen((data) async {
     if (data == null) return;
@@ -113,13 +115,15 @@ Future<bool> onIosBackground(ServiceInstance service) async {
 }
 
 class BackgroundLocationService {
-  static final BackgroundLocationService _instance = BackgroundLocationService._internal();
+  static final BackgroundLocationService _instance =
+      BackgroundLocationService._internal();
   factory BackgroundLocationService() => _instance;
   BackgroundLocationService._internal();
 
   final FlutterBackgroundService _service = FlutterBackgroundService();
 
-  Stream<Map<String, dynamic>?> get onLocationUpdate => _service.on('onLocationUpdate');
+  Stream<Map<String, dynamic>?> get onLocationUpdate =>
+      _service.on('onLocationUpdate');
 
   Future<void> initialize() async {
     await _service.configure(

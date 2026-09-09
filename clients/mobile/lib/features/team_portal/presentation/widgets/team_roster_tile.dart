@@ -42,24 +42,27 @@ class TeamRosterTile extends StatelessWidget {
   void _showRemoveConfirmation(BuildContext context) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Remove Team Member'),
-        content: Text('Are you sure you want to remove ${member.fullName} from the team roster?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Remove Team Member'),
+            content: Text(
+              'Are you sure you want to remove ${member.fullName} from the team roster?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  onRemove?.call();
+                },
+                style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+                child: const Text('Remove'),
+              ),
+            ],
           ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              onRemove?.call();
-            },
-            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('Remove'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -74,16 +77,20 @@ class TeamRosterTile extends StatelessWidget {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isCurrentUser ? AppColors.primary.withValues(alpha: 0.3) : AppColors.border,
+          color:
+              isCurrentUser
+                  ? AppColors.primary.withValues(alpha: 0.3)
+                  : AppColors.border,
         ),
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 20,
-            backgroundColor: isLeader
-                ? AppColors.warning.withValues(alpha: 0.15)
-                : AppColors.primary.withValues(alpha: 0.1),
+            backgroundColor:
+                isLeader
+                    ? AppColors.warning.withValues(alpha: 0.15)
+                    : AppColors.primary.withValues(alpha: 0.1),
             child: Text(
               _getInitials(member.fullName),
               style: TextStyle(
@@ -114,7 +121,10 @@ class TeamRosterTile extends StatelessWidget {
                     if (isLeader) ...[
                       const SizedBox(width: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.warning.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(4),
@@ -122,7 +132,11 @@ class TeamRosterTile extends StatelessWidget {
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.star, size: 10, color: AppColors.warning),
+                            Icon(
+                              Icons.star,
+                              size: 10,
+                              color: AppColors.warning,
+                            ),
                             SizedBox(width: 2),
                             Text(
                               'LEADER',
@@ -139,7 +153,10 @@ class TeamRosterTile extends StatelessWidget {
                     if (isCurrentUser) ...[
                       const SizedBox(width: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
@@ -159,7 +176,10 @@ class TeamRosterTile extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   member.subRole ?? member.department,
-                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -176,12 +196,19 @@ class TeamRosterTile extends StatelessWidget {
                 Container(
                   width: 6,
                   height: 6,
-                  decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
+                  decoration: BoxDecoration(
+                    color: statusColor,
+                    shape: BoxShape.circle,
+                  ),
                 ),
                 const SizedBox(width: 4),
                 Text(
                   member.memberStatus.label,
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: statusColor),
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: statusColor,
+                  ),
                 ),
               ],
             ),
@@ -189,7 +216,11 @@ class TeamRosterTile extends StatelessWidget {
           if (canManage && !isLeader && !isCurrentUser) ...[
             const SizedBox(width: 4),
             IconButton(
-              icon: const Icon(Icons.person_remove_outlined, size: 20, color: AppColors.error),
+              icon: const Icon(
+                Icons.person_remove_outlined,
+                size: 20,
+                color: AppColors.error,
+              ),
               tooltip: 'Remove from team',
               onPressed: () => _showRemoveConfirmation(context),
             ),

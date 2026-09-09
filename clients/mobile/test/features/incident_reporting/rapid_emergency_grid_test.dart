@@ -18,17 +18,19 @@ class StubSecureStorage extends SecureStorageService {
 
 class StubDispatchService extends RapidDispatchService {
   StubDispatchService()
-      : super(
-          incidentRepository: IncidentRepository(
-            apiClient: ApiClient(storageService: StubSecureStorage()),
-          ),
-          locationService: const LocationService(),
-        );
+    : super(
+        incidentRepository: IncidentRepository(
+          apiClient: ApiClient(storageService: StubSecureStorage()),
+        ),
+        locationService: const LocationService(),
+      );
 
   RapidEmergencyPreset? triggeredPreset;
 
   @override
-  Future<IncidentResponseModel> dispatchRapidIncident(RapidEmergencyPreset preset) async {
+  Future<IncidentResponseModel> dispatchRapidIncident(
+    RapidEmergencyPreset preset,
+  ) async {
     triggeredPreset = preset;
     return IncidentResponseModel(
       id: 'stub-id-1',
@@ -44,7 +46,9 @@ class StubDispatchService extends RapidDispatchService {
 }
 
 void main() {
-  testWidgets('RapidEmergencyGrid renders 4 preset buttons and responds to tap', (tester) async {
+  testWidgets('RapidEmergencyGrid renders 4 preset buttons and responds to tap', (
+    tester,
+  ) async {
     final dispatchService = StubDispatchService();
     final cubit = RapidIncidentCubit(dispatchService: dispatchService);
 

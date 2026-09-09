@@ -19,13 +19,14 @@ class RouteService {
   final Dio _dio;
 
   RouteService({Dio? dio})
-      : _dio = dio ??
-            Dio(
-              BaseOptions(
-                connectTimeout: const Duration(seconds: 6),
-                receiveTimeout: const Duration(seconds: 6),
-              ),
-            );
+    : _dio =
+          dio ??
+          Dio(
+            BaseOptions(
+              connectTimeout: const Duration(seconds: 6),
+              receiveTimeout: const Duration(seconds: 6),
+            ),
+          );
 
   Future<RouteResult> calculateRoute({
     required LatLng origin,
@@ -50,11 +51,12 @@ class RouteService {
           final coordinates = geometry?['coordinates'] as List<dynamic>?;
 
           if (coordinates != null && coordinates.isNotEmpty) {
-            final List<LatLng> routePoints = coordinates.map((coord) {
-              final lon = (coord[0] as num).toDouble();
-              final lat = (coord[1] as num).toDouble();
-              return LatLng(lat, lon);
-            }).toList();
+            final List<LatLng> routePoints =
+                coordinates.map((coord) {
+                  final lon = (coord[0] as num).toDouble();
+                  final lat = (coord[1] as num).toDouble();
+                  return LatLng(lat, lon);
+                }).toList();
 
             final double distanceMeters =
                 (firstRoute['distance'] as num?)?.toDouble() ?? 0.0;

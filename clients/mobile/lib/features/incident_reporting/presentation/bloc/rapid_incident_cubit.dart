@@ -9,10 +9,9 @@ class RapidIncidentCubit extends Cubit<RapidIncidentState> {
   final RapidDispatchService _dispatchService;
   Timer? _countdownTimer;
 
-  RapidIncidentCubit({
-    required RapidDispatchService dispatchService,
-  })  : _dispatchService = dispatchService,
-        super(const RapidIncidentInitial());
+  RapidIncidentCubit({required RapidDispatchService dispatchService})
+    : _dispatchService = dispatchService,
+      super(const RapidIncidentInitial());
 
   /// Triggers instant emergency incident submission with heavy haptic feedback.
   Future<void> triggerRapidIncident(RapidEmergencyPreset preset) async {
@@ -27,18 +26,24 @@ class RapidIncidentCubit extends Cubit<RapidIncidentState> {
 
     try {
       final incident = await _dispatchService.dispatchRapidIncident(preset);
-      emit(RapidIncidentSuccess(
-        incident: incident,
-        preset: preset,
-        isReversible: true,
-        remainingSeconds: 5,
-      ));
+      emit(
+        RapidIncidentSuccess(
+          incident: incident,
+          preset: preset,
+          isReversible: true,
+          remainingSeconds: 5,
+        ),
+      );
       _startCountdown();
     } catch (e) {
       final message = e.toString().replaceAll('Exception: ', '').trim();
-      emit(RapidIncidentFailure(
-        message.isNotEmpty ? message : 'Emergency dispatch failed. Please try again.',
-      ));
+      emit(
+        RapidIncidentFailure(
+          message.isNotEmpty
+              ? message
+              : 'Emergency dispatch failed. Please try again.',
+        ),
+      );
     }
   }
 
@@ -52,9 +57,11 @@ class RapidIncidentCubit extends Cubit<RapidIncidentState> {
       emit(const RapidIncidentInitial());
     } catch (e) {
       final message = e.toString().replaceAll('Exception: ', '').trim();
-      emit(RapidIncidentFailure(
-        message.isNotEmpty ? message : 'Failed to cancel incident.',
-      ));
+      emit(
+        RapidIncidentFailure(
+          message.isNotEmpty ? message : 'Failed to cancel incident.',
+        ),
+      );
     }
   }
 
@@ -67,14 +74,9 @@ class RapidIncidentCubit extends Cubit<RapidIncidentState> {
 
         if (nextSeconds <= 0) {
           timer.cancel();
-          emit(current.copyWith(
-            isReversible: false,
-            remainingSeconds: 0,
-          ));
+          emit(current.copyWith(isReversible: false, remainingSeconds: 0));
         } else {
-          emit(current.copyWith(
-            remainingSeconds: nextSeconds,
-          ));
+          emit(current.copyWith(remainingSeconds: nextSeconds));
         }
       } else {
         timer.cancel();

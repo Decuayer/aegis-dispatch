@@ -57,13 +57,14 @@ void main() {
     tempDir = await Directory.systemTemp.createTemp('media_picker_test_');
     fakePicker = FakeImagePicker();
     mockThumbnailService = ThumbnailGeneratorService(
-      thumbnailGenerator: ({
-        required String video,
-        String? thumbnailPath,
-        dynamic imageFormat,
-        int maxHeight = 0,
-        int quality = 10,
-      }) async => '${tempDir.path}/mock_thumb.jpg',
+      thumbnailGenerator:
+          ({
+            required String video,
+            String? thumbnailPath,
+            dynamic imageFormat,
+            int maxHeight = 0,
+            int quality = 10,
+          }) async => '${tempDir.path}/mock_thumb.jpg',
       tempDirectoryProvider: () async => tempDir,
     );
 
@@ -108,15 +109,18 @@ void main() {
       );
     });
 
-    test('throws UnsupportedMediaFormatException for rejected photo formats', () async {
-      final file = createTestFile('invalid.bmp', 1024);
-      fakePicker.returnedImage = XFile(file.path);
+    test(
+      'throws UnsupportedMediaFormatException for rejected photo formats',
+      () async {
+        final file = createTestFile('invalid.bmp', 1024);
+        fakePicker.returnedImage = XFile(file.path);
 
-      expect(
-        () => service.pickImageFromCamera(),
-        throwsA(isA<UnsupportedMediaFormatException>()),
-      );
-    });
+        expect(
+          () => service.pickImageFromCamera(),
+          throwsA(isA<UnsupportedMediaFormatException>()),
+        );
+      },
+    );
 
     test('successfully records video and generates thumbnail', () async {
       final file = createTestFile('incident.mp4', 15 * 1024 * 1024); // 15 MB
@@ -140,14 +144,17 @@ void main() {
       );
     });
 
-    test('throws UnsupportedMediaFormatException for unsupported video format', () async {
-      final file = createTestFile('legacy.avi', 1024);
-      fakePicker.returnedVideo = XFile(file.path);
+    test(
+      'throws UnsupportedMediaFormatException for unsupported video format',
+      () async {
+        final file = createTestFile('legacy.avi', 1024);
+        fakePicker.returnedVideo = XFile(file.path);
 
-      expect(
-        () => service.recordVideoFromCamera(),
-        throwsA(isA<UnsupportedMediaFormatException>()),
-      );
-    });
+        expect(
+          () => service.recordVideoFromCamera(),
+          throwsA(isA<UnsupportedMediaFormatException>()),
+        );
+      },
+    );
   });
 }

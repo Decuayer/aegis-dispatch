@@ -2,7 +2,7 @@ import 'dart:convert';
 
 enum RoleType {
   employee, // 0
-  team,     // 1
+  team, // 1
   operator, // 2
 }
 
@@ -32,7 +32,8 @@ class UserModel {
   });
 
   String get fullName => '$firstName $lastName'.trim();
-  bool get isGoogleLinked => googleEmail != null && googleEmail!.trim().isNotEmpty;
+  bool get isGoogleLinked =>
+      googleEmail != null && googleEmail!.trim().isNotEmpty;
 
   static RoleType parseRoleType(dynamic role) {
     if (role == null) return RoleType.employee;
@@ -59,7 +60,8 @@ class UserModel {
       roleType: parseRoleType(json['roleType'] ?? json['RoleType']),
       subRole: json['subRole'] as String? ?? json['SubRole'] as String?,
       avatarUrl: json['avatarUrl'] as String? ?? json['AvatarUrl'] as String?,
-      googleEmail: json['googleEmail'] as String? ?? json['GoogleEmail'] as String?,
+      googleEmail:
+          json['googleEmail'] as String? ?? json['GoogleEmail'] as String?,
     );
   }
 

@@ -53,14 +53,21 @@ class IncidentResponseModel {
       status: json['status'] as String? ?? 'Open',
       latitude: (json['latitude'] as num?)?.toDouble() ?? 0.0,
       longitude: (json['longitude'] as num?)?.toDouble() ?? 0.0,
-      createdAt: json['createdAt'] != null
-          ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
-          : DateTime.now(),
-      mediaAttachments: json['mediaAttachments'] != null
-          ? (json['mediaAttachments'] as List)
-              .map((item) => IncidentMediaModel.fromJson(item as Map<String, dynamic>))
-              .toList()
-          : const [],
+      createdAt:
+          json['createdAt'] != null
+              ? DateTime.tryParse(json['createdAt'].toString()) ??
+                  DateTime.now()
+              : DateTime.now(),
+      mediaAttachments:
+          json['mediaAttachments'] != null
+              ? (json['mediaAttachments'] as List)
+                  .map(
+                    (item) => IncidentMediaModel.fromJson(
+                      item as Map<String, dynamic>,
+                    ),
+                  )
+                  .toList()
+              : const [],
     );
   }
 }

@@ -15,12 +15,15 @@ class StubSecureStorage extends SecureStorageService {
 }
 
 class StubFeedbackRepository extends FeedbackRepository {
-  StubFeedbackRepository() : super(apiClient: ApiClient(storageService: StubSecureStorage()));
+  StubFeedbackRepository()
+    : super(apiClient: ApiClient(storageService: StubSecureStorage()));
 
   bool shouldFail = false;
 
   @override
-  Future<FeedbackResponseModel> submitFeedback(CreateFeedbackRequest request) async {
+  Future<FeedbackResponseModel> submitFeedback(
+    CreateFeedbackRequest request,
+  ) async {
     if (shouldFail) {
       throw Exception('Submission failed from server');
     }
@@ -53,22 +56,27 @@ void main() {
   }
 
   group('FeedbackSubmissionView Widget Tests', () {
-    testWidgets('renders all form elements, category chips, and submit button', (tester) async {
-      await tester.pumpWidget(createWidget());
-      await tester.pumpAndSettle();
+    testWidgets(
+      'renders all form elements, category chips, and submit button',
+      (tester) async {
+        await tester.pumpWidget(createWidget());
+        await tester.pumpAndSettle();
 
-      expect(find.text('Send Feedback'), findsOneWidget);
-      expect(find.text('Feedback Category'), findsOneWidget);
-      expect(find.text('Bug Report'), findsOneWidget);
-      expect(find.text('Improvement Suggestion'), findsOneWidget);
-      expect(find.text('Operational Issue'), findsOneWidget);
-      expect(find.text('Title *'), findsOneWidget);
-      expect(find.text('Description *'), findsOneWidget);
-      expect(find.text('Media Attachments'), findsOneWidget);
-      expect(find.text('Submit Feedback'), findsOneWidget);
-    });
+        expect(find.text('Send Feedback'), findsOneWidget);
+        expect(find.text('Feedback Category'), findsOneWidget);
+        expect(find.text('Bug Report'), findsOneWidget);
+        expect(find.text('Improvement Suggestion'), findsOneWidget);
+        expect(find.text('Operational Issue'), findsOneWidget);
+        expect(find.text('Title *'), findsOneWidget);
+        expect(find.text('Description *'), findsOneWidget);
+        expect(find.text('Media Attachments'), findsOneWidget);
+        expect(find.text('Submit Feedback'), findsOneWidget);
+      },
+    );
 
-    testWidgets('shows validation errors when submitting with empty fields', (tester) async {
+    testWidgets('shows validation errors when submitting with empty fields', (
+      tester,
+    ) async {
       await tester.pumpWidget(createWidget());
       await tester.pumpAndSettle();
 
@@ -81,7 +89,9 @@ void main() {
       expect(find.text('Description is required.'), findsOneWidget);
     });
 
-    testWidgets('switching categories updates choice chip selection', (tester) async {
+    testWidgets('switching categories updates choice chip selection', (
+      tester,
+    ) async {
       await tester.pumpWidget(createWidget());
       await tester.pumpAndSettle();
 
@@ -95,12 +105,20 @@ void main() {
       expect(choiceChipWidget.selected, isTrue);
     });
 
-    testWidgets('submitting valid feedback displays FeedbackSuccessDialog', (tester) async {
+    testWidgets('submitting valid feedback displays FeedbackSuccessDialog', (
+      tester,
+    ) async {
       await tester.pumpWidget(createWidget());
       await tester.pumpAndSettle();
 
-      await tester.enterText(find.byType(TextFormField).first, 'Generator noise');
-      await tester.enterText(find.byType(TextFormField).last, 'Excessive vibrations and noise during peak operation.');
+      await tester.enterText(
+        find.byType(TextFormField).first,
+        'Generator noise',
+      );
+      await tester.enterText(
+        find.byType(TextFormField).last,
+        'Excessive vibrations and noise during peak operation.',
+      );
       await tester.pumpAndSettle();
 
       final submitBtn = find.text('Submit Feedback');

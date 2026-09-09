@@ -17,15 +17,16 @@ class FcmNotificationService {
   final ApiClient _apiClient;
   final LocalNotificationService _localNotifications;
 
-  void Function(String incidentId, Map<String, dynamic> data)? onDispatchAlertTapped;
+  void Function(String incidentId, Map<String, dynamic> data)?
+  onDispatchAlertTapped;
 
   FcmNotificationService({
     FirebaseMessaging? messaging,
     required ApiClient apiClient,
     LocalNotificationService? localNotifications,
-  })  : _messaging = messaging ?? _resolveMessagingSafely(),
-        _apiClient = apiClient,
-        _localNotifications = localNotifications ?? LocalNotificationService();
+  }) : _messaging = messaging ?? _resolveMessagingSafely(),
+       _apiClient = apiClient,
+       _localNotifications = localNotifications ?? LocalNotificationService();
 
   /// Safely resolves FirebaseMessaging instance only when Firebase has been initialized.
   static FirebaseMessaging? _resolveMessagingSafely() {
@@ -38,7 +39,8 @@ class FcmNotificationService {
   }
 
   Future<void> initialize({
-    void Function(String incidentId, Map<String, dynamic> data)? onNotificationAction,
+    void Function(String incidentId, Map<String, dynamic> data)?
+    onNotificationAction,
   }) async {
     onDispatchAlertTapped = onNotificationAction;
 
@@ -111,7 +113,9 @@ class FcmNotificationService {
 
   void _handleForegroundMessage(RemoteMessage message) {
     final title = message.notification?.title ?? 'Emergency Dispatch Alert';
-    final body = message.notification?.body ?? 'New dispatch mission assigned to your unit.';
+    final body =
+        message.notification?.body ??
+        'New dispatch mission assigned to your unit.';
 
     _localNotifications.showEmergencyNotification(
       id: message.hashCode,

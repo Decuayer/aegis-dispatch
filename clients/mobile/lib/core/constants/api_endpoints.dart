@@ -40,7 +40,8 @@ class ApiEndpoints {
   static const String incidents = '/api/v1/incidents';
   static String incidentById(String id) => '/api/v1/incidents/$id';
   static String incidentStatus(String id) => '/api/v1/incidents/$id/status';
-  static String incidentReports(String incidentId) => '/api/v1/incidents/$incidentId/reports';
+  static String incidentReports(String incidentId) =>
+      '/api/v1/incidents/$incidentId/reports';
 
   // Response Teams & Tasks Endpoints
   static const String teams = '/api/v1/teams';
@@ -48,9 +49,9 @@ class ApiEndpoints {
   static String teamById(String id) => '/api/v1/teams/$id';
   static String teamStatus(String teamId) => '/api/v1/teams/$teamId/status';
   static String teamMembers(String teamId) => '/api/v1/teams/$teamId/members';
-  static String teamMember(String teamId, String userId) => '/api/v1/teams/$teamId/members/$userId';
-  static String teamMemberStatus(String teamId, String userId) => '/api/v1/teams/$teamId/members/$userId/status';
+  static String teamMember(String teamId, String userId) =>
+      '/api/v1/teams/$teamId/members/$userId';
+  static String teamMemberStatus(String teamId, String userId) =>
+      '/api/v1/teams/$teamId/members/$userId/status';
   static const String teamLocation = '/api/v1/teams/location';
-
-
 }

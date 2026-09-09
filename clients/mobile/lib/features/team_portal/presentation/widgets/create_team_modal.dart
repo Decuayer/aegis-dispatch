@@ -36,10 +36,7 @@ class _CreateTeamModalState extends State<CreateTeamModal> {
   void _handleCreate() {
     if (_formKey.currentState?.validate() == true) {
       Navigator.pop(context);
-      widget.onSubmit(
-        _teamNameController.text.trim(),
-        _designateAsLeader,
-      );
+      widget.onSubmit(_teamNameController.text.trim(), _designateAsLeader);
     }
   }
 
@@ -73,7 +70,11 @@ class _CreateTeamModalState extends State<CreateTeamModal> {
               const SizedBox(height: 16),
               const Row(
                 children: [
-                  Icon(Icons.add_moderator_outlined, color: AppColors.primary, size: 28),
+                  Icon(
+                    Icons.add_moderator_outlined,
+                    color: AppColors.primary,
+                    size: 28,
+                  ),
                   SizedBox(width: 10),
                   Text(
                     'Establish New Response Unit',
@@ -131,7 +132,10 @@ class _CreateTeamModalState extends State<CreateTeamModal> {
                 ),
                 subtitle: const Text(
                   'You will oversee roster management and unit readiness.',
-                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
                 onChanged: (val) => setState(() => _designateAsLeader = val),
               ),

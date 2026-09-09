@@ -4,7 +4,9 @@ import 'package:socar_dispatch_mobile/features/employee_tracking/presentation/wi
 
 void main() {
   group('AssignedTeamInfoCard Widget Tests', () {
-    testWidgets('renders team name, leader, member count and call button', (tester) async {
+    testWidgets('renders team name, leader, member count and call button', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(

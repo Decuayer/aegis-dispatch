@@ -9,11 +9,31 @@ class StepCategorySeverity extends StatelessWidget {
   const StepCategorySeverity({super.key});
 
   static const List<Map<String, dynamic>> _categories = [
-    {'name': 'Fire', 'icon': Icons.local_fire_department_rounded, 'color': Color(0xFFE53935)},
-    {'name': 'Medical', 'icon': Icons.medical_services_rounded, 'color': Color(0xFF43A047)},
-    {'name': 'Security', 'icon': Icons.shield_rounded, 'color': Color(0xFF1E88E5)},
-    {'name': 'Environmental', 'icon': Icons.eco_rounded, 'color': Color(0xFF00ACC1)},
-    {'name': 'Chemical', 'icon': Icons.science_rounded, 'color': Color(0xFFFB8C00)},
+    {
+      'name': 'Fire',
+      'icon': Icons.local_fire_department_rounded,
+      'color': Color(0xFFE53935),
+    },
+    {
+      'name': 'Medical',
+      'icon': Icons.medical_services_rounded,
+      'color': Color(0xFF43A047),
+    },
+    {
+      'name': 'Security',
+      'icon': Icons.shield_rounded,
+      'color': Color(0xFF1E88E5),
+    },
+    {
+      'name': 'Environmental',
+      'icon': Icons.eco_rounded,
+      'color': Color(0xFF00ACC1),
+    },
+    {
+      'name': 'Chemical',
+      'icon': Icons.science_rounded,
+      'color': Color(0xFFFB8C00),
+    },
   ];
 
   @override
@@ -51,17 +71,18 @@ class StepCategorySeverity extends StatelessWidget {
 
                   return InkWell(
                     onTap: () {
-                      context
-                          .read<IncidentReportBloc>()
-                          .add(CategorySelected(cat['name'] as String));
+                      context.read<IncidentReportBloc>().add(
+                        CategorySelected(cat['name'] as String),
+                      );
                     },
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
-                        color: isSelected
-                            ? color.withValues(alpha: 0.12)
-                            : AppColors.surface,
+                        color:
+                            isSelected
+                                ? color.withValues(alpha: 0.12)
+                                : AppColors.surface,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: isSelected ? color : AppColors.border,
@@ -81,8 +102,11 @@ class StepCategorySeverity extends StatelessWidget {
                               cat['name'] as String,
                               style: TextStyle(
                                 fontWeight:
-                                    isSelected ? FontWeight.bold : FontWeight.w500,
-                                color: isSelected ? color : AppColors.textPrimary,
+                                    isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.w500,
+                                color:
+                                    isSelected ? color : AppColors.textPrimary,
                                 fontSize: 13,
                               ),
                             ),
@@ -126,9 +150,9 @@ class StepCategorySeverity extends StatelessWidget {
                       ),
                       TextButton(
                         onPressed: () {
-                          context
-                              .read<IncidentReportBloc>()
-                              .add(const LoadEmergencyCodesStarted());
+                          context.read<IncidentReportBloc>().add(
+                            const LoadEmergencyCodesStarted(),
+                          );
                         },
                         child: const Text('Retry'),
                       ),
@@ -137,81 +161,93 @@ class StepCategorySeverity extends StatelessWidget {
                 )
               else
                 Column(
-                  children: state.emergencyCodes.map((code) {
-                    final isSelected = state.selectedEmergencyCode?.id == code.id;
-                    Color badgeColor;
-                    try {
-                      final hex = code.colorHex.replaceFirst('#', '');
-                      badgeColor = Color(int.parse('0xFF$hex'));
-                    } catch (_) {
-                      badgeColor = AppColors.accent;
-                    }
+                  children:
+                      state.emergencyCodes.map((code) {
+                        final isSelected =
+                            state.selectedEmergencyCode?.id == code.id;
+                        Color badgeColor;
+                        try {
+                          final hex = code.colorHex.replaceFirst('#', '');
+                          badgeColor = Color(int.parse('0xFF$hex'));
+                        } catch (_) {
+                          badgeColor = AppColors.accent;
+                        }
 
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: InkWell(
-                        onTap: () {
-                          context
-                              .read<IncidentReportBloc>()
-                              .add(EmergencyCodeSelected(code));
-                        },
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? badgeColor.withValues(alpha: 0.1)
-                                : AppColors.surface,
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: InkWell(
+                            onTap: () {
+                              context.read<IncidentReportBloc>().add(
+                                EmergencyCodeSelected(code),
+                              );
+                            },
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: isSelected ? badgeColor : AppColors.border,
-                              width: isSelected ? 2 : 1,
+                            child: Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color:
+                                    isSelected
+                                        ? badgeColor.withValues(alpha: 0.1)
+                                        : AppColors.surface,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color:
+                                      isSelected
+                                          ? badgeColor
+                                          : AppColors.border,
+                                  width: isSelected ? 2 : 1,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 14,
+                                    height: 14,
+                                    decoration: BoxDecoration(
+                                      color: badgeColor,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'CODE ${code.code}',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                            color:
+                                                isSelected
+                                                    ? badgeColor
+                                                    : AppColors.textPrimary,
+                                          ),
+                                        ),
+                                        if (code.description.isNotEmpty)
+                                          Text(
+                                            code.description,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: AppColors.textSecondary,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (isSelected)
+                                    Icon(
+                                      Icons.check_circle,
+                                      color: badgeColor,
+                                      size: 20,
+                                    ),
+                                ],
+                              ),
                             ),
                           ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 14,
-                                height: 14,
-                                decoration: BoxDecoration(
-                                  color: badgeColor,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'CODE ${code.code}',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                        color: isSelected
-                                            ? badgeColor
-                                            : AppColors.textPrimary,
-                                      ),
-                                    ),
-                                    if (code.description.isNotEmpty)
-                                      Text(
-                                        code.description,
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: AppColors.textSecondary,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                              if (isSelected)
-                                Icon(Icons.check_circle, color: badgeColor, size: 20),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
+                        );
+                      }).toList(),
                 ),
             ],
           ),

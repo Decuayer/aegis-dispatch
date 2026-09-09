@@ -10,7 +10,6 @@ import '../widgets/status_action_bar.dart';
 import 'task_route_map_view.dart';
 import '../../../../core/widgets/entity_id_badge.dart';
 
-
 class ActiveTaskView extends StatelessWidget {
   final TeamTaskModel task;
   final List<LatLng> routePoints;
@@ -38,7 +37,10 @@ class ActiveTaskView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currentStatus = TeamStatus.fromString(task.status);
-    final fallbackCoords = LatLng(task.latitude - 0.005, task.longitude - 0.005);
+    final fallbackCoords = LatLng(
+      task.latitude - 0.005,
+      task.longitude - 0.005,
+    );
     final effectiveTeamLocation = teamLocation ?? fallbackCoords;
 
     return Column(
@@ -83,10 +85,11 @@ class ActiveTaskView extends StatelessWidget {
           currentStatus: currentStatus,
           isLoading: isStatusUpdating,
           onStatusChangeRequested: onStatusChange,
-          onResolveRequested: () => CompletionNotesModal.show(
-            context,
-            onSubmit: (notes, photo) => onDebriefSubmit(notes, photo),
-          ),
+          onResolveRequested:
+              () => CompletionNotesModal.show(
+                context,
+                onSubmit: (notes, photo) => onDebriefSubmit(notes, photo),
+              ),
         ),
       ],
     );
@@ -109,7 +112,10 @@ class ActiveTaskView extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.accent,
                       borderRadius: BorderRadius.circular(8),
@@ -126,12 +132,18 @@ class ActiveTaskView extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(
                     task.category,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                   ),
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: status.color.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
@@ -150,11 +162,9 @@ class ActiveTaskView extends StatelessWidget {
           const SizedBox(height: 10),
           Row(
             children: [
-              EntityIdBadge(
-                id: task.id,
-                type: EntityBadgeType.incident,
-              ),
-              if (task.assignedTeamId != null && task.assignedTeamId!.isNotEmpty) ...[
+              EntityIdBadge(id: task.id, type: EntityBadgeType.incident),
+              if (task.assignedTeamId != null &&
+                  task.assignedTeamId!.isNotEmpty) ...[
                 const SizedBox(width: 8),
                 EntityIdBadge(
                   id: task.assignedTeamId!,
@@ -167,7 +177,6 @@ class ActiveTaskView extends StatelessWidget {
       ),
     );
   }
-
 
   Widget _buildIncidentDetailsCard() {
     return Container(
@@ -182,7 +191,11 @@ class ActiveTaskView extends StatelessWidget {
         children: [
           const Text(
             'Incident Description',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textSecondary),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+              color: AppColors.textSecondary,
+            ),
           ),
           const SizedBox(height: 6),
           Text(

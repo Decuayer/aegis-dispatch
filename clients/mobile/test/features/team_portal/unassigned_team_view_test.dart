@@ -23,42 +23,45 @@ void main() {
       department: 'Fire Safety',
     );
 
-    testWidgets('renders available teams list and create team button correctly', (tester) async {
-      final repository = TeamPortalRepository(
-        apiClient: ApiClient(storageService: FakeSecureStorage()),
-      );
-      final bloc = TeamPortalBloc(repository: repository);
+    testWidgets(
+      'renders available teams list and create team button correctly',
+      (tester) async {
+        final repository = TeamPortalRepository(
+          apiClient: ApiClient(storageService: FakeSecureStorage()),
+        );
+        final bloc = TeamPortalBloc(repository: repository);
 
-      final availableTeams = [
-        AvailableTeamModel(
-          id: 'team-alpha',
-          teamName: 'Alpha Fire Unit',
-          leaderId: 'leader-john',
-          leaderFullName: 'Commander John',
-          memberCount: 4,
-          createdAt: DateTime.now(),
-        ),
-      ];
+        final availableTeams = [
+          AvailableTeamModel(
+            id: 'team-alpha',
+            teamName: 'Alpha Fire Unit',
+            leaderId: 'leader-john',
+            leaderFullName: 'Commander John',
+            memberCount: 4,
+            createdAt: DateTime.now(),
+          ),
+        ];
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: BlocProvider.value(
-            value: bloc,
-            child: UnassignedTeamView(
-              user: testUser,
-              availableTeams: availableTeams,
-              isActionInProgress: false,
+        await tester.pumpWidget(
+          MaterialApp(
+            home: BlocProvider.value(
+              value: bloc,
+              child: UnassignedTeamView(
+                user: testUser,
+                availableTeams: availableTeams,
+                isActionInProgress: false,
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      expect(find.text('Unassigned Responder'), findsOneWidget);
-      expect(find.text('Alpha Fire Unit'), findsOneWidget);
-      expect(find.text('Leader: Commander John'), findsOneWidget);
-      expect(find.text('4 / 6 Members'), findsOneWidget);
-      expect(find.text('Create Team'), findsOneWidget);
-      expect(find.text('Join Team'), findsOneWidget);
-    });
+        expect(find.text('Unassigned Responder'), findsOneWidget);
+        expect(find.text('Alpha Fire Unit'), findsOneWidget);
+        expect(find.text('Leader: Commander John'), findsOneWidget);
+        expect(find.text('4 / 6 Members'), findsOneWidget);
+        expect(find.text('Create Team'), findsOneWidget);
+        expect(find.text('Join Team'), findsOneWidget);
+      },
+    );
   });
 }

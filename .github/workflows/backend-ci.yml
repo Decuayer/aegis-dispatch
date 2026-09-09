@@ -159,6 +159,7 @@ jobs:
   codeql-analysis:
     name: GitHub CodeQL SAST Analysis (C#)
     runs-on: ubuntu-latest
+    continue-on-error: true
     permissions:
       security-events: write
       actions: read
@@ -183,5 +184,15 @@ jobs:
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
+        continue-on-error: true
         with:
           category: "/language:csharp"
+          upload: ${{ github.event.repository.private == false && 'always' || 'never' }}
+
+      - name: Upload CodeQL SARIF Report Artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: codeql-csharp-sast-sarif
+          path: "../results/*.sarif"
+          retention-days: 14

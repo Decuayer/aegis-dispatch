@@ -66,7 +66,9 @@ class RapidEmergencyButton extends StatelessWidget {
                         height: 22,
                         child: CircularProgressIndicator(
                           strokeWidth: 2.5,
-                          valueColor: AlwaysStoppedAnimation<Color>(preset.primaryColor),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            preset.primaryColor,
+                          ),
                         ),
                       ),
                   ],

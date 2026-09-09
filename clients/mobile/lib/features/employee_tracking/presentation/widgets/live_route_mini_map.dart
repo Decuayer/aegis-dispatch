@@ -39,9 +39,10 @@ class _LiveRouteMiniMapState extends State<LiveRouteMiniMap> {
 
   void _fitMapBounds() {
     if (widget.teamLocation != null) {
-      final points = widget.routePoints.isNotEmpty
-          ? widget.routePoints
-          : [widget.teamLocation!, widget.incidentLocation];
+      final points =
+          widget.routePoints.isNotEmpty
+              ? widget.routePoints
+              : [widget.teamLocation!, widget.incidentLocation];
 
       if (points.length >= 2) {
         final bounds = LatLngBounds.fromPoints(points);
@@ -83,7 +84,10 @@ class _LiveRouteMiniMapState extends State<LiveRouteMiniMap> {
                       Polyline(
                         points: widget.routePoints,
                         strokeWidth: 4.5,
-                        color: widget.isFallback ? AppColors.warning : AppColors.primary,
+                        color:
+                            widget.isFallback
+                                ? AppColors.warning
+                                : AppColors.primary,
                       ),
                     ],
                   ),
@@ -100,10 +104,18 @@ class _LiveRouteMiniMapState extends State<LiveRouteMiniMap> {
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 2.5),
                           boxShadow: const [
-                            BoxShadow(color: Colors.black38, blurRadius: 6, offset: Offset(0, 2)),
+                            BoxShadow(
+                              color: Colors.black38,
+                              blurRadius: 6,
+                              offset: Offset(0, 2),
+                            ),
                           ],
                         ),
-                        child: const Icon(Icons.location_on, color: Colors.white, size: 22),
+                        child: const Icon(
+                          Icons.location_on,
+                          color: Colors.white,
+                          size: 22,
+                        ),
                       ),
                     ),
 
@@ -119,10 +131,18 @@ class _LiveRouteMiniMapState extends State<LiveRouteMiniMap> {
                             shape: BoxShape.circle,
                             border: Border.all(color: Colors.white, width: 2.5),
                             boxShadow: const [
-                              BoxShadow(color: Colors.black38, blurRadius: 6, offset: Offset(0, 2)),
+                              BoxShadow(
+                                color: Colors.black38,
+                                blurRadius: 6,
+                                offset: Offset(0, 2),
+                              ),
                             ],
                           ),
-                          child: const Icon(Icons.directions_car_rounded, color: Colors.white, size: 22),
+                          child: const Icon(
+                            Icons.directions_car_rounded,
+                            color: Colors.white,
+                            size: 22,
+                          ),
                         ),
                       ),
                   ],
@@ -137,18 +157,29 @@ class _LiveRouteMiniMapState extends State<LiveRouteMiniMap> {
               top: 12,
               left: 12,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.black87,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: const [
-                    BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2)),
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 4,
+                      offset: Offset(0, 2),
+                    ),
                   ],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.speed_rounded, color: Colors.greenAccent, size: 16),
+                    const Icon(
+                      Icons.speed_rounded,
+                      color: Colors.greenAccent,
+                      size: 16,
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       widget.etaMinutes != null

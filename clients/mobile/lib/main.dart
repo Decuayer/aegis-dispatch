@@ -43,7 +43,7 @@ void main() async {
   // Storage & Persistent Preferences
   final prefs = await SharedPreferences.getInstance();
   final onboardingRepository = OnboardingRepository(prefs: prefs);
-  final mapSettingsRepository = MapSettingsRepository(prefs: prefs); 
+  final mapSettingsRepository = MapSettingsRepository(prefs: prefs);
   const onboardingPermissionService = OnboardingPermissionService();
 
   // Core Services
@@ -54,8 +54,12 @@ void main() async {
   final mediaPickerService = MediaPickerService();
   final routeService = RouteService();
   final fcmNotificationService = FcmNotificationService(apiClient: apiClient);
-  final locationStreamRepository = LocationStreamRepository(storageService: secureStorage);
-  final employeeTrackingHubService = EmployeeTrackingHubService(storageService: secureStorage);
+  final locationStreamRepository = LocationStreamRepository(
+    storageService: secureStorage,
+  );
+  final employeeTrackingHubService = EmployeeTrackingHubService(
+    storageService: secureStorage,
+  );
 
   // Repositories
   final authRepository = AuthRepository(
@@ -66,24 +70,14 @@ void main() async {
     apiClient: apiClient,
     storageService: secureStorage,
   );
-  final mediaRepository = MediaRepository(
-    apiClient: apiClient,
-  );
-  final incidentRepository = IncidentRepository(
-    apiClient: apiClient,
-  );
-  final taskRepository = TaskRepository(
-    apiClient: apiClient,
-  );
-  final teamPortalRepository = TeamPortalRepository(
-    apiClient: apiClient,
-  );
+  final mediaRepository = MediaRepository(apiClient: apiClient);
+  final incidentRepository = IncidentRepository(apiClient: apiClient);
+  final taskRepository = TaskRepository(apiClient: apiClient);
+  final teamPortalRepository = TeamPortalRepository(apiClient: apiClient);
   final employeeIncidentRepository = EmployeeIncidentRepository(
     apiClient: apiClient,
   );
-  final feedbackRepository = FeedbackRepository(
-    apiClient: apiClient,
-  );
+  final feedbackRepository = FeedbackRepository(apiClient: apiClient);
 
   runApp(
     SocarDispatchApp(

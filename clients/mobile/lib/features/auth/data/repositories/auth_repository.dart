@@ -15,8 +15,8 @@ class AuthRepository {
   AuthRepository({
     required ApiClient apiClient,
     required SecureStorageService storageService,
-  })  : _apiClient = apiClient,
-        _storageService = storageService;
+  }) : _apiClient = apiClient,
+       _storageService = storageService;
 
   Future<AuthResponseModel> login(String email, String password) async {
     try {
@@ -36,7 +36,8 @@ class AuthRepository {
         throw Exception('Invalid server response format.');
       }
 
-      final isSuccess = responseData['success'] == true || responseData['Success'] == true;
+      final isSuccess =
+          responseData['success'] == true || responseData['Success'] == true;
       final payload = responseData['data'] ?? responseData['Data'];
 
       if (isSuccess && payload != null) {
@@ -49,7 +50,10 @@ class AuthRepository {
 
         return authResponse;
       } else {
-        final message = responseData['message'] ?? responseData['Message'] ?? 'Authentication failed.';
+        final message =
+            responseData['message'] ??
+            responseData['Message'] ??
+            'Authentication failed.';
         throw Exception(message.toString());
       }
     } on DioException catch (e) {
@@ -77,7 +81,8 @@ class AuthRepository {
         throw Exception('Invalid server response format.');
       }
 
-      final isSuccess = responseData['success'] == true || responseData['Success'] == true;
+      final isSuccess =
+          responseData['success'] == true || responseData['Success'] == true;
       final payload = responseData['data'] ?? responseData['Data'];
 
       if (isSuccess && payload != null) {
@@ -90,7 +95,10 @@ class AuthRepository {
 
         return authResponse;
       } else {
-        final message = responseData['message'] ?? responseData['Message'] ?? 'Registration failed.';
+        final message =
+            responseData['message'] ??
+            responseData['Message'] ??
+            'Registration failed.';
         throw Exception(message.toString());
       }
     } on DioException catch (e) {
@@ -109,8 +117,10 @@ class AuthRepository {
       );
 
       final dynamic rawData = response.data;
-      Map<String, dynamic> responseData = rawData is Map<String, dynamic> ? rawData : {};
-      final isSuccess = responseData['success'] == true || responseData['Success'] == true;
+      Map<String, dynamic> responseData =
+          rawData is Map<String, dynamic> ? rawData : {};
+      final isSuccess =
+          responseData['success'] == true || responseData['Success'] == true;
       final payload = responseData['data'] ?? responseData['Data'];
 
       if (isSuccess && payload != null) {
@@ -123,7 +133,10 @@ class AuthRepository {
 
         return authResponse;
       } else {
-        final message = responseData['message'] ?? responseData['Message'] ?? 'Google login failed.';
+        final message =
+            responseData['message'] ??
+            responseData['Message'] ??
+            'Google login failed.';
         throw Exception(message.toString());
       }
     } on DioException catch (e) {
@@ -145,13 +158,16 @@ class AuthRepository {
         data: {
           'idToken': idToken,
           if (phone != null && phone.isNotEmpty) 'phone': phone,
-          if (department != null && department.isNotEmpty) 'department': department,
+          if (department != null && department.isNotEmpty)
+            'department': department,
         },
       );
 
       final dynamic rawData = response.data;
-      Map<String, dynamic> responseData = rawData is Map<String, dynamic> ? rawData : {};
-      final isSuccess = responseData['success'] == true || responseData['Success'] == true;
+      Map<String, dynamic> responseData =
+          rawData is Map<String, dynamic> ? rawData : {};
+      final isSuccess =
+          responseData['success'] == true || responseData['Success'] == true;
       final payload = responseData['data'] ?? responseData['Data'];
 
       if (isSuccess && payload != null) {
@@ -164,7 +180,10 @@ class AuthRepository {
 
         return authResponse;
       } else {
-        final message = responseData['message'] ?? responseData['Message'] ?? 'Google registration failed.';
+        final message =
+            responseData['message'] ??
+            responseData['Message'] ??
+            'Google registration failed.';
         throw Exception(message.toString());
       }
     } on DioException catch (e) {
@@ -197,21 +216,26 @@ class AuthRepository {
         if (raw['Message'] != null && raw['Message'].toString().isNotEmpty) {
           return raw['Message'].toString();
         }
-        if (raw['errors'] != null && (raw['errors'] is List) && (raw['errors'] as List).isNotEmpty) {
+        if (raw['errors'] != null &&
+            (raw['errors'] is List) &&
+            (raw['errors'] as List).isNotEmpty) {
           return (raw['errors'] as List).first.toString();
         }
-      } else if (raw is String && raw.isNotEmpty && !raw.startsWith('<!DOCTYPE')) {
+      } else if (raw is String &&
+          raw.isNotEmpty &&
+          !raw.startsWith('<!DOCTYPE')) {
         return raw;
       }
     }
 
-    if (error.response?.statusCode == 400 || 
-        error.response?.statusCode == 401 || 
+    if (error.response?.statusCode == 400 ||
+        error.response?.statusCode == 401 ||
         error.response?.statusCode == 403) {
       return 'Invalid email address or password.';
     }
 
-    if (error.type == DioExceptionType.connectionTimeout || error.type == DioExceptionType.receiveTimeout) {
+    if (error.type == DioExceptionType.connectionTimeout ||
+        error.type == DioExceptionType.receiveTimeout) {
       return 'Server connection timed out. Please verify API is running.';
     }
     if (error.type == DioExceptionType.connectionError) {
@@ -219,5 +243,4 @@ class AuthRepository {
     }
     return 'Authentication failed. Please verify your credentials.';
   }
-
 }

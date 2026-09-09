@@ -26,12 +26,12 @@ class UnassignedTeamView extends StatelessWidget {
       context,
       onSubmit: (teamName, designateAsLeader) {
         context.read<TeamPortalBloc>().add(
-              CreateTeamRequested(
-                teamName: teamName,
-                designateAsLeader: designateAsLeader,
-                userId: user.id,
-              ),
-            );
+          CreateTeamRequested(
+            teamName: teamName,
+            designateAsLeader: designateAsLeader,
+            userId: user.id,
+          ),
+        );
       },
     );
   }
@@ -62,7 +62,10 @@ class UnassignedTeamView extends StatelessWidget {
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add_moderator_outlined),
-        label: const Text('Create Team', style: TextStyle(fontWeight: FontWeight.bold)),
+        label: const Text(
+          'Create Team',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -101,7 +104,11 @@ class UnassignedTeamView extends StatelessWidget {
                             color: Colors.white.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(Icons.hub_outlined, color: Colors.white, size: 26),
+                          child: const Icon(
+                            Icons.hub_outlined,
+                            color: Colors.white,
+                            size: 26,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         const Expanded(
@@ -119,7 +126,11 @@ class UnassignedTeamView extends StatelessWidget {
                     const SizedBox(height: 12),
                     const Text(
                       'You are currently not assigned to an active response unit. Join an open idle team or establish a new unit to receive emergency dispatches.',
-                      style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                        height: 1.4,
+                      ),
                     ),
                   ],
                 ),
@@ -127,7 +138,10 @@ class UnassignedTeamView extends StatelessWidget {
             ),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -141,7 +155,9 @@ class UnassignedTeamView extends StatelessWidget {
                     ),
                     TextButton.icon(
                       onPressed: () {
-                        context.read<TeamPortalBloc>().add(const RefreshAvailableTeams());
+                        context.read<TeamPortalBloc>().add(
+                          const RefreshAvailableTeams(),
+                        );
                       },
                       icon: const Icon(Icons.refresh, size: 18),
                       label: const Text('Refresh'),
@@ -174,13 +190,19 @@ class UnassignedTeamView extends StatelessWidget {
                         const SizedBox(height: 16),
                         const Text(
                           'No Open Teams Available',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         const Text(
                           'All existing response units are full or currently engaged. Tap below to establish a new unit.',
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: AppColors.textSecondary, height: 1.4),
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            height: 1.4,
+                          ),
                         ),
                         const SizedBox(height: 24),
                         ElevatedButton.icon(
@@ -188,7 +210,10 @@ class UnassignedTeamView extends StatelessWidget {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
@@ -203,28 +228,20 @@ class UnassignedTeamView extends StatelessWidget {
               )
             else
               SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final team = availableTeams[index];
-                    return AvailableTeamCard(
-                      team: team,
-                      isJoining: isActionInProgress,
-                      onJoin: () {
-                        context.read<TeamPortalBloc>().add(
-                              JoinTeamRequested(
-                                teamId: team.id,
-                                userId: user.id,
-                              ),
-                            );
-                      },
-                    );
-                  },
-                  childCount: availableTeams.length,
-                ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final team = availableTeams[index];
+                  return AvailableTeamCard(
+                    team: team,
+                    isJoining: isActionInProgress,
+                    onJoin: () {
+                      context.read<TeamPortalBloc>().add(
+                        JoinTeamRequested(teamId: team.id, userId: user.id),
+                      );
+                    },
+                  );
+                }, childCount: availableTeams.length),
               ),
-            const SliverToBoxAdapter(
-              child: SizedBox(height: 80),
-            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 80)),
           ],
         ),
       ),

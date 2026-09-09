@@ -7,10 +7,7 @@ class ApiClient {
   late final Dio dio;
   final SecureStorageService storageService;
 
-  ApiClient({
-    required this.storageService,
-    void Function()? onUnauthorized,
-  }) {
+  ApiClient({required this.storageService, void Function()? onUnauthorized}) {
     dio = Dio(
       BaseOptions(
         baseUrl: ApiEndpoints.baseUrl,

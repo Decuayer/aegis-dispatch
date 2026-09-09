@@ -27,7 +27,9 @@ class _EmployeeHomeViewState extends State<EmployeeHomeView> {
   @override
   void initState() {
     super.initState();
-    context.read<EmployeeTrackingBloc>().add(LoadMyIncidents(widget.user.id.toString()));
+    context.read<EmployeeTrackingBloc>().add(
+      LoadMyIncidents(widget.user.id.toString()),
+    );
   }
 
   @override
@@ -55,7 +57,9 @@ class _EmployeeHomeViewState extends State<EmployeeHomeView> {
         child: BlocConsumer<RapidIncidentCubit, RapidIncidentState>(
           listener: (context, state) {
             if (state is RapidIncidentSuccess) {
-              context.read<EmployeeTrackingBloc>().add(const RefreshMyIncidents());
+              context.read<EmployeeTrackingBloc>().add(
+                const RefreshMyIncidents(),
+              );
             } else if (state is RapidIncidentFailure) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -65,7 +69,9 @@ class _EmployeeHomeViewState extends State<EmployeeHomeView> {
                 ),
               );
             } else if (state is RapidIncidentCanceled) {
-              context.read<EmployeeTrackingBloc>().add(const RefreshMyIncidents());
+              context.read<EmployeeTrackingBloc>().add(
+                const RefreshMyIncidents(),
+              );
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Emergency alert canceled successfully.'),
@@ -79,11 +85,16 @@ class _EmployeeHomeViewState extends State<EmployeeHomeView> {
           builder: (context, state) {
             return RefreshIndicator(
               onRefresh: () async {
-                context.read<EmployeeTrackingBloc>().add(const RefreshMyIncidents());
+                context.read<EmployeeTrackingBloc>().add(
+                  const RefreshMyIncidents(),
+                );
               },
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -128,7 +139,11 @@ class _EmployeeHomeViewState extends State<EmployeeHomeView> {
                     // My Reported Incidents Section
                     const Row(
                       children: [
-                        Icon(Icons.radar_rounded, color: AppColors.primary, size: 20),
+                        Icon(
+                          Icons.radar_rounded,
+                          color: AppColors.primary,
+                          size: 20,
+                        ),
                         SizedBox(width: 6),
                         Text(
                           'My Reported Incidents',
@@ -156,7 +171,10 @@ class _EmployeeHomeViewState extends State<EmployeeHomeView> {
                         if (trackingState is EmployeeTrackingLoaded) {
                           if (trackingState.incidents.isEmpty) {
                             return Container(
-                              padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 18,
+                                horizontal: 16,
+                              ),
                               decoration: BoxDecoration(
                                 color: AppColors.surfaceMuted,
                                 borderRadius: BorderRadius.circular(14),
@@ -164,12 +182,18 @@ class _EmployeeHomeViewState extends State<EmployeeHomeView> {
                               ),
                               child: const Row(
                                 children: [
-                                  Icon(Icons.check_circle_outline_rounded, color: AppColors.success),
+                                  Icon(
+                                    Icons.check_circle_outline_rounded,
+                                    color: AppColors.success,
+                                  ),
                                   SizedBox(width: 10),
                                   Expanded(
                                     child: Text(
                                       'No active incidents reported. Facility status is normal.',
-                                      style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: AppColors.textSecondary,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -189,12 +213,17 @@ class _EmployeeHomeViewState extends State<EmployeeHomeView> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => BlocProvider.value(
-                                        value: context.read<EmployeeTrackingBloc>(),
-                                        child: IncidentTrackingDetailView(
-                                          incidentId: incident.id,
-                                        ),
-                                      ),
+                                      builder:
+                                          (_) => BlocProvider.value(
+                                            value:
+                                                context
+                                                    .read<
+                                                      EmployeeTrackingBloc
+                                                    >(),
+                                            child: IncidentTrackingDetailView(
+                                              incidentId: incident.id,
+                                            ),
+                                          ),
                                     ),
                                   );
                                 },
@@ -212,7 +241,11 @@ class _EmployeeHomeViewState extends State<EmployeeHomeView> {
                     // Rapid Action Section Header
                     const Row(
                       children: [
-                        Icon(Icons.bolt_rounded, color: AppColors.primary, size: 20),
+                        Icon(
+                          Icons.bolt_rounded,
+                          color: AppColors.primary,
+                          size: 20,
+                        ),
                         SizedBox(width: 6),
                         Text(
                           'Rapid Emergency Actions (1-Tap)',
@@ -247,29 +280,42 @@ class _EmployeeHomeViewState extends State<EmployeeHomeView> {
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 6,
+                        ),
                         leading: Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
                             color: AppColors.accent.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(Icons.description_outlined, color: AppColors.accent),
+                          child: const Icon(
+                            Icons.description_outlined,
+                            color: AppColors.accent,
+                          ),
                         ),
                         title: const Text(
                           'Report Detailed Incident',
-                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
                         ),
                         subtitle: const Text(
                           'Step-by-step wizard with media attachments',
                           style: TextStyle(fontSize: 12),
                         ),
-                        trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                        trailing: const Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          size: 14,
+                        ),
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (ctx) => const IncidentReportWizardView(),
+                              builder:
+                                  (ctx) => const IncidentReportWizardView(),
                             ),
                           );
                         },

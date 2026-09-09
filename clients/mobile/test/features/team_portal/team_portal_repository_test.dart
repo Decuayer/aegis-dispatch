@@ -64,7 +64,7 @@ void main() {
               'memberCount': 2,
               'createdAt': '2026-08-31T02:00:00Z',
             },
-          ]
+          ],
         };
 
         return ResponseBody.fromString(
@@ -108,9 +108,9 @@ void main() {
                 'phone': '123456',
                 'department': 'HSE',
                 'memberStatus': 'Available',
-              }
+              },
             ],
-          }
+          },
         };
 
         return ResponseBody.fromString(
@@ -123,79 +123,98 @@ void main() {
       });
 
       final repository = TeamPortalRepository(apiClient: apiClient);
-      final team = await repository.joinTeam(teamId: 'team-1', userId: 'user-100');
+      final team = await repository.joinTeam(
+        teamId: 'team-1',
+        userId: 'user-100',
+      );
 
       expect(team.id, 'team-1');
       expect(team.members.length, 1);
       expect(team.members.first.userId, 'user-100');
     });
 
-    test('claimLeadership calls PUT with designated leaderId and teamName', () async {
-      apiClient.dio.httpClientAdapter = MockHttpClientAdapter((options) async {
-        expect(options.path, contains('/api/v1/teams/team-2'));
-        expect(options.method, 'PUT');
-        expect(options.data['teamName'], 'Bravo Unit');
-        expect(options.data['leaderId'], 'user-100');
+    test(
+      'claimLeadership calls PUT with designated leaderId and teamName',
+      () async {
+        apiClient.dio.httpClientAdapter = MockHttpClientAdapter((
+          options,
+        ) async {
+          expect(options.path, contains('/api/v1/teams/team-2'));
+          expect(options.method, 'PUT');
+          expect(options.data['teamName'], 'Bravo Unit');
+          expect(options.data['leaderId'], 'user-100');
 
-        final payload = {
-          'success': true,
-          'data': {
-            'id': 'team-2',
-            'teamName': 'Bravo Unit',
-            'status': 'Idle',
-            'leaderId': 'user-100',
-            'members': [],
-          }
-        };
+          final payload = {
+            'success': true,
+            'data': {
+              'id': 'team-2',
+              'teamName': 'Bravo Unit',
+              'status': 'Idle',
+              'leaderId': 'user-100',
+              'members': [],
+            },
+          };
 
-        return ResponseBody.fromString(
-          jsonEncode(payload),
-          200,
-          headers: {
-            Headers.contentTypeHeader: [Headers.jsonContentType],
-          },
+          return ResponseBody.fromString(
+            jsonEncode(payload),
+            200,
+            headers: {
+              Headers.contentTypeHeader: [Headers.jsonContentType],
+            },
+          );
+        });
+
+        final repository = TeamPortalRepository(apiClient: apiClient);
+        final updated = await repository.claimLeadership(
+          teamId: 'team-2',
+          userId: 'user-100',
+          teamName: 'Bravo Unit',
         );
-      });
 
-      final repository = TeamPortalRepository(apiClient: apiClient);
-      final updated = await repository.claimLeadership(
-        teamId: 'team-2',
-        userId: 'user-100',
-        teamName: 'Bravo Unit',
-      );
+        expect(updated.leaderId, 'user-100');
+      },
+    );
 
-      expect(updated.leaderId, 'user-100');
-    });
+    test(
+      'leaveTeam throws descriptive exception when blocked by active emergency response',
+      () async {
+        apiClient.dio.httpClientAdapter = MockHttpClientAdapter((
+          options,
+        ) async {
+          expect(
+            options.path,
+            contains('/api/v1/teams/team-1/members/user-100'),
+          );
+          expect(options.method, 'DELETE');
 
-    test('leaveTeam throws descriptive exception when blocked by active emergency response', () async {
-      apiClient.dio.httpClientAdapter = MockHttpClientAdapter((options) async {
-        expect(options.path, contains('/api/v1/teams/team-1/members/user-100'));
-        expect(options.method, 'DELETE');
+          final payload = {
+            'success': false,
+            'message':
+                'Cannot remove member while the team is involved in an active emergency response.',
+          };
 
-        final payload = {
-          'success': false,
-          'message': 'Cannot remove member while the team is involved in an active emergency response.',
-        };
+          return ResponseBody.fromString(
+            jsonEncode(payload),
+            400,
+            headers: {
+              Headers.contentTypeHeader: [Headers.jsonContentType],
+            },
+          );
+        });
 
-        return ResponseBody.fromString(
-          jsonEncode(payload),
-          400,
-          headers: {
-            Headers.contentTypeHeader: [Headers.jsonContentType],
-          },
+        final repository = TeamPortalRepository(apiClient: apiClient);
+
+        expect(
+          () => repository.leaveTeam(teamId: 'team-1', userId: 'user-100'),
+          throwsA(
+            predicate(
+              (e) =>
+                  e is Exception &&
+                  e.toString().contains('active emergency response'),
+            ),
+          ),
         );
-      });
-
-      final repository = TeamPortalRepository(apiClient: apiClient);
-
-      expect(
-        () => repository.leaveTeam(teamId: 'team-1', userId: 'user-100'),
-        throwsA(
-          predicate((e) =>
-              e is Exception &&
-              e.toString().contains('active emergency response')),
-        ),
-      );
-    });
+      },
+    );
   });
 }

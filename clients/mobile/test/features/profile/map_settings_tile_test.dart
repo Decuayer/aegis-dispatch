@@ -10,7 +10,9 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('MapSettingsTile Widget Tests', () {
-    testWidgets('renders tile with switch and responds to user toggle', (tester) async {
+    testWidgets('renders tile with switch and responds to user toggle', (
+      tester,
+    ) async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
       final repository = MapSettingsRepository(prefs: prefs);

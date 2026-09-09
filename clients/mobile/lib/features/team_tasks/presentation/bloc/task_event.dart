@@ -48,10 +48,7 @@ class TaskLocationUpdated extends TaskEvent {
   final double latitude;
   final double longitude;
 
-  const TaskLocationUpdated({
-    required this.latitude,
-    required this.longitude,
-  });
+  const TaskLocationUpdated({required this.latitude, required this.longitude});
 }
 
 class SignalRTaskReceived extends TaskEvent {

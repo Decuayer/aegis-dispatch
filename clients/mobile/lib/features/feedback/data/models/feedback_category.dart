@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum FeedbackCategory {
-  bugReport,
-  improvement,
-  operationalIssue,
-}
+enum FeedbackCategory { bugReport, improvement, operationalIssue }
 
 extension FeedbackCategoryExtension on FeedbackCategory {
   String get label {

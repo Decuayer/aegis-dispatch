@@ -6,8 +6,8 @@ import 'incident_report_event.dart';
 import 'incident_report_state.dart';
 import '../../services/thumbnail_generator_service.dart';
 
-
-class IncidentReportBloc extends Bloc<IncidentReportEvent, IncidentReportState> {
+class IncidentReportBloc
+    extends Bloc<IncidentReportEvent, IncidentReportState> {
   final IncidentRepository _incidentRepository;
   final LocationService _locationService;
   final ThumbnailGeneratorService _thumbnailGeneratorService;
@@ -16,11 +16,11 @@ class IncidentReportBloc extends Bloc<IncidentReportEvent, IncidentReportState> 
     required IncidentRepository incidentRepository,
     required LocationService locationService,
     ThumbnailGeneratorService? thumbnailGeneratorService,
-
-  })  : _incidentRepository = incidentRepository,
-        _locationService = locationService,
-        _thumbnailGeneratorService = thumbnailGeneratorService ?? ThumbnailGeneratorService(),
-        super(const IncidentReportState()) {
+  }) : _incidentRepository = incidentRepository,
+       _locationService = locationService,
+       _thumbnailGeneratorService =
+           thumbnailGeneratorService ?? ThumbnailGeneratorService(),
+       super(const IncidentReportState()) {
     on<LoadEmergencyCodesStarted>(_onLoadEmergencyCodesStarted);
     on<StepChanged>(_onStepChanged);
     on<CategorySelected>(_onCategorySelected);
@@ -40,27 +40,20 @@ class IncidentReportBloc extends Bloc<IncidentReportEvent, IncidentReportState> 
     emit(state.copyWith(isLoadingCodes: true, clearErrorMessage: true));
     try {
       final codes = await _incidentRepository.getEmergencyCodes();
-      emit(state.copyWith(
-        emergencyCodes: codes,
-        isLoadingCodes: false,
-      ));
+      emit(state.copyWith(emergencyCodes: codes, isLoadingCodes: false));
     } catch (e) {
-      emit(state.copyWith(
-        isLoadingCodes: false,
-        errorMessage: e.toString().replaceAll('Exception: ', ''),
-      ));
+      emit(
+        state.copyWith(
+          isLoadingCodes: false,
+          errorMessage: e.toString().replaceAll('Exception: ', ''),
+        ),
+      );
     }
   }
 
-  void _onStepChanged(
-    StepChanged event,
-    Emitter<IncidentReportState> emit,
-  ) {
+  void _onStepChanged(StepChanged event, Emitter<IncidentReportState> emit) {
     if (event.newStep >= 0 && event.newStep <= 2) {
-      emit(state.copyWith(
-        currentStep: event.newStep,
-        clearErrorMessage: true,
-      ));
+      emit(state.copyWith(currentStep: event.newStep, clearErrorMessage: true));
     }
   }
 
@@ -68,20 +61,21 @@ class IncidentReportBloc extends Bloc<IncidentReportEvent, IncidentReportState> 
     CategorySelected event,
     Emitter<IncidentReportState> emit,
   ) {
-    emit(state.copyWith(
-      selectedCategory: event.category,
-      clearErrorMessage: true,
-    ));
+    emit(
+      state.copyWith(selectedCategory: event.category, clearErrorMessage: true),
+    );
   }
 
   void _onEmergencyCodeSelected(
     EmergencyCodeSelected event,
     Emitter<IncidentReportState> emit,
   ) {
-    emit(state.copyWith(
-      selectedEmergencyCode: event.code,
-      clearErrorMessage: true,
-    ));
+    emit(
+      state.copyWith(
+        selectedEmergencyCode: event.code,
+        clearErrorMessage: true,
+      ),
+    );
   }
 
   void _onMediaFilesAdded(
@@ -89,10 +83,9 @@ class IncidentReportBloc extends Bloc<IncidentReportEvent, IncidentReportState> 
     Emitter<IncidentReportState> emit,
   ) {
     final updatedList = List.of(state.selectedMediaFiles)..addAll(event.files);
-    emit(state.copyWith(
-      selectedMediaFiles: updatedList,
-      clearErrorMessage: true,
-    ));
+    emit(
+      state.copyWith(selectedMediaFiles: updatedList, clearErrorMessage: true),
+    );
   }
 
   void _onMediaFileRemoved(
@@ -104,11 +97,14 @@ class IncidentReportBloc extends Bloc<IncidentReportEvent, IncidentReportState> 
       if (removedMedia.thumbnailPath != null) {
         _thumbnailGeneratorService.deleteThumbnail(removedMedia.thumbnailPath);
       }
-      final updatedList = List.of(state.selectedMediaFiles)..removeAt(event.index);
-      emit(state.copyWith(
-        selectedMediaFiles: updatedList,
-        clearErrorMessage: true,
-      ));
+      final updatedList = List.of(state.selectedMediaFiles)
+        ..removeAt(event.index);
+      emit(
+        state.copyWith(
+          selectedMediaFiles: updatedList,
+          clearErrorMessage: true,
+        ),
+      );
     }
   }
 
@@ -116,23 +112,24 @@ class IncidentReportBloc extends Bloc<IncidentReportEvent, IncidentReportState> 
     LocationRequested event,
     Emitter<IncidentReportState> emit,
   ) async {
-    emit(state.copyWith(
-      isFetchingLocation: true,
-      clearLocationError: true,
-    ));
+    emit(state.copyWith(isFetchingLocation: true, clearLocationError: true));
 
     try {
       final position = await _locationService.getCurrentLocation();
-      emit(state.copyWith(
-        currentPosition: position,
-        isFetchingLocation: false,
-        clearLocationError: true,
-      ));
+      emit(
+        state.copyWith(
+          currentPosition: position,
+          isFetchingLocation: false,
+          clearLocationError: true,
+        ),
+      );
     } catch (e) {
-      emit(state.copyWith(
-        isFetchingLocation: false,
-        locationError: e.toString().replaceAll('Exception: ', ''),
-      ));
+      emit(
+        state.copyWith(
+          isFetchingLocation: false,
+          locationError: e.toString().replaceAll('Exception: ', ''),
+        ),
+      );
     }
   }
 
@@ -148,25 +145,33 @@ class IncidentReportBloc extends Bloc<IncidentReportEvent, IncidentReportState> 
     Emitter<IncidentReportState> emit,
   ) async {
     if (!state.isStep1Valid) {
-      emit(state.copyWith(
-        errorMessage: 'Please select an incident category and emergency severity code.',
-      ));
+      emit(
+        state.copyWith(
+          errorMessage:
+              'Please select an incident category and emergency severity code.',
+        ),
+      );
       return;
     }
 
     if (state.currentPosition == null) {
-      emit(state.copyWith(
-        errorMessage: 'GPS coordinates are required. Please acquire location before submitting.',
-      ));
+      emit(
+        state.copyWith(
+          errorMessage:
+              'GPS coordinates are required. Please acquire location before submitting.',
+        ),
+      );
       return;
     }
 
-    emit(state.copyWith(
-      isSubmitting: true,
-      clearErrorMessage: true,
-      clearSubmissionSuccess: true,
-      uploadProgressMessage: 'Preparing media attachments...',
-    ));
+    emit(
+      state.copyWith(
+        isSubmitting: true,
+        clearErrorMessage: true,
+        clearSubmissionSuccess: true,
+        uploadProgressMessage: 'Preparing media attachments...',
+      ),
+    );
 
     try {
       final List<CreateIncidentMediaItem> uploadedMediaItems = [];
@@ -175,11 +180,15 @@ class IncidentReportBloc extends Bloc<IncidentReportEvent, IncidentReportState> 
       final totalFiles = state.selectedMediaFiles.length;
       for (int i = 0; i < totalFiles; i++) {
         final mediaFile = state.selectedMediaFiles[i];
-        emit(state.copyWith(
-          uploadProgressMessage: 'Uploading media (${i + 1}/$totalFiles)...',
-        ));
+        emit(
+          state.copyWith(
+            uploadProgressMessage: 'Uploading media (${i + 1}/$totalFiles)...',
+          ),
+        );
 
-        final mediaUrl = await _incidentRepository.uploadIncidentMedia(mediaFile.file);
+        final mediaUrl = await _incidentRepository.uploadIncidentMedia(
+          mediaFile.file,
+        );
         uploadedMediaItems.add(
           CreateIncidentMediaItem(
             mediaUrl: mediaUrl,
@@ -189,14 +198,15 @@ class IncidentReportBloc extends Bloc<IncidentReportEvent, IncidentReportState> 
       }
 
       // 2. Dispatch incident report payload
-      emit(state.copyWith(
-        uploadProgressMessage: 'Submitting incident report...',
-      ));
+      emit(
+        state.copyWith(uploadProgressMessage: 'Submitting incident report...'),
+      );
 
       final request = CreateIncidentRequestModel(
         category: state.selectedCategory!,
         emergencyCode: state.selectedEmergencyCode!.code,
-        description: state.description.trim().isEmpty ? null : state.description.trim(),
+        description:
+            state.description.trim().isEmpty ? null : state.description.trim(),
         latitude: state.currentPosition!.latitude,
         longitude: state.currentPosition!.longitude,
         mediaAttachments: uploadedMediaItems,
@@ -204,17 +214,21 @@ class IncidentReportBloc extends Bloc<IncidentReportEvent, IncidentReportState> 
 
       final result = await _incidentRepository.createIncident(request);
 
-      emit(state.copyWith(
-        isSubmitting: false,
-        clearUploadProgress: true,
-        submissionSuccess: result,
-      ));
+      emit(
+        state.copyWith(
+          isSubmitting: false,
+          clearUploadProgress: true,
+          submissionSuccess: result,
+        ),
+      );
     } catch (e) {
-      emit(state.copyWith(
-        isSubmitting: false,
-        clearUploadProgress: true,
-        errorMessage: e.toString().replaceAll('Exception: ', ''),
-      ));
+      emit(
+        state.copyWith(
+          isSubmitting: false,
+          clearUploadProgress: true,
+          errorMessage: e.toString().replaceAll('Exception: ', ''),
+        ),
+      );
     }
   }
 
@@ -227,9 +241,7 @@ class IncidentReportBloc extends Bloc<IncidentReportEvent, IncidentReportState> 
         _thumbnailGeneratorService.deleteThumbnail(media.thumbnailPath);
       }
     }
-    emit(IncidentReportState(
-      emergencyCodes: state.emergencyCodes,
-    ));
+    emit(IncidentReportState(emergencyCodes: state.emergencyCodes));
   }
 
   @override

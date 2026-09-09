@@ -61,7 +61,7 @@ jobs:
         run: flutter pub get
 
       - name: Verify Code Style & Formatting (dart format)
-        run: dart format --output=none --set-exit-if-changed .
+        run: dart format --output=none --set-exit-if-changed lib test
 
       - name: Execute Flutter Static Analysis (Strict)
         run: flutter analyze

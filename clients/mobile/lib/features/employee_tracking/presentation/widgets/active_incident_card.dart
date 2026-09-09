@@ -3,7 +3,6 @@ import '../../../../core/constants/app_colors.dart';
 import '../../data/models/tracked_incident_model.dart';
 import '../../../../core/widgets/entity_id_badge.dart';
 
-
 class ActiveIncidentCard extends StatelessWidget {
   final TrackedIncidentModel incident;
   final VoidCallback onTap;
@@ -16,9 +15,15 @@ class ActiveIncidentCard extends StatelessWidget {
 
   Color _getEmergencyCodeColor(String code) {
     final lower = code.toLowerCase();
-    if (lower.contains('red')) return AppColors.accent;
-    if (lower.contains('yellow') || lower.contains('amber')) return AppColors.warning;
-    if (lower.contains('blue')) return AppColors.info;
+    if (lower.contains('red')) {
+      return AppColors.accent;
+    }
+    if (lower.contains('yellow') || lower.contains('amber')) {
+      return AppColors.warning;
+    }
+    if (lower.contains('blue')) {
+      return AppColors.info;
+    }
     return AppColors.primary;
   }
 
@@ -94,11 +99,16 @@ class ActiveIncidentCard extends StatelessWidget {
                     children: [
                       // Emergency Code Pill
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: codeColor.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: codeColor.withValues(alpha: 0.4)),
+                          border: Border.all(
+                            color: codeColor.withValues(alpha: 0.4),
+                          ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -127,7 +137,10 @@ class ActiveIncidentCard extends StatelessWidget {
 
                   // Status Pill
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: statusColor.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(12),
@@ -159,7 +172,8 @@ class ActiveIncidentCard extends StatelessWidget {
               const SizedBox(height: 4),
 
               // Description snippet
-              if (incident.description != null && incident.description!.isNotEmpty)
+              if (incident.description != null &&
+                  incident.description!.isNotEmpty)
                 Text(
                   incident.description!,
                   maxLines: 2,
@@ -198,7 +212,11 @@ class ActiveIncidentCard extends StatelessWidget {
                   ),
                   Row(
                     children: [
-                      const Icon(Icons.schedule_rounded, size: 13, color: AppColors.textMuted),
+                      const Icon(
+                        Icons.schedule_rounded,
+                        size: 13,
+                        color: AppColors.textMuted,
+                      ),
                       const SizedBox(width: 3),
                       Text(
                         elapsedText,
@@ -208,7 +226,11 @@ class ActiveIncidentCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 4),
-                      const Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.textMuted),
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        size: 16,
+                        color: AppColors.textMuted,
+                      ),
                     ],
                   ),
                 ],

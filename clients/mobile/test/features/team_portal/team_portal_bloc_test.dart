@@ -11,7 +11,8 @@ import 'package:socar_dispatch_mobile/features/team_tasks/data/models/team_model
 class FakeSecureStorage extends SecureStorageService {}
 
 class MockTeamPortalRepository extends TeamPortalRepository {
-  MockTeamPortalRepository() : super(apiClient: ApiClient(storageService: FakeSecureStorage()));
+  MockTeamPortalRepository()
+    : super(apiClient: ApiClient(storageService: FakeSecureStorage()));
 
   TeamModel? mockUserTeam;
   List<AvailableTeamModel> mockAvailableTeams = [];
@@ -20,10 +21,14 @@ class MockTeamPortalRepository extends TeamPortalRepository {
   Future<TeamModel?> getUserTeam(String userId) async => mockUserTeam;
 
   @override
-  Future<List<AvailableTeamModel>> getAvailableTeams() async => mockAvailableTeams;
+  Future<List<AvailableTeamModel>> getAvailableTeams() async =>
+      mockAvailableTeams;
 
   @override
-  Future<TeamModel> joinTeam({required String teamId, required String userId}) async {
+  Future<TeamModel> joinTeam({
+    required String teamId,
+    required String userId,
+  }) async {
     return TeamModel(
       id: teamId,
       teamName: 'Joined Team',
@@ -35,7 +40,10 @@ class MockTeamPortalRepository extends TeamPortalRepository {
   }
 
   @override
-  Future<void> leaveTeam({required String teamId, required String userId}) async {
+  Future<void> leaveTeam({
+    required String teamId,
+    required String userId,
+  }) async {
     mockUserTeam = null;
   }
 
@@ -92,23 +100,26 @@ void main() {
       bloc.add(const LoadTeamPortal('user-1'));
     });
 
-    test('emits TeamAssignedLoaded after successfully joining open team', () async {
-      final bloc = TeamPortalBloc(repository: repository);
+    test(
+      'emits TeamAssignedLoaded after successfully joining open team',
+      () async {
+        final bloc = TeamPortalBloc(repository: repository);
 
-      expectLater(
-        bloc.stream,
-        emitsInOrder([
-          isA<TeamPortalActionSuccess>(),
-          isA<TeamAssignedLoaded>().having(
-            (s) => s.team.id,
-            'team id',
-            'team-1',
-          ),
-        ]),
-      );
+        expectLater(
+          bloc.stream,
+          emitsInOrder([
+            isA<TeamPortalActionSuccess>(),
+            isA<TeamAssignedLoaded>().having(
+              (s) => s.team.id,
+              'team id',
+              'team-1',
+            ),
+          ]),
+        );
 
-      bloc.add(const JoinTeamRequested(teamId: 'team-1', userId: 'user-1'));
-    });
+        bloc.add(const JoinTeamRequested(teamId: 'team-1', userId: 'user-1'));
+      },
+    );
 
     test('emits TeamUnassignedLoaded after departing active team', () async {
       final bloc = TeamPortalBloc(repository: repository);
@@ -124,26 +135,31 @@ void main() {
       bloc.add(const LeaveTeamRequested(teamId: 'team-1', userId: 'user-1'));
     });
 
-    test('emits TeamAssignedLoaded with new leaderId when claiming vacant leadership', () async {
-      final bloc = TeamPortalBloc(repository: repository);
+    test(
+      'emits TeamAssignedLoaded with new leaderId when claiming vacant leadership',
+      () async {
+        final bloc = TeamPortalBloc(repository: repository);
 
-      expectLater(
-        bloc.stream,
-        emitsInOrder([
-          isA<TeamPortalActionSuccess>(),
-          isA<TeamAssignedLoaded>().having(
-            (s) => s.team.leaderId,
-            'leaderId',
-            'user-1',
+        expectLater(
+          bloc.stream,
+          emitsInOrder([
+            isA<TeamPortalActionSuccess>(),
+            isA<TeamAssignedLoaded>().having(
+              (s) => s.team.leaderId,
+              'leaderId',
+              'user-1',
+            ),
+          ]),
+        );
+
+        bloc.add(
+          const ClaimLeadershipRequested(
+            teamId: 'team-2',
+            userId: 'user-1',
+            teamName: 'Bravo Unit',
           ),
-        ]),
-      );
-
-      bloc.add(const ClaimLeadershipRequested(
-        teamId: 'team-2',
-        userId: 'user-1',
-        teamName: 'Bravo Unit',
-      ));
-    });
+        );
+      },
+    );
   });
 }

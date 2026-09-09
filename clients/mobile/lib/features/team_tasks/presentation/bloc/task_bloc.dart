@@ -25,12 +25,12 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     required LocationService locationService,
     TeamLocationTracker? locationTracker,
     LocationStreamRepository? locationStreamRepository,
-  })  : _taskRepository = taskRepository,
-        _routeService = routeService,
-        _locationService = locationService,
-        _locationTracker = locationTracker ?? TeamLocationTracker(),
-        _locationStreamRepository = locationStreamRepository,
-        super(const TaskInitial()) {
+  }) : _taskRepository = taskRepository,
+       _routeService = routeService,
+       _locationService = locationService,
+       _locationTracker = locationTracker ?? TeamLocationTracker(),
+       _locationStreamRepository = locationStreamRepository,
+       super(const TaskInitial()) {
     on<LoadActiveTask>(_onLoadActiveTask);
     on<LoadTaskHistory>(_onLoadTaskHistory);
     on<UpdateOperationalStatus>(_onUpdateOperationalStatus);
@@ -43,15 +43,19 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
 
   void _listenToBackgroundLocationStream() {
     _backgroundLocationSubscription?.cancel();
-    _backgroundLocationSubscription = _locationStreamRepository?.onLocationUpdate.listen((data) {
-      if (data != null && data['latitude'] != null && data['longitude'] != null) {
-        final lat = double.tryParse(data['latitude'].toString());
-        final lng = double.tryParse(data['longitude'].toString());
-        if (lat != null && lng != null) {
-          add(TaskLocationUpdated(latitude: lat, longitude: lng));
-        }
-      }
-    });
+    _backgroundLocationSubscription = _locationStreamRepository
+        ?.onLocationUpdate
+        .listen((data) {
+          if (data != null &&
+              data['latitude'] != null &&
+              data['longitude'] != null) {
+            final lat = double.tryParse(data['latitude'].toString());
+            final lng = double.tryParse(data['longitude'].toString());
+            if (lat != null && lng != null) {
+              add(TaskLocationUpdated(latitude: lat, longitude: lng));
+            }
+          }
+        });
   }
 
   Future<void> _onLoadActiveTask(
@@ -63,7 +67,9 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     }
 
     try {
-      final activeTask = await _taskRepository.getActiveTaskForTeam(event.teamId);
+      final activeTask = await _taskRepository.getActiveTaskForTeam(
+        event.teamId,
+      );
       final history = await _taskRepository.getTaskHistory(event.teamId);
 
       if (activeTask == null) {
@@ -78,7 +84,10 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
         final position = await _locationService.getCurrentLocation();
         currentCoords = LatLng(position.latitude, position.longitude);
       } catch (_) {
-        currentCoords = LatLng(activeTask.latitude - 0.005, activeTask.longitude - 0.005);
+        currentCoords = LatLng(
+          activeTask.latitude - 0.005,
+          activeTask.longitude - 0.005,
+        );
       }
 
       final destination = LatLng(activeTask.latitude, activeTask.longitude);
@@ -136,10 +145,12 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     final currentState = state as TaskActiveLoaded;
     final currentTask = currentState.task;
 
-    emit(TaskStatusUpdating(
-      currentTask: currentTask,
-      pendingStatus: event.newStatus,
-    ));
+    emit(
+      TaskStatusUpdating(
+        currentTask: currentTask,
+        pendingStatus: event.newStatus,
+      ),
+    );
 
     try {
       await _taskRepository.updateTeamStatus(event.teamId, event.newStatus);
@@ -165,16 +176,21 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
       }
 
       final updatedTask = currentTask.copyWith(
-        status: event.newStatus == TeamStatus.enRoute ? 'EnRoute' : event.newStatus.apiValue,
+        status:
+            event.newStatus == TeamStatus.enRoute
+                ? 'EnRoute'
+                : event.newStatus.apiValue,
       );
 
       emit(currentState.copyWith(task: updatedTask));
     } catch (e) {
-      emit(TaskFailure(
-        'Failed to update status: ${e.toString()}',
-        cachedTask: currentTask,
-        failedStatus: event.newStatus,
-      ));
+      emit(
+        TaskFailure(
+          'Failed to update status: ${e.toString()}',
+          cachedTask: currentTask,
+          failedStatus: event.newStatus,
+        ),
+      );
       emit(currentState);
     }
   }
@@ -223,7 +239,10 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     final currentState = state as TaskActiveLoaded;
 
     final updatedLocation = LatLng(event.latitude, event.longitude);
-    final destination = LatLng(currentState.task.latitude, currentState.task.longitude);
+    final destination = LatLng(
+      currentState.task.latitude,
+      currentState.task.longitude,
+    );
 
     final routeResult = await _routeService.calculateRoute(
       origin: updatedLocation,

@@ -85,20 +85,29 @@ class EmployeeTrackingHubService {
   HubConnection? _incidentsHub;
   HubConnection? _locationHub;
 
-  final _newIncidentController = StreamController<NewIncidentUpdate>.broadcast();
-  final _incidentStatusController = StreamController<IncidentStatusUpdate>.broadcast();
-  final _teamDispatchedController = StreamController<TeamDispatchedUpdate>.broadcast();
-  final _incidentUpdatedController = StreamController<IncidentUpdatedData>.broadcast();
-  final _teamLocationController = StreamController<TeamLocationUpdate>.broadcast();
+  final _newIncidentController =
+      StreamController<NewIncidentUpdate>.broadcast();
+  final _incidentStatusController =
+      StreamController<IncidentStatusUpdate>.broadcast();
+  final _teamDispatchedController =
+      StreamController<TeamDispatchedUpdate>.broadcast();
+  final _incidentUpdatedController =
+      StreamController<IncidentUpdatedData>.broadcast();
+  final _teamLocationController =
+      StreamController<TeamLocationUpdate>.broadcast();
 
   Stream<NewIncidentUpdate> get onNewIncident => _newIncidentController.stream;
-  Stream<IncidentStatusUpdate> get onIncidentStatusChanged => _incidentStatusController.stream;
-  Stream<TeamDispatchedUpdate> get onTeamDispatched => _teamDispatchedController.stream;
-  Stream<IncidentUpdatedData> get onIncidentUpdated => _incidentUpdatedController.stream;
-  Stream<TeamLocationUpdate> get onTeamLocationUpdated => _teamLocationController.stream;
+  Stream<IncidentStatusUpdate> get onIncidentStatusChanged =>
+      _incidentStatusController.stream;
+  Stream<TeamDispatchedUpdate> get onTeamDispatched =>
+      _teamDispatchedController.stream;
+  Stream<IncidentUpdatedData> get onIncidentUpdated =>
+      _incidentUpdatedController.stream;
+  Stream<TeamLocationUpdate> get onTeamLocationUpdated =>
+      _teamLocationController.stream;
 
   EmployeeTrackingHubService({required SecureStorageService storageService})
-      : _storageService = storageService;
+    : _storageService = storageService;
 
   Future<void> initialize() async {
     final token = await _storageService.getAccessToken();
@@ -107,15 +116,16 @@ class EmployeeTrackingHubService {
     final baseUrl = ApiEndpoints.baseUrl;
 
     // 1. Incidents Hub Connection
-    _incidentsHub = HubConnectionBuilder()
-        .withUrl(
-          '$baseUrl/hubs/incidents',
-          options: HttpConnectionOptions(
-            accessTokenFactory: () async => token,
-          ),
-        )
-        .withAutomaticReconnect(retryDelays: [0, 2000, 5000, 10000, 30000])
-        .build();
+    _incidentsHub =
+        HubConnectionBuilder()
+            .withUrl(
+              '$baseUrl/hubs/incidents',
+              options: HttpConnectionOptions(
+                accessTokenFactory: () async => token,
+              ),
+            )
+            .withAutomaticReconnect(retryDelays: [0, 2000, 5000, 10000, 30000])
+            .build();
 
     _incidentsHub?.on('NewIncident', _handleNewIncident);
     _incidentsHub?.on('IncidentStatusChanged', _handleIncidentStatusChanged);
@@ -123,15 +133,16 @@ class EmployeeTrackingHubService {
     _incidentsHub?.on('IncidentUpdated', _handleIncidentUpdated);
 
     // 2. Location Hub Connection
-    _locationHub = HubConnectionBuilder()
-        .withUrl(
-          '$baseUrl/hubs/location',
-          options: HttpConnectionOptions(
-            accessTokenFactory: () async => token,
-          ),
-        )
-        .withAutomaticReconnect(retryDelays: [0, 2000, 5000, 10000, 30000])
-        .build();
+    _locationHub =
+        HubConnectionBuilder()
+            .withUrl(
+              '$baseUrl/hubs/location',
+              options: HttpConnectionOptions(
+                accessTokenFactory: () async => token,
+              ),
+            )
+            .withAutomaticReconnect(retryDelays: [0, 2000, 5000, 10000, 30000])
+            .build();
 
     _locationHub?.on('TeamLocationUpdated', _handleTeamLocationUpdated);
 
@@ -147,11 +158,20 @@ class EmployeeTrackingHubService {
   void _handleNewIncident(List<dynamic>? args) {
     if (args == null || args.isEmpty) return;
     final data = args[0] as Map<String, dynamic>;
-    final incidentId = (data['id'] ?? data['Id'] ?? data['incidentId'] ?? data['IncidentId'] ?? '').toString();
-    final title = (data['title'] ?? data['Title'] ?? 'Yeni Acil Durum').toString();
+    final incidentId =
+        (data['id'] ??
+                data['Id'] ??
+                data['incidentId'] ??
+                data['IncidentId'] ??
+                '')
+            .toString();
+    final title =
+        (data['title'] ?? data['Title'] ?? 'Yeni Acil Durum').toString();
     final code = (data['emergencyCode'] ?? data['EmergencyCode'])?.toString();
-    final lat = (data['latitude'] ?? data['Latitude'] as num?)?.toDouble() ?? 0.0;
-    final lng = (data['longitude'] ?? data['Longitude'] as num?)?.toDouble() ?? 0.0;
+    final lat =
+        (data['latitude'] ?? data['Latitude'] as num?)?.toDouble() ?? 0.0;
+    final lng =
+        (data['longitude'] ?? data['Longitude'] as num?)?.toDouble() ?? 0.0;
     final status = (data['status'] ?? data['Status'] ?? 'Reported').toString();
 
     final update = NewIncidentUpdate(
@@ -170,7 +190,8 @@ class EmployeeTrackingHubService {
   void _handleIncidentStatusChanged(List<dynamic>? args) {
     if (args == null || args.isEmpty) return;
     final data = args[0] as Map<String, dynamic>;
-    final incidentId = (data['incidentId'] ?? data['IncidentId'] ?? '').toString();
+    final incidentId =
+        (data['incidentId'] ?? data['IncidentId'] ?? '').toString();
     final status = (data['status'] ?? data['Status'] ?? '').toString();
     final prev = (data['previousStatus'] ?? data['PreviousStatus'])?.toString();
 
@@ -187,9 +208,11 @@ class EmployeeTrackingHubService {
   void _handleTeamDispatched(List<dynamic>? args) {
     if (args == null || args.isEmpty) return;
     final data = args[0] as Map<String, dynamic>;
-    final incidentId = (data['incidentId'] ?? data['IncidentId'] ?? '').toString();
+    final incidentId =
+        (data['incidentId'] ?? data['IncidentId'] ?? '').toString();
     final teamId = (data['teamId'] ?? data['TeamId'] ?? '').toString();
-    final assignmentId = (data['assignmentId'] ?? data['AssignmentId'] ?? '').toString();
+    final assignmentId =
+        (data['assignmentId'] ?? data['AssignmentId'] ?? '').toString();
 
     _teamDispatchedController.add(
       TeamDispatchedUpdate(
@@ -204,9 +227,12 @@ class EmployeeTrackingHubService {
   void _handleIncidentUpdated(List<dynamic>? args) {
     if (args == null || args.isEmpty) return;
     final data = args[0] as Map<String, dynamic>;
-    final incidentId = (data['incidentId'] ?? data['IncidentId'] ?? '').toString();
-    final desc = data['description'] as String? ?? data['Description'] as String?;
-    final code = data['emergencyCode'] as String? ?? data['EmergencyCode'] as String?;
+    final incidentId =
+        (data['incidentId'] ?? data['IncidentId'] ?? '').toString();
+    final desc =
+        data['description'] as String? ?? data['Description'] as String?;
+    final code =
+        data['emergencyCode'] as String? ?? data['EmergencyCode'] as String?;
 
     _incidentUpdatedController.add(
       IncidentUpdatedData(
@@ -222,8 +248,14 @@ class EmployeeTrackingHubService {
     if (args == null || args.isEmpty) return;
     final data = args[0] as Map<String, dynamic>;
     final teamId = (data['teamId'] ?? data['TeamId'] ?? '').toString();
-    final lat = (data['lat'] ?? data['latitude'] ?? data['Latitude'] as num?)?.toDouble() ?? 0.0;
-    final lng = (data['lng'] ?? data['longitude'] ?? data['Longitude'] as num?)?.toDouble() ?? 0.0;
+    final lat =
+        (data['lat'] ?? data['latitude'] ?? data['Latitude'] as num?)
+            ?.toDouble() ??
+        0.0;
+    final lng =
+        (data['lng'] ?? data['longitude'] ?? data['Longitude'] as num?)
+            ?.toDouble() ??
+        0.0;
 
     _teamLocationController.add(
       TeamLocationUpdate(

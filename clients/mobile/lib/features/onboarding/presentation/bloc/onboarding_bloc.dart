@@ -11,9 +11,9 @@ class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
   OnboardingBloc({
     required OnboardingRepository onboardingRepository,
     required OnboardingPermissionService permissionService,
-  })  : _onboardingRepository = onboardingRepository,
-        _permissionService = permissionService,
-        super(const OnboardingInitial()) {
+  }) : _onboardingRepository = onboardingRepository,
+       _permissionService = permissionService,
+       super(const OnboardingInitial()) {
     on<OnboardingCheckRequested>(_onCheckRequested);
     on<KvkkConsentToggled>(_onConsentToggled);
     on<OnboardingPermissionsRequested>(_onPermissionsRequested);
@@ -39,10 +39,12 @@ class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
   ) {
     if (state is OnboardingRequired) {
       final current = state as OnboardingRequired;
-      emit(current.copyWith(
-        isConsentChecked: event.isAccepted,
-        errorMessage: null,
-      ));
+      emit(
+        current.copyWith(
+          isConsentChecked: event.isAccepted,
+          errorMessage: null,
+        ),
+      );
     }
   }
 
@@ -64,18 +66,24 @@ class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
         emit(const OnboardingCompleted());
         break;
       case OnboardingPermissionResult.permanentlyDenied:
-        emit(current.copyWith(
-          isSubmitting: false,
-          isPermanentlyDenied: true,
-          errorMessage: 'Location permission is permanently denied. Please enable it in device settings.',
-        ));
+        emit(
+          current.copyWith(
+            isSubmitting: false,
+            isPermanentlyDenied: true,
+            errorMessage:
+                'Location permission is permanently denied. Please enable it in device settings.',
+          ),
+        );
         break;
       case OnboardingPermissionResult.denied:
-        emit(current.copyWith(
-          isSubmitting: false,
-          isPermanentlyDenied: false,
-          errorMessage: 'Location permission is required for emergency dispatch operations.',
-        ));
+        emit(
+          current.copyWith(
+            isSubmitting: false,
+            isPermanentlyDenied: false,
+            errorMessage:
+                'Location permission is required for emergency dispatch operations.',
+          ),
+        );
         break;
     }
   }
