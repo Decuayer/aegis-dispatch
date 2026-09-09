@@ -3,6 +3,11 @@ ARG DOTNET_VERSION=10.0
 # Stage 1: Runtime base with security hardening
 FROM mcr.microsoft.com/dotnet/aspnet:${DOTNET_VERSION}-alpine AS base
 
+LABEL org.opencontainers.image.title="socar-dispatch-api" \
+      org.opencontainers.image.description="SOCAR Dispatch Core Backend API (.NET 10)" \
+      org.opencontainers.image.vendor="SOCAR" \
+      org.opencontainers.image.source="https://github.com/Decuayer/socar-dispatch"
+
 RUN apk update && apk upgrade --no-cache && \
     apk add --no-cache \
     ca-certificates \
@@ -24,7 +29,7 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_VERSION}-alpine AS build
 WORKDIR /src
 
-COPY SocarDispatch.slnx ./
+COPY SocarDispatch.slnx Directory.Build.props ./
 COPY src/SocarDispatch.Domain/SocarDispatch.Domain.csproj src/SocarDispatch.Domain/
 COPY src/SocarDispatch.Application/SocarDispatch.Application.csproj src/SocarDispatch.Application/
 COPY src/SocarDispatch.Infrastructure/SocarDispatch.Infrastructure.csproj src/SocarDispatch.Infrastructure/

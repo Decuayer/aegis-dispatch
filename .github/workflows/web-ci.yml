@@ -1,0 +1,73 @@
+name: Web Client CI — Blazor WebAssembly Quality & Build
+
+on:
+  push:
+    branches: [ main, master, develop, 'release/*' ]
+    paths:
+      - 'clients/web/**'
+      - '.github/workflows/web-ci.yml'
+      - '.editorconfig'
+  pull_request:
+    branches: [ main, master, develop, 'release/*' ]
+    paths:
+      - 'clients/web/**'
+      - '.github/workflows/web-ci.yml'
+      - '.editorconfig'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-validate-web:
+    name: Build & Verify Blazor WebAssembly SPA
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: clients/web/SocarDispatch.Web
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Cache NuGet Packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-web-${{ hashFiles('clients/web/**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-web-
+
+      - name: Restore Project Dependencies
+        run: dotnet restore SocarDispatch.Web.csproj
+
+      - name: Compile Blazor WebAssembly Project (Release Mode)
+        run: dotnet build SocarDispatch.Web.csproj --configuration Release --no-restore
+
+      - name: Publish Production SPA Bundle
+        run: |
+          dotnet publish SocarDispatch.Web.csproj \
+            --configuration Release \
+            --output ./publish \
+            --no-build
+
+      - name: Validate WebAssembly & Static Assets Integrity
+        run: |
+          echo "=== Verifying Publish Directory Output ==="
+          test -d ./publish/wwwroot || { echo "Missing wwwroot in publish output!"; exit 1; }
+          test -f ./publish/wwwroot/index.html || { echo "Missing index.html in publish output!"; exit 1; }
+          test -d ./publish/wwwroot/_framework || { echo "Missing _framework WebAssembly binaries!"; exit 1; }
+          echo "✅ All critical Blazor WebAssembly files successfully verified."
+
+      - name: Upload Published Web SPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: blazor-webassembly-production-bundle
+          path: clients/web/SocarDispatch.Web/publish/wwwroot/
+          retention-days: 7

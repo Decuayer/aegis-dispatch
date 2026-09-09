@@ -26,7 +26,7 @@ public class IncidentsHub : Hub
             }
         }
 
-        var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+        var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
                      ?? Context.User?.FindFirst("sub")?.Value;
         if (!string.IsNullOrEmpty(userId))
         {

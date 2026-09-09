@@ -1,23 +1,29 @@
-name: Mobile CI
+name: Mobile CI — Flutter Quality, Tests & Build Validation
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [ main, master, develop, 'release/*' ]
     paths:
       - 'clients/mobile/**'
       - '.github/workflows/mobile-ci.yml'
   pull_request:
-    branches: [ main, master, develop ]
+    branches: [ main, master, develop, 'release/*' ]
     paths:
       - 'clients/mobile/**'
       - '.github/workflows/mobile-ci.yml'
   workflow_dispatch:
 
-jobs:
-  analyze-and-test:
-    name: Analyze & Test (Flutter)
-    runs-on: ubuntu-latest
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
+jobs:
+  # ----------------------------------------------------------------------------
+  # 1. Code Style, Static Analysis & Automated Testing with Coverage
+  # ----------------------------------------------------------------------------
+  analyze-and-test:
+    name: Lint, Analyze & Test (Flutter)
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: clients/mobile
@@ -26,7 +32,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Java
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
@@ -38,14 +44,88 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Verify Flutter Environment
+      - name: Cache Pub Packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            clients/mobile/.dart_tool
+          key: ${{ runner.os }}-flutter-pub-${{ hashFiles('clients/mobile/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-flutter-pub-
+
+      - name: Verify Flutter Toolchain
         run: flutter doctor -v
+
+      - name: Install Project Dependencies
+        run: flutter pub get
+
+      - name: Verify Code Style & Formatting (dart format)
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Execute Flutter Static Analysis (Strict)
+        run: flutter analyze
+
+      - name: Run Unit & Widget Test Suite with Coverage
+        run: flutter test --coverage
+
+      - name: Generate Test & Coverage Summary for PR
+        run: |
+          if [ -f coverage/lcov.info ]; then
+            LINES_FOUND=$(grep -c "DA:" coverage/lcov.info || true)
+            LINES_HIT=$(grep -c -v "DA:[0-9]*,0" coverage/lcov.info || true)
+            echo "### 📱 Flutter Mobile Test & Coverage Summary" >> $GITHUB_STEP_SUMMARY
+            echo "- **Coverage Data Points:** $LINES_FOUND lines recorded" >> $GITHUB_STEP_SUMMARY
+            echo "- **Status:** ✅ All unit and widget tests passed cleanly." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload Test Coverage Artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: flutter-lcov-coverage
+          path: clients/mobile/coverage/
+          retention-days: 14
+
+  # ----------------------------------------------------------------------------
+  # 2. Release Build Smoke Test (Packaging Verification)
+  # ----------------------------------------------------------------------------
+  build-smoke-test:
+    name: Build Release Smoke Test (Web & APK)
+    needs: analyze-and-test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: clients/mobile
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
 
       - name: Install Dependencies
         run: flutter pub get
 
-      - name: Run Linter & Static Analysis
-        run: flutter analyze
+      - name: Build Web Release Bundle
+        run: flutter build web --release
 
-      - name: Run Unit & Widget Tests
-        run: flutter test
+      - name: Build Android Release APK (No Codesign)
+        run: flutter build apk --release --no-codesign
+
+      - name: Upload Release APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-release-apk
+          path: clients/mobile/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 7

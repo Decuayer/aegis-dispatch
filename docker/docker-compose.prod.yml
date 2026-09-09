@@ -8,6 +8,9 @@ volumes:
   socar_dispatch_miniodata_prod:
 
 services:
+  # ----------------------------------------------------------------------------
+  # 1. Spatial Database (PostgreSQL + PostGIS)
+  # ----------------------------------------------------------------------------
   postgres:
     image: postgis/postgis:16-3.4-alpine
     container_name: socar_dispatch_db_prod
@@ -29,9 +32,17 @@ services:
         limits:
           cpus: '2.0'
           memory: 4G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - socar_dispatch_net
 
+  # ----------------------------------------------------------------------------
+  # 2. Distributed Cache & State Bus (Redis)
+  # ----------------------------------------------------------------------------
   redis:
     image: redis:7-alpine
     container_name: socar_dispatch_redis_prod
@@ -44,9 +55,22 @@ services:
       timeout: 5s
       retries: 5
     restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - socar_dispatch_net
 
+  # ----------------------------------------------------------------------------
+  # 3. Object Storage (MinIO)
+  # ----------------------------------------------------------------------------
   minio:
     image: minio/minio:latest
     container_name: socar_dispatch_storage_prod
@@ -62,9 +86,22 @@ services:
       timeout: 5s
       retries: 3
     restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - socar_dispatch_net
 
+  # ----------------------------------------------------------------------------
+  # 4. Storage Bucket Initialization Companion (MinIO Client)
+  # ----------------------------------------------------------------------------
   createbuckets:
     image: minio/mc:latest
     container_name: socar_dispatch_minio_init_prod
@@ -78,6 +115,9 @@ services:
     networks:
       - socar_dispatch_net
 
+  # ----------------------------------------------------------------------------
+  # 5. .NET Web API Service
+  # ----------------------------------------------------------------------------
   api:
     build:
       context: ../backend
@@ -118,9 +158,50 @@ services:
         limits:
           cpus: '2.0'
           memory: 2G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - socar_dispatch_net
 
+  # ----------------------------------------------------------------------------
+  # 6. Blazor WebAssembly Web Client
+  # ----------------------------------------------------------------------------
+  web:
+    build:
+      context: ../clients/web/SocarDispatch.Web
+      dockerfile: Dockerfile
+    container_name: socar_dispatch_web_prod
+    ports:
+      - "${WEB_PORT:-8085}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:80/healthz || exit 1" ]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - socar_dispatch_net
+
+  # ----------------------------------------------------------------------------
+  # 7. Reverse Proxy & Ingress Gateway (Nginx)
+  # ----------------------------------------------------------------------------
   nginx:
     build:
       context: ../infrastructure/nginx
@@ -132,11 +213,18 @@ services:
     depends_on:
       api:
         condition: service_healthy
+      web:
+        condition: service_healthy
     restart: always
     deploy:
       resources:
         limits:
           cpus: '1.0'
           memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - socar_dispatch_net
