@@ -1,16 +1,20 @@
 @using SocarDispatch.Web.Services
 @inject IToastService ToastService
+@inject NavigationManager Navigation
 @implements IDisposable
 
 <div class="toast-container" aria-live="assertive">
     @foreach (var toast in _toasts)
     {
-        <div class="toast-card toast-@toast.Level.ToString().ToLower()" @key="toast.Id">
+        var isActionable = !string.IsNullOrWhiteSpace(toast.ActionUrl);
+        <div class="toast-card toast-@toast.Level.ToString().ToLower() @(isActionable ? "toast-actionable" : "")" 
+             @key="toast.Id"
+             @onclick="() => HandleToastClick(toast)">
             <div class="toast-icon">
                 @switch (toast.Level)
                 {
                     case ToastLevel.Danger:
-                        <span>⚠️</span>
+                        <span>🚨</span>
                         break;
                     case ToastLevel.Success:
                         <span>✅</span>
@@ -24,10 +28,16 @@
                 }
             </div>
             <div class="toast-content">
-                <div class="toast-title">@toast.Title</div>
+                <div class="toast-title-row">
+                    <span class="toast-title">@toast.Title</span>
+                    @if (isActionable)
+                    {
+                        <span class="toast-action-badge">View &rarr;</span>
+                    }
+                </div>
                 <div class="toast-message">@toast.Message</div>
             </div>
-            <button class="toast-close" @onclick="() => RemoveToast(toast.Id)" aria-label="Close">×</button>
+            <button class="toast-close" @onclick="() => RemoveToast(toast.Id)" @onclick:stopPropagation="true" aria-label="Close">×</button>
         </div>
     }
 </div>
@@ -47,10 +57,19 @@
             _toasts.Add(toast);
             StateHasChanged();
 
-            // Belirlenen süre sonra otomatik kapat
+            // Auto close after duration
             await Task.Delay(toast.DurationMs);
             RemoveToast(toast.Id);
         });
+    }
+
+    private void HandleToastClick(ToastMessage toast)
+    {
+        if (!string.IsNullOrWhiteSpace(toast.ActionUrl))
+        {
+            Navigation.NavigateTo(toast.ActionUrl);
+            RemoveToast(toast.Id);
+        }
     }
 
     private void RemoveToast(Guid id)
@@ -92,6 +111,15 @@
         box-shadow: var(--shadow-lg);
         animation: toast-slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         color: var(--color-text-primary);
+        transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+    .toast-card.toast-actionable {
+        cursor: pointer;
+    }
+    .toast-card.toast-actionable:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+        border-color: var(--color-accent);
     }
     .toast-card.toast-info {
         border-left: 4px solid var(--color-accent);
@@ -115,12 +143,27 @@
         flex: 1;
         min-width: 0;
     }
+    .toast-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 3px;
+    }
     .toast-title {
         font-size: 13px;
         font-weight: 700;
-        margin-bottom: 3px;
         letter-spacing: 0.2px;
         color: var(--color-text-primary);
+    }
+    .toast-action-badge {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--color-primary);
+        background: rgba(227, 6, 19, 0.08);
+        padding: 2px 6px;
+        border-radius: 4px;
+        white-space: nowrap;
     }
     .toast-message {
         font-size: 12px;
@@ -137,6 +180,7 @@
         padding: 0 4px;
         line-height: 1;
         transition: color 0.15s ease;
+        flex-shrink: 0;
     }
     .toast-close:hover {
         color: var(--color-text-primary);

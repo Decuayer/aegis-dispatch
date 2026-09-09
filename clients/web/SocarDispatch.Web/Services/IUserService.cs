@@ -31,4 +31,6 @@ public interface IUserService
     Task<ApiResponse<UserDto>?> UpdateCurrentUserProfileAsync(UpdateUserProfileRequestDto request, CancellationToken cancellationToken = default);
     Task<ApiResponse<UserDto>?> UpdateUserRoleAsync(Guid userId, UpdateUserRoleRequestDto request, CancellationToken cancellationToken = default);
     Task<ApiResponse<bool>?> DeleteUserAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<ApiResponse<UserDto>?> LinkGoogleAccountAsync(string idToken, CancellationToken cancellationToken = default);
+    Task<ApiResponse<UserDto>?> UnlinkGoogleAccountAsync(CancellationToken cancellationToken = default);
 }

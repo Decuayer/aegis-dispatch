@@ -32,6 +32,7 @@ public class GoogleAuthService : IGoogleAuthService
             var payload = await GoogleJsonWebSignature.ValidateAsync(idToken, settings);
 
             return new GoogleUserInfo(
+                GoogleId: payload.Subject,
                 Email: payload.Email,
                 FirstName: payload.GivenName ?? "GoogleUser",
                 LastName: payload.FamilyName ?? string.Empty,

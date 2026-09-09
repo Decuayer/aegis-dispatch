@@ -14,9 +14,11 @@ class EmployeeTrackingBloc
   final RouteService _routeService;
   final EmployeeTrackingHubService _hubService;
 
+  StreamSubscription<NewIncidentUpdate>? _newIncidentSub;
   StreamSubscription<IncidentStatusUpdate>? _statusSub;
   StreamSubscription<TeamDispatchedUpdate>? _dispatchSub;
   StreamSubscription<TeamLocationUpdate>? _locationSub;
+  StreamSubscription<IncidentUpdatedData>? _incidentUpdatedSub;
 
   String? _currentUserId;
 
@@ -41,6 +43,10 @@ class EmployeeTrackingBloc
   }
 
   void _listenToSignalRStreams() {
+    _newIncidentSub = _hubService.onNewIncident.listen((_) {
+      add(const RefreshMyIncidents());
+    });
+
     _statusSub = _hubService.onIncidentStatusChanged.listen((update) {
       add(IncidentStatusReceived(
         incidentId: update.incidentId,
@@ -61,6 +67,10 @@ class EmployeeTrackingBloc
         latitude: update.latitude,
         longitude: update.longitude,
       ));
+    });
+
+    _incidentUpdatedSub = _hubService.onIncidentUpdated.listen((_) {
+      add(const RefreshMyIncidents());
     });
   }
 
@@ -306,9 +316,11 @@ class EmployeeTrackingBloc
 
   @override
   Future<void> close() {
+    _newIncidentSub?.cancel();
     _statusSub?.cancel();
     _dispatchSub?.cancel();
     _locationSub?.cancel();
+    _incidentUpdatedSub?.cancel();
     return super.close();
   }
 }

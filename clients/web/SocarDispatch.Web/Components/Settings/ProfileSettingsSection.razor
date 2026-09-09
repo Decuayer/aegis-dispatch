@@ -1,10 +1,15 @@
 @using System.Net.Http.Headers
+@using Microsoft.Extensions.Configuration
+@using Microsoft.JSInterop
 @using SocarDispatch.Web.Models.Auth
 @using SocarDispatch.Web.Models.Common
 @using SocarDispatch.Web.Services
 @inject IUserService UserService
 @inject IToastService ToastService
 @inject HttpClient Http
+@inject IJSRuntime JSRuntime
+@inject IConfiguration Configuration
+@implements IDisposable
 
 <div class="settings-card">
     <div class="settings-card-header">
@@ -78,7 +83,6 @@
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                             <polyline points="17 8 12 3 7 8"/>
-                            <line x1="12" y1="3" x2="12" y2="15"/>
                         </svg>
                         <span>Upload Photo File</span>
                         <InputFile OnChange="HandleFileSelectedAsync" accept="image/png,image/jpeg,image/webp" style="display:none;" />
@@ -150,6 +154,93 @@
                     </button>
                 </div>
             </EditForm>
+
+            <div class="divider-line" style="margin: 2rem 0;"></div>
+
+            <!-- Connected Accounts / Google Authentication Linking Section -->
+            <div class="connected-accounts-section">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+                    <div>
+                        <h4 style="font-size: 1.1rem; font-weight: 600; color: var(--color-text-primary, #ffffff); margin: 0 0 0.25rem 0;">
+                            Bağlı Hesaplar / Connected Accounts
+                        </h4>
+                        <p style="font-size: 0.85rem; color: var(--color-text-secondary, #94a3b8); margin: 0;">
+                            Hesabınıza Google hesabınızı bağlayarak hem Web Panel'e hem Mobil Uygulamaya tek tıkla şifresiz giriş yapabilirsiniz.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="connected-account-card" style="display: flex; align-items: center; justify-content: space-between; padding: 1.25rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--color-border, rgba(255, 255, 255, 0.08)); border-radius: 12px; gap: 1rem; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(255, 255, 255, 0.06); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <svg width="24" height="24" viewBox="0 0 24 24">
+                                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem;">
+                                <span style="font-weight: 600; font-size: 0.95rem; color: var(--color-text-primary, #ffffff);">Google Hesabı</span>
+                                @if (_user.IsGoogleLinked)
+                                {
+                                    <span style="display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; font-weight: 600; padding: 2px 8px; border-radius: 9999px; background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3);">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                                        Bağlandı
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span style="font-size: 0.75rem; font-weight: 500; padding: 2px 8px; border-radius: 9999px; background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.25);">
+                                        Bağlı Değil
+                                    </span>
+                                }
+                            </div>
+                            <div style="font-size: 0.85rem; color: var(--color-text-secondary, #94a3b8);">
+                                @if (_user.IsGoogleLinked)
+                                {
+                                    <span>Bağlı e-posta: <strong style="color: var(--color-text-primary, #ffffff);">@_user.GoogleEmail</strong></span>
+                                }
+                                else
+                                {
+                                    <span>Google hesabınızı bağlayarak şifresiz oturum açabilirsiniz.</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        @if (_user.IsGoogleLinked)
+                        {
+                            <button type="button" class="btn btn-outline-danger btn-sm" @onclick="HandleUnlinkGoogleAsync" disabled="@_isGoogleActionInProgress" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 1rem; border-radius: 8px;">
+                                @if (_isGoogleActionInProgress)
+                                {
+                                    <span class="spinner-sm"></span>
+                                    <span>İşleniyor...</span>
+                                }
+                                else
+                                {
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                    <span>Bağlantıyı Kaldır</span>
+                                }
+                            </button>
+                        }
+                        else
+                        {
+                            <div id="google-link-btn-container" style="min-height: 40px; min-width: 200px;">
+                                @if (_isGoogleActionInProgress)
+                                {
+                                    <div class="spinner-sm"></div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
         }
     </div>
 </div>
@@ -160,10 +251,116 @@
     private bool _isLoading = true;
     private bool _isSaving;
     private bool _isUploading;
+    private bool _isGoogleActionInProgress;
+    private DotNetObjectReference<ProfileSettingsSection>? _dotNetRef;
+    private bool _jsInitialized;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadProfileAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_isLoading && _user != null && !_user.IsGoogleLinked && !_jsInitialized)
+        {
+            _jsInitialized = true;
+            await SetupGoogleLinkButtonAsync();
+        }
+    }
+
+    private async Task SetupGoogleLinkButtonAsync()
+    {
+        try
+        {
+            _dotNetRef ??= DotNetObjectReference.Create(this);
+            var googleClientId = Configuration["Authentication:GoogleClientId"] 
+                                 ?? Configuration["GoogleClientId"] 
+                                 ?? string.Empty;
+
+            await JSRuntime.InvokeVoidAsync("socarGoogleAuth.initLink", _dotNetRef, googleClientId, "google-link-btn-container");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[GoogleAuth] Link setup error: {ex.Message}");
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnGoogleLinkSuccess(string idToken)
+    {
+        if (string.IsNullOrWhiteSpace(idToken)) return;
+
+        _isGoogleActionInProgress = true;
+        StateHasChanged();
+
+        try
+        {
+            var response = await UserService.LinkGoogleAccountAsync(idToken);
+            if (response != null && response.Success && response.Data != null)
+            {
+                _user = response.Data;
+                ToastService.ShowSuccess($"Google hesabı ({_user.GoogleEmail}) başarıyla bağlandı.", "Google Hesabı Bağlandı");
+            }
+            else
+            {
+                ToastService.ShowError(response?.Message ?? "Google hesabı bağlanamadı.");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Bağlantı hatası: {ex.Message}");
+        }
+        finally
+        {
+            _isGoogleActionInProgress = false;
+            _jsInitialized = false; // Reset to allow re-render if unlinked later
+            StateHasChanged();
+        }
+    }
+
+    [JSInvokable]
+    public void OnGoogleLinkFailure(string error)
+    {
+        _isGoogleActionInProgress = false;
+        ToastService.ShowError(error, "Google Bağlantı Hatası");
+        StateHasChanged();
+    }
+
+    private async Task HandleUnlinkGoogleAsync()
+    {
+        _isGoogleActionInProgress = true;
+        StateHasChanged();
+
+        try
+        {
+            var response = await UserService.UnlinkGoogleAccountAsync();
+            if (response != null && response.Success && response.Data != null)
+            {
+                _user = response.Data;
+                _jsInitialized = false;
+                ToastService.ShowSuccess("Google hesabı bağlantısı başarıyla kaldırıldı.", "Bağlantı Kaldırıldı");
+                // Re-initialize Google link button on next render
+                _ = Task.Delay(100).ContinueWith(async _ => 
+                {
+                    await InvokeAsync(SetupGoogleLinkButtonAsync);
+                    await InvokeAsync(StateHasChanged);
+                });
+            }
+            else
+            {
+                ToastService.ShowError(response?.Message ?? "Google hesabı bağlantısı kaldırılamadı.");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Hata: {ex.Message}");
+        }
+        finally
+        {
+            _isGoogleActionInProgress = false;
+            StateHasChanged();
+        }
     }
 
     private async Task LoadProfileAsync()
@@ -281,5 +478,10 @@
         var f = !string.IsNullOrEmpty(first) ? first[0].ToString().ToUpper() : "O";
         var l = !string.IsNullOrEmpty(last) ? last[0].ToString().ToUpper() : "P";
         return $"{f}{l}";
+    }
+
+    public void Dispose()
+    {
+        _dotNetRef?.Dispose();
     }
 }

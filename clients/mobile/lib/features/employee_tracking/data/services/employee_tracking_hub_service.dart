@@ -60,16 +60,38 @@ class TeamLocationUpdate {
   });
 }
 
+class NewIncidentUpdate {
+  final String incidentId;
+  final String title;
+  final String? emergencyCode;
+  final double latitude;
+  final double longitude;
+  final String status;
+  final DateTime createdAt;
+
+  const NewIncidentUpdate({
+    required this.incidentId,
+    required this.title,
+    this.emergencyCode,
+    required this.latitude,
+    required this.longitude,
+    required this.status,
+    required this.createdAt,
+  });
+}
+
 class EmployeeTrackingHubService {
   final SecureStorageService _storageService;
   HubConnection? _incidentsHub;
   HubConnection? _locationHub;
 
+  final _newIncidentController = StreamController<NewIncidentUpdate>.broadcast();
   final _incidentStatusController = StreamController<IncidentStatusUpdate>.broadcast();
   final _teamDispatchedController = StreamController<TeamDispatchedUpdate>.broadcast();
   final _incidentUpdatedController = StreamController<IncidentUpdatedData>.broadcast();
   final _teamLocationController = StreamController<TeamLocationUpdate>.broadcast();
 
+  Stream<NewIncidentUpdate> get onNewIncident => _newIncidentController.stream;
   Stream<IncidentStatusUpdate> get onIncidentStatusChanged => _incidentStatusController.stream;
   Stream<TeamDispatchedUpdate> get onTeamDispatched => _teamDispatchedController.stream;
   Stream<IncidentUpdatedData> get onIncidentUpdated => _incidentUpdatedController.stream;
@@ -95,12 +117,10 @@ class EmployeeTrackingHubService {
         .withAutomaticReconnect(retryDelays: [0, 2000, 5000, 10000, 30000])
         .build();
 
+    _incidentsHub?.on('NewIncident', _handleNewIncident);
     _incidentsHub?.on('IncidentStatusChanged', _handleIncidentStatusChanged);
-    _incidentsHub?.on('ReceiveIncidentStatusChanged', _handleIncidentStatusChanged);
     _incidentsHub?.on('TeamDispatched', _handleTeamDispatched);
-    _incidentsHub?.on('ReceiveAssignmentCreated', _handleTeamDispatched);
     _incidentsHub?.on('IncidentUpdated', _handleIncidentUpdated);
-    _incidentsHub?.on('ReceiveIncidentUpdated', _handleIncidentUpdated);
 
     // 2. Location Hub Connection
     _locationHub = HubConnectionBuilder()
@@ -114,7 +134,6 @@ class EmployeeTrackingHubService {
         .build();
 
     _locationHub?.on('TeamLocationUpdated', _handleTeamLocationUpdated);
-    _locationHub?.on('ReceiveTeamLocationUpdated', _handleTeamLocationUpdated);
 
     try {
       await _incidentsHub?.start();
@@ -123,6 +142,29 @@ class EmployeeTrackingHubService {
     try {
       await _locationHub?.start();
     } catch (_) {}
+  }
+
+  void _handleNewIncident(List<dynamic>? args) {
+    if (args == null || args.isEmpty) return;
+    final data = args[0] as Map<String, dynamic>;
+    final incidentId = (data['id'] ?? data['Id'] ?? data['incidentId'] ?? data['IncidentId'] ?? '').toString();
+    final title = (data['title'] ?? data['Title'] ?? 'Yeni Acil Durum').toString();
+    final code = (data['emergencyCode'] ?? data['EmergencyCode'])?.toString();
+    final lat = (data['latitude'] ?? data['Latitude'] as num?)?.toDouble() ?? 0.0;
+    final lng = (data['longitude'] ?? data['Longitude'] as num?)?.toDouble() ?? 0.0;
+    final status = (data['status'] ?? data['Status'] ?? 'Reported').toString();
+
+    final update = NewIncidentUpdate(
+      incidentId: incidentId,
+      title: title,
+      emergencyCode: code,
+      latitude: lat,
+      longitude: lng,
+      status: status,
+      createdAt: DateTime.now(),
+    );
+
+    _newIncidentController.add(update);
   }
 
   void _handleIncidentStatusChanged(List<dynamic>? args) {
@@ -201,6 +243,7 @@ class EmployeeTrackingHubService {
       await _locationHub?.stop();
     } catch (_) {}
 
+    await _newIncidentController.close();
     await _incidentStatusController.close();
     await _teamDispatchedController.close();
     await _incidentUpdatedController.close();

@@ -18,10 +18,13 @@ class ApiEndpoints {
   static const String login = '/api/v1/auth/login';
   static const String register = '/api/v1/auth/register';
   static const String googleLogin = '/api/v1/auth/google-login';
+  static const String googleRegister = '/api/v1/auth/google-register';
 
   // User & Profile endpoints
   static const String currentUser = '/api/v1/users/me';
   static const String updateProfile = '/api/v1/users/me';
+  static const String linkGoogleAccount = '/api/v1/users/me/link-google';
+  static const String unlinkGoogleAccount = '/api/v1/users/me/unlink-google';
   static const String updateDeviceToken = '/api/v1/users/me/device-token';
   static const String usersDirectory = '/api/v1/users';
 

@@ -54,7 +54,9 @@ class _EmployeeHomeViewState extends State<EmployeeHomeView> {
       body: SafeArea(
         child: BlocConsumer<RapidIncidentCubit, RapidIncidentState>(
           listener: (context, state) {
-            if (state is RapidIncidentFailure) {
+            if (state is RapidIncidentSuccess) {
+              context.read<EmployeeTrackingBloc>().add(const RefreshMyIncidents());
+            } else if (state is RapidIncidentFailure) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(state.errorMessage),
@@ -63,6 +65,7 @@ class _EmployeeHomeViewState extends State<EmployeeHomeView> {
                 ),
               );
             } else if (state is RapidIncidentCanceled) {
+              context.read<EmployeeTrackingBloc>().add(const RefreshMyIncidents());
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Emergency alert canceled successfully.'),

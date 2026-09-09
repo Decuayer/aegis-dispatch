@@ -38,7 +38,6 @@ public class IncidentUpdatedNotificationHandler : INotificationHandler<IncidentU
             };
 
             await _hubContext.Clients.All.SendAsync("IncidentUpdated", updatePayload, cancellationToken);
-            await _hubContext.Clients.All.SendAsync("ReceiveIncidentUpdated", updatePayload, cancellationToken);
         }
         catch (Exception ex)
         {

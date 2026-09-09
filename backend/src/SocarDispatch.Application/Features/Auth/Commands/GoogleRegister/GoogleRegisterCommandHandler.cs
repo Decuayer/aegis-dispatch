@@ -6,15 +6,15 @@ using SocarDispatch.Application.Features.Auth.DTOs;
 using SocarDispatch.Domain.Entities;
 using SocarDispatch.Domain.Enums;
 
-namespace SocarDispatch.Application.Features.Auth.Commands.GoogleLogin;
+namespace SocarDispatch.Application.Features.Auth.Commands.GoogleRegister;
 
-public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, ApiResponse<AuthResponseDto>>
+public class GoogleRegisterCommandHandler : IRequestHandler<GoogleRegisterCommand, ApiResponse<AuthResponseDto>>
 {
     private readonly IApplicationDbContext _context;
     private readonly IGoogleAuthService _googleAuthService;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
 
-    public GoogleLoginCommandHandler(
+    public GoogleRegisterCommandHandler(
         IApplicationDbContext context,
         IGoogleAuthService googleAuthService,
         IJwtTokenGenerator jwtTokenGenerator)
@@ -24,43 +24,21 @@ public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, Api
         _jwtTokenGenerator = jwtTokenGenerator;
     }
 
-    public async Task<ApiResponse<AuthResponseDto>> Handle(GoogleLoginCommand request, CancellationToken cancellationToken)
+    public async Task<ApiResponse<AuthResponseDto>> Handle(GoogleRegisterCommand request, CancellationToken cancellationToken)
     {
-        // 1. Verifying the Google ID Token
         var googleUser = await _googleAuthService.VerifyIdTokenAsync(request.IdToken, cancellationToken);
         var emailNormalized = googleUser.Email.Trim().ToLowerInvariant();
 
-        // 2. Check if the user exists in the database by GoogleId or normalized Email/GoogleEmail.
-        var user = await _context.Users
+        var existingUser = await _context.Users
             .FirstOrDefaultAsync(u => u.GoogleId == googleUser.GoogleId ||
                                       u.Email.ToLower() == emailNormalized ||
                                       (u.GoogleEmail != null && u.GoogleEmail.ToLower() == emailNormalized),
                                  cancellationToken);
 
-        // 3. Automatically save if the user is visiting for the first time
-        if (user == null)
+        User user;
+        if (existingUser != null)
         {
-            user = new User
-            {
-                Id = Guid.NewGuid(),
-                FirstName = googleUser.FirstName,
-                LastName = string.IsNullOrWhiteSpace(googleUser.LastName) ? "." : googleUser.LastName,
-                Email = emailNormalized,
-                Phone = "Not Provided",
-                PasswordHash = "OAUTH_GOOGLE_ACCOUNT",
-                Department = "Genel",
-                RoleType = RoleType.Employee,
-                AvatarUrl = googleUser.PictureUrl,
-                GoogleId = googleUser.GoogleId,
-                GoogleEmail = googleUser.Email,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync(cancellationToken);
-        }
-        else
-        {
+            user = existingUser;
             var isDirty = false;
             if (string.IsNullOrEmpty(user.GoogleId))
             {
@@ -80,8 +58,28 @@ public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, Api
                 await _context.SaveChangesAsync(cancellationToken);
             }
         }
+        else
+        {
+            user = new User
+            {
+                Id = Guid.NewGuid(),
+                FirstName = googleUser.FirstName,
+                LastName = string.IsNullOrWhiteSpace(googleUser.LastName) ? "." : googleUser.LastName,
+                Email = emailNormalized,
+                Phone = string.IsNullOrWhiteSpace(request.Phone) ? "Not Provided" : request.Phone.Trim(),
+                PasswordHash = "OAUTH_GOOGLE_ACCOUNT",
+                Department = string.IsNullOrWhiteSpace(request.Department) ? "Genel" : request.Department.Trim(),
+                RoleType = RoleType.Employee,
+                AvatarUrl = googleUser.PictureUrl,
+                GoogleId = googleUser.GoogleId,
+                GoogleEmail = googleUser.Email,
+                CreatedAt = DateTime.UtcNow
+            };
 
-        // 4. Generating a JWT
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+
         var (token, expiresAt) = _jwtTokenGenerator.GenerateToken(user);
 
         var authResponse = new AuthResponseDto
@@ -103,6 +101,6 @@ public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, Api
             }
         };
 
-        return ApiResponse<AuthResponseDto>.SuccessResult(authResponse, "Google ile giriş başarılı.");
+        return ApiResponse<AuthResponseDto>.SuccessResult(authResponse, "Google ile kayıt başarıyla tamamlandı.");
     }
 }

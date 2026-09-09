@@ -15,4 +15,6 @@ public class CurrentUserDto
     public string? SubRole { get; set; }
     public string? AvatarUrl { get; set; }
     public Guid? ActiveTeamId { get; set; }
+    public string? GoogleEmail { get; set; }
+    public bool IsGoogleLinked => !string.IsNullOrWhiteSpace(GoogleEmail);
 }

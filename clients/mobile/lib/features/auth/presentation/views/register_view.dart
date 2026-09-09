@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/services/google_auth_service.dart';
 import '../../../../core/utils/validators.dart';
 import '../../data/models/register_request_model.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
 import 'widgets/custom_text_field.dart';
+import 'widgets/social_login_button.dart';
 
 class RegisterView extends StatefulWidget {
   const RegisterView({super.key});
@@ -77,6 +79,30 @@ class _RegisterViewState extends State<RegisterView> {
       );
 
       context.read<AuthBloc>().add(AuthRegisterRequested(request));
+    }
+  }
+
+  Future<void> _onGoogleRegisterPressed() async {
+    try {
+      final idToken = await GoogleAuthService.signInAndGetIdToken();
+      if (idToken == null) return;
+      if (!mounted) return;
+      context.read<AuthBloc>().add(
+            AuthGoogleRegisterRequested(
+              idToken: idToken,
+              phone: _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null,
+              department: _selectedDepartment,
+            ),
+          );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Google Sign-Up failed: ${e.toString().replaceAll('Exception: ', '')}'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -365,6 +391,30 @@ class _RegisterViewState extends State<RegisterView> {
                                       ),
                                     )
                                   : const Text('Create Employee Account'),
+                            ),
+                            const SizedBox(height: 20),
+                            Row(
+                              children: const [
+                                Expanded(child: Divider(color: AppColors.border)),
+                                Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 12),
+                                  child: Text(
+                                    'OR',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textMuted,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(child: Divider(color: AppColors.border)),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                            SocialLoginButton(
+                              text: 'Sign up with Google',
+                              isLoading: isLoading,
+                              onPressed: _onGoogleRegisterPressed,
                             ),
                           ],
                         ),

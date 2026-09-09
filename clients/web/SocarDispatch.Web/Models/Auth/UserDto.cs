@@ -11,4 +11,6 @@ public class UserDto
     public RoleType RoleType { get; set; }
     public string? SubRole { get; set; }
     public string? AvatarUrl { get; set; }
+    public string? GoogleEmail { get; set; }
+    public bool IsGoogleLinked => !string.IsNullOrWhiteSpace(GoogleEmail);
 }

@@ -31,6 +31,18 @@ class AuthGoogleLoginRequested extends AuthEvent {
   const AuthGoogleLoginRequested({required this.idToken});
 }
 
+class AuthGoogleRegisterRequested extends AuthEvent {
+  final String idToken;
+  final String? phone;
+  final String? department;
+
+  const AuthGoogleRegisterRequested({
+    required this.idToken,
+    this.phone,
+    this.department,
+  });
+}
+
 class AuthUserUpdated extends AuthEvent {
   final UserModel updatedUser;
 

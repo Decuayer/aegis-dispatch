@@ -39,7 +39,6 @@ public class IncidentStatusChangedNotificationHandler : INotificationHandler<Inc
 
             // SignalR Live Broadcast
             await _hubContext.Clients.All.SendAsync("IncidentStatusChanged", statusPayload, cancellationToken);
-            await _hubContext.Clients.All.SendAsync("ReceiveIncidentStatusChanged", statusPayload, cancellationToken);
         }
         catch (Exception ex)
         {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/services/google_auth_service.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/utils/validators.dart';
 import '../bloc/auth_bloc.dart';
@@ -24,7 +25,7 @@ class _LoginViewState extends State<LoginView> {
 
   @override
   void dispose() {
-    _emailController.dispose;
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -37,6 +38,24 @@ class _LoginViewState extends State<LoginView> {
               password: _passwordController.text,
             ),
           );
+    }
+  }
+
+  Future<void> _onGoogleLoginPressed() async {
+    try {
+      final idToken = await GoogleAuthService.signInAndGetIdToken();
+      if (idToken == null) return;
+      if (!mounted) return;
+      context.read<AuthBloc>().add(AuthGoogleLoginRequested(idToken: idToken));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Google Sign-In failed: ${e.toString().replaceAll('Exception: ', '')}'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -205,14 +224,7 @@ class _LoginViewState extends State<LoginView> {
                             SocialLoginButton(
                               text: 'Sign in with Google',
                               isLoading: isLoading,
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Google Sign-In will be configured with OAuth credentials.'),
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
-                              },
+                              onPressed: _onGoogleLoginPressed,
                             ),
                             const SizedBox(height: 18),
                             Row(

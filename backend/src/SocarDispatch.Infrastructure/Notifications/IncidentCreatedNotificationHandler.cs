@@ -23,7 +23,7 @@ public class IncidentCreatedNotificationHandler : INotificationHandler<IncidentC
     {
         try
         {
-            await _hubContext.Clients.Group("operators").SendAsync("NewIncident", new
+            await _hubContext.Clients.All.SendAsync("NewIncident", new
             {
                 id = notification.IncidentId,
                 reporterId = notification.ReporterId,
@@ -36,7 +36,7 @@ public class IncidentCreatedNotificationHandler : INotificationHandler<IncidentC
                 createdAt = notification.CreatedAt
             }, cancellationToken);
 
-            _logger.LogInformation("Broadcasted NewIncident event to operators for IncidentId: {IncidentId}", notification.IncidentId);
+            _logger.LogInformation("Broadcasted NewIncident event to all clients for IncidentId: {IncidentId}", notification.IncidentId);
         }
         catch (Exception ex)
         {

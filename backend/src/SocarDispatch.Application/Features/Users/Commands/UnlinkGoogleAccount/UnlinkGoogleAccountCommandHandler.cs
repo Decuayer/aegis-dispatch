@@ -5,21 +5,20 @@ using SocarDispatch.Application.Common.Models;
 using SocarDispatch.Application.Features.Users.DTOs;
 using SocarDispatch.Domain.Exceptions;
 
-namespace SocarDispatch.Application.Features.Users.Queries.GetCurrentUser;
+namespace SocarDispatch.Application.Features.Users.Commands.UnlinkGoogleAccount;
 
-public class GetCurrentUserQueryHandler : IRequestHandler<GetCurrentUserQuery, ApiResponse<CurrentUserDto>>
+public class UnlinkGoogleAccountCommandHandler : IRequestHandler<UnlinkGoogleAccountCommand, ApiResponse<CurrentUserDto>>
 {
     private readonly IApplicationDbContext _context;
 
-    public GetCurrentUserQueryHandler(IApplicationDbContext context)
+    public UnlinkGoogleAccountCommandHandler(IApplicationDbContext context)
     {
         _context = context;
     }
 
-    public async Task<ApiResponse<CurrentUserDto>> Handle(GetCurrentUserQuery request, CancellationToken cancellationToken)
+    public async Task<ApiResponse<CurrentUserDto>> Handle(UnlinkGoogleAccountCommand request, CancellationToken cancellationToken)
     {
         var user = await _context.Users
-            .AsNoTracking()
             .Include(u => u.TeamMemberships)
             .Include(u => u.LedTeams)
             .FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
@@ -29,7 +28,16 @@ public class GetCurrentUserQueryHandler : IRequestHandler<GetCurrentUserQuery, A
             throw new EntityNotFoundException("User", request.UserId);
         }
 
-        // Aktif takım kimliği: Kullanıcının üyesi olduğu veya liderlik ettiği takım
+        if (string.IsNullOrEmpty(user.GoogleId) && string.IsNullOrEmpty(user.GoogleEmail))
+        {
+            throw new DomainException("No Google account is currently linked to this user.");
+        }
+
+        user.GoogleId = null;
+        user.GoogleEmail = null;
+
+        await _context.SaveChangesAsync(cancellationToken);
+
         var activeTeamId = user.TeamMemberships.Select(tm => (Guid?)tm.TeamId).FirstOrDefault()
                            ?? user.LedTeams.Select(t => (Guid?)t.Id).FirstOrDefault();
 
@@ -45,9 +53,9 @@ public class GetCurrentUserQueryHandler : IRequestHandler<GetCurrentUserQuery, A
             SubRole = user.SubRole,
             AvatarUrl = user.AvatarUrl,
             ActiveTeamId = activeTeamId,
-            GoogleEmail = user.GoogleEmail
+            GoogleEmail = null
         };
 
-        return ApiResponse<CurrentUserDto>.SuccessResult(dto, "User information successfully retrieved.");
+        return ApiResponse<CurrentUserDto>.SuccessResult(dto, "Google account successfully unlinked.");
     }
 }

@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/services/local_notification_service.dart';
+import '../../../employee_tracking/data/services/employee_tracking_hub_service.dart';
 import '../../../profile/data/models/user_model.dart';
 import '../../../profile/presentation/views/profile_view.dart';
 import '../../../team_tasks/data/models/team_model.dart';
@@ -36,15 +39,40 @@ class TeamDashboardView extends StatefulWidget {
 class _TeamDashboardViewState extends State<TeamDashboardView>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  StreamSubscription<TeamDispatchedUpdate>? _dispatchedSub;
+  StreamSubscription<IncidentStatusUpdate>? _statusSub;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+
+    _dispatchedSub = context.read<EmployeeTrackingHubService>().onTeamDispatched.listen((update) {
+      if (!mounted) return;
+      if (update.teamId.toLowerCase() == widget.team.id.toLowerCase()) {
+        LocalNotificationService().showEmergencyNotification(
+          id: update.incidentId.hashCode,
+          title: 'Acil Görev Ataması / Emergency Dispatch',
+          body: 'Müdahale ekibiniz bir acil durum görevine atandı.',
+          payload: {'teamId': widget.team.id, 'incidentId': update.incidentId},
+        );
+        context.read<TaskBloc>().add(LoadActiveTask(widget.team.id, isRefresh: true));
+        _tabController.animateTo(0);
+        context.read<TeamPortalBloc>().add(LoadTeamPortal(widget.user.id));
+      }
+    });
+
+    _statusSub = context.read<EmployeeTrackingHubService>().onIncidentStatusChanged.listen((update) {
+      if (!mounted) return;
+      context.read<TaskBloc>().add(LoadActiveTask(widget.team.id, isRefresh: true));
+      context.read<TeamPortalBloc>().add(LoadTeamPortal(widget.user.id));
+    });
   }
 
   @override
   void dispose() {
+    _dispatchedSub?.cancel();
+    _statusSub?.cancel();
     _tabController.dispose();
     super.dispose();
   }

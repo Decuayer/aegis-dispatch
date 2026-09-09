@@ -74,6 +74,49 @@ class ProfileRepository {
     }
   }
 
+  Future<UserModel> linkGoogleAccount(String idToken) async {
+    try {
+      final response = await _apiClient.dio.post(
+        ApiEndpoints.linkGoogleAccount,
+        data: {'idToken': idToken},
+      );
+
+      final responseData = response.data as Map<String, dynamic>;
+      if (responseData['success'] == true && responseData['data'] != null) {
+        final updatedUser = UserModel.fromJson(responseData['data'] as Map<String, dynamic>);
+        await _storageService.saveUserData(updatedUser);
+        return updatedUser;
+      } else {
+        final message = responseData['message'] as String? ?? 'Failed to link Google account.';
+        throw Exception(message);
+      }
+    } on DioException catch (e) {
+      final errorMsg = _extractErrorMessage(e);
+      throw Exception(errorMsg);
+    }
+  }
+
+  Future<UserModel> unlinkGoogleAccount() async {
+    try {
+      final response = await _apiClient.dio.post(
+        ApiEndpoints.unlinkGoogleAccount,
+      );
+
+      final responseData = response.data as Map<String, dynamic>;
+      if (responseData['success'] == true && responseData['data'] != null) {
+        final updatedUser = UserModel.fromJson(responseData['data'] as Map<String, dynamic>);
+        await _storageService.saveUserData(updatedUser);
+        return updatedUser;
+      } else {
+        final message = responseData['message'] as String? ?? 'Failed to unlink Google account.';
+        throw Exception(message);
+      }
+    } on DioException catch (e) {
+      final errorMsg = _extractErrorMessage(e);
+      throw Exception(errorMsg);
+    }
+  }
+
 
   String _extractErrorMessage(DioException error) {
     if (error.response?.data != null && error.response?.data is Map<String, dynamic>) {

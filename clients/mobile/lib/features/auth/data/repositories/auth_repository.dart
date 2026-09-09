@@ -134,6 +134,47 @@ class AuthRepository {
     }
   }
 
+  Future<AuthResponseModel> googleRegister({
+    required String idToken,
+    String? phone,
+    String? department,
+  }) async {
+    try {
+      final response = await _apiClient.dio.post(
+        ApiEndpoints.googleRegister,
+        data: {
+          'idToken': idToken,
+          if (phone != null && phone.isNotEmpty) 'phone': phone,
+          if (department != null && department.isNotEmpty) 'department': department,
+        },
+      );
+
+      final dynamic rawData = response.data;
+      Map<String, dynamic> responseData = rawData is Map<String, dynamic> ? rawData : {};
+      final isSuccess = responseData['success'] == true || responseData['Success'] == true;
+      final payload = responseData['data'] ?? responseData['Data'];
+
+      if (isSuccess && payload != null) {
+        final authResponse = AuthResponseModel.fromJson(
+          payload is Map<String, dynamic> ? payload : {},
+        );
+
+        await _storageService.saveAccessToken(authResponse.accessToken);
+        await _storageService.saveUserData(authResponse.user);
+
+        return authResponse;
+      } else {
+        final message = responseData['message'] ?? responseData['Message'] ?? 'Google registration failed.';
+        throw Exception(message.toString());
+      }
+    } on DioException catch (e) {
+      final errorMsg = _extractErrorMessage(e);
+      throw Exception(errorMsg);
+    } catch (e) {
+      throw Exception(e.toString().replaceAll('Exception: ', ''));
+    }
+  }
+
   Future<UserModel?> getCachedUser() async {
     final token = await _storageService.getAccessToken();
     if (token == null || token.isEmpty) {

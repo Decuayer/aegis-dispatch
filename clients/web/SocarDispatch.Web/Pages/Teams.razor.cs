@@ -40,6 +40,7 @@ public partial class Teams : ComponentBase, IDisposable
         LocationHub.OnTeamLocationUpdated += HandleLocationUpdated;
         IncidentHub.OnTeamDispatched += HandleTeamDispatched;
         IncidentHub.OnMemberStatusChanged += HandleMemberStatusChanged;
+        IncidentHub.OnIncidentStatusChanged += HandleIncidentStatusChangedRealtime;
 
         await LoadTeamsAsync();
         await LoadStatusCountsAsync();
@@ -274,11 +275,25 @@ public partial class Teams : ComponentBase, IDisposable
         });
     }
 
+    private void HandleIncidentStatusChangedRealtime(object? sender, IncidentStatusChangedEventArgs e)
+    {
+        if (e.Status is "Resolved" or "Canceled")
+        {
+            InvokeAsync(async () =>
+            {
+                await LoadTeamsAsync();
+                await LoadStatusCountsAsync();
+                StateHasChanged();
+            });
+        }
+    }
+
     public void Dispose()
     {
         LocationHub.OnTeamLocationUpdated -= HandleLocationUpdated;
         IncidentHub.OnTeamDispatched -= HandleTeamDispatched;
         IncidentHub.OnMemberStatusChanged -= HandleMemberStatusChanged;
+        IncidentHub.OnIncidentStatusChanged -= HandleIncidentStatusChangedRealtime;
 
         _searchCts?.Cancel();
         _searchCts?.Dispose();

@@ -217,9 +217,7 @@ class _AuthGateState extends State<AuthGate> {
       },
     );
 
-    if (user.roleType == RoleType.employee) {
-      widget.trackingHubService.initialize();
-    }
+    widget.trackingHubService.initialize();
   }
 
   @override

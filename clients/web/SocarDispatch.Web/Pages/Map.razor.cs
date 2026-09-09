@@ -18,6 +18,18 @@ public partial class Map : ComponentBase, IDisposable
     [Inject] private ILocationHubClient LocationHub { get; set; } = default!;
     [Inject] private ISettingsService SettingsService { get; set; } = default!;
 
+    [SupplyParameterFromQuery(Name = "incidentId")]
+    public Guid? TargetIncidentId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "lat")]
+    public double? TargetLat { get; set; }
+
+    [SupplyParameterFromQuery(Name = "lng")]
+    public double? TargetLng { get; set; }
+
+    [SupplyParameterFromQuery(Name = "teamId")]
+    public Guid? TargetTeamId { get; set; }
+
     private LeafletMap? _mapRef;
     private List<MapIncidentDto> _incidents = new();
     private List<MapTeamDto> _teams = new();
@@ -28,6 +40,7 @@ public partial class Map : ComponentBase, IDisposable
     private bool _isQuickDispatchOpen = false;
     private string _selectedTileProvider = "OpenStreetMap";
     private bool _isBoundaryLocked = false;
+    private bool _hasHandledTargetLocation = false;
 
     private int _activeIncidentsCount => _incidents.Count(i => i.Status is not ("Resolved" or "Canceled"));
     private int _activeTeamsCount => _teams.Count(t => t.Status == "Idle");
@@ -41,12 +54,43 @@ public partial class Map : ComponentBase, IDisposable
         }
     }
 
-
     protected override async Task OnInitializedAsync()
     {
         await LoadSettingsPreferencesAsync();
         await LoadMapDataAsync();
         SubscribeToHubEvents();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_hasHandledTargetLocation && _mapRef != null)
+        {
+            if (TargetIncidentId.HasValue)
+            {
+                _hasHandledTargetLocation = true;
+                _selectedIncidentId = TargetIncidentId.Value;
+                _isSidebarOpen = true;
+
+                if (TargetLat.HasValue && TargetLng.HasValue)
+                {
+                    await _mapRef.PanToLocationAsync(TargetLat.Value, TargetLng.Value, 17);
+                }
+                else
+                {
+                    await _mapRef.FocusMarkerByIdAsync("incident", TargetIncidentId.Value, 17);
+                }
+            }
+            else if (TargetLat.HasValue && TargetLng.HasValue)
+            {
+                _hasHandledTargetLocation = true;
+                await _mapRef.PanToLocationAsync(TargetLat.Value, TargetLng.Value, 17);
+            }
+            else if (TargetTeamId.HasValue)
+            {
+                _hasHandledTargetLocation = true;
+                await _mapRef.FocusMarkerByIdAsync("team", TargetTeamId.Value, 17);
+            }
+        }
     }
 
     private async Task LoadSettingsPreferencesAsync()

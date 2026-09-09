@@ -16,6 +16,7 @@ class UserModel {
   final RoleType roleType;
   final String? subRole;
   final String? avatarUrl;
+  final String? googleEmail;
 
   const UserModel({
     required this.id,
@@ -27,9 +28,11 @@ class UserModel {
     required this.roleType,
     this.subRole,
     this.avatarUrl,
+    this.googleEmail,
   });
 
   String get fullName => '$firstName $lastName'.trim();
+  bool get isGoogleLinked => googleEmail != null && googleEmail!.trim().isNotEmpty;
 
   static RoleType parseRoleType(dynamic role) {
     if (role == null) return RoleType.employee;
@@ -56,6 +59,7 @@ class UserModel {
       roleType: parseRoleType(json['roleType'] ?? json['RoleType']),
       subRole: json['subRole'] as String? ?? json['SubRole'] as String?,
       avatarUrl: json['avatarUrl'] as String? ?? json['AvatarUrl'] as String?,
+      googleEmail: json['googleEmail'] as String? ?? json['GoogleEmail'] as String?,
     );
   }
 
@@ -70,6 +74,7 @@ class UserModel {
       'roleType': roleType.index,
       'subRole': subRole,
       'avatarUrl': avatarUrl,
+      'googleEmail': googleEmail,
     };
   }
 
@@ -88,6 +93,7 @@ class UserModel {
     RoleType? roleType,
     String? subRole,
     String? avatarUrl,
+    String? googleEmail,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -99,6 +105,7 @@ class UserModel {
       roleType: roleType ?? this.roleType,
       subRole: subRole ?? this.subRole,
       avatarUrl: avatarUrl ?? this.avatarUrl,
+      googleEmail: googleEmail ?? this.googleEmail,
     );
   }
 }

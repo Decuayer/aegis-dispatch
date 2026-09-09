@@ -81,4 +81,26 @@ class ProfileCubit extends Cubit<ProfileState> {
       emit(ProfileError(errorMsg, cachedUser: currentUser));
     }
   }
+
+  Future<void> linkGoogleAccount(UserModel currentUser, String idToken) async {
+    emit(ProfileUpdating(currentUser));
+    try {
+      final updatedUser = await _profileRepository.linkGoogleAccount(idToken);
+      emit(ProfileUpdateSuccess(updatedUser, 'Google hesabı (${updatedUser.googleEmail ?? ''}) başarıyla bağlandı.'));
+    } catch (e) {
+      final errorMsg = e.toString().replaceAll('Exception: ', '');
+      emit(ProfileError(errorMsg, cachedUser: currentUser));
+    }
+  }
+
+  Future<void> unlinkGoogleAccount(UserModel currentUser) async {
+    emit(ProfileUpdating(currentUser));
+    try {
+      final updatedUser = await _profileRepository.unlinkGoogleAccount();
+      emit(ProfileUpdateSuccess(updatedUser, 'Google hesabı bağlantısı başarıyla kaldırıldı.'));
+    } catch (e) {
+      final errorMsg = e.toString().replaceAll('Exception: ', '');
+      emit(ProfileError(errorMsg, cachedUser: currentUser));
+    }
+  }
 }
