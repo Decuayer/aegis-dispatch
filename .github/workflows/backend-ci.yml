@@ -188,11 +188,21 @@ jobs:
         with:
           category: "/language:csharp"
           upload: ${{ github.event.repository.private == false && 'always' || 'never' }}
+          output: 'codeql-results'
+
+      - name: Stage SARIF Report for Artifact Upload
+        if: always()
+        run: |
+          mkdir -p codeql-results
+          if [ -d "../results" ]; then
+            cp -rf ../results/* codeql-results/ 2>/dev/null || true
+          fi
 
       - name: Upload CodeQL SARIF Report Artifact
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: codeql-csharp-sast-sarif
-          path: "../results/*.sarif"
+          path: codeql-results/
+          if-no-files-found: ignore
           retention-days: 14

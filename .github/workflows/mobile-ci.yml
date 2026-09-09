@@ -120,8 +120,8 @@ jobs:
       - name: Build Web Release Bundle
         run: flutter build web --release
 
-      - name: Build Android Release APK (No Codesign)
-        run: flutter build apk --release --no-codesign
+      - name: Build Android Release APK Smoke Test
+        run: flutter build apk --release
 
       - name: Upload Release APK Artifact
         uses: actions/upload-artifact@v4
