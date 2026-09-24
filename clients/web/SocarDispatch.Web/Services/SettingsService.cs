@@ -5,7 +5,7 @@ namespace SocarDispatch.Web.Services;
 
 public class SettingsService : ISettingsService
 {
-    private const string StorageKey = "socar_user_preferences";
+    private const string StorageKey = "aegis_user_preferences";
     private readonly ILocalStorageService _localStorage;
     private UserPreferencesDto? _cachedPreferences;
 

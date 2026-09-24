@@ -4,12 +4,12 @@ class AppColors {
   AppColors._();
 
   // Brand Colors
-  static const Color primary = Color(0xFF003882); // SOCAR Blue
+  static const Color primary = Color(0xFF003882); // Aegis Navy
   static const Color primaryDark = Color(0xFF00224F);
   static const Color primaryLight = Color(0xFF1E5BB0);
 
-  static const Color secondary = Color(0xFF008D36); // SOCAR Green
-  static const Color accent = Color(0xFFE30613); // SOCAR Red / Emergency
+  static const Color secondary = Color(0xFF008D36); // Tactical Emerald
+  static const Color accent = Color(0xFFE30613); // Emergency Red
 
   // Neutral Colors
   static const Color background = Color(0xFFF8FAFC);

@@ -94,7 +94,7 @@ builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "SOCAR Dispatch API",
+        Title = "Aegis Dispatch API",
         Version = "v1",
         Description = "Real-Time Emergency Dispatch and Response System API"
     });
@@ -121,7 +121,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "SOCAR Dispatch API v1");
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Aegis Dispatch API v1");
     });
 }
 
@@ -173,9 +173,9 @@ using (var scope = app.Services.CreateScope())
         logger.LogWarning(ex, "Object storage initialization encountered an issue. Startup will continue.");
     }
 
-    // 4. Default Operator Seed Data (ensure operator@socar.az exists on startup)
-    const string defaultOperatorEmail = "operator@socar.az";
-    var existingOperator = await context.Users.FirstOrDefaultAsync(u => u.Email == defaultOperatorEmail);
+    // 4. Default Operator Seed Data (ensure operator@aegisdispatch.internal exists on startup)
+    const string defaultOperatorEmail = "operator@aegisdispatch.internal";
+    var existingOperator = await context.Users.FirstOrDefaultAsync(u => u.Email == defaultOperatorEmail || u.Email == "operator@socar.az");
     var passwordHasher = services.GetRequiredService<SocarDispatch.Application.Common.Interfaces.IPasswordHasher>();
 
     if (existingOperator == null)
@@ -183,12 +183,12 @@ using (var scope = app.Services.CreateScope())
         var defaultOperator = new SocarDispatch.Domain.Entities.User
         {
             Id = Guid.NewGuid(),
-            FirstName = "SOCAR",
+            FirstName = "Aegis",
             LastName = "Operator",
             Email = defaultOperatorEmail,
-            Phone = "+994501234567",
+            Phone = "+15551234567",
             PasswordHash = passwordHasher.HashPassword("Operator123!"),
-            Department = "Dispatch & Emergency Operations",
+            Department = "Emergency Operations",
             RoleType = SocarDispatch.Domain.Enums.RoleType.Operator,
             SubRole = "Head Dispatcher",
             CreatedAt = DateTime.UtcNow
@@ -198,11 +198,19 @@ using (var scope = app.Services.CreateScope())
         await context.SaveChangesAsync();
         logger.LogInformation("Default operator account successfully created ({Email}).", defaultOperator.Email);
     }
-    else if (existingOperator.RoleType != SocarDispatch.Domain.Enums.RoleType.Operator)
+    else
     {
-        existingOperator.RoleType = SocarDispatch.Domain.Enums.RoleType.Operator;
+        if (existingOperator.Email == "operator@socar.az")
+        {
+            existingOperator.Email = defaultOperatorEmail;
+            existingOperator.FirstName = "Aegis";
+        }
+        if (existingOperator.RoleType != SocarDispatch.Domain.Enums.RoleType.Operator)
+        {
+            existingOperator.RoleType = SocarDispatch.Domain.Enums.RoleType.Operator;
+        }
         await context.SaveChangesAsync();
-        logger.LogInformation("Updated operator role for account ({Email}).", existingOperator.Email);
+        logger.LogInformation("Updated operator account ({Email}).", existingOperator.Email);
     }
 }
 

@@ -68,7 +68,7 @@ void onStart(ServiceInstance service) async {
 
       // 2. Update Android notification banner
       service.invoke('updateNotification', {
-        'title': 'SOCAR Dispatch Active Tracking',
+        'title': 'AegisDispatch Active Tracking',
         'content':
             'Lat: ${position.latitude.toStringAsFixed(5)}, Lng: ${position.longitude.toStringAsFixed(5)}',
       });
@@ -132,7 +132,7 @@ class BackgroundLocationService {
         autoStart: false,
         isForegroundMode: true,
         notificationChannelId: LocalNotificationService.channelId,
-        initialNotificationTitle: 'SOCAR Dispatch Standby',
+        initialNotificationTitle: 'AegisDispatch Standby',
         initialNotificationContent: 'Awaiting emergency dispatch assignment...',
         foregroundServiceNotificationId: 9999,
         foregroundServiceTypes: [AndroidForegroundType.location],

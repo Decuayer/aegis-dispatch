@@ -97,7 +97,7 @@ class KvkkConsentView extends StatelessWidget {
                           ],
                         ),
                         child: Image.asset(
-                          'assets/images/socar_logo.png',
+                          'assets/images/aegis_logo.png',
                           fit: BoxFit.contain,
                         ),
                       ),
@@ -106,7 +106,7 @@ class KvkkConsentView extends StatelessWidget {
 
                     // Header Titles
                     const Text(
-                      'SOCAR Dispatch',
+                      'AegisDispatch',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 24,

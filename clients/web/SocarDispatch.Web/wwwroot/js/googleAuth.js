@@ -1,4 +1,4 @@
-window.socarGoogleAuth = {
+window.aegisGoogleAuth = window.socarGoogleAuth = {
     dotNetRef: null,
     clientId: null,
     isInitialized: false,

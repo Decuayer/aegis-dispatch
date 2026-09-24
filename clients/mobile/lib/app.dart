@@ -173,7 +173,7 @@ class SocarDispatchApp extends StatelessWidget {
         ],
         child: MaterialApp(
           navigatorKey: rootNavigatorKey,
-          title: 'SOCAR Dispatch',
+          title: 'AegisDispatch',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,
           home: OnboardingGateView(

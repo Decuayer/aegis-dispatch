@@ -4,14 +4,14 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SOCAR Dispatch — Operator Control Panel</title>
-    <meta name="description" content="SOCAR Dispatch Operator Control Panel for real-time emergency incident management and team coordination." />
+    <title>AegisDispatch — Command Control Panel</title>
+    <meta name="description" content="AegisDispatch Command Control Panel for real-time emergency incident management and team coordination." />
     <base href="/" />
 
     <!-- Theme: read persisted preference before render to prevent flash -->
     <script>
         (function () {
-            var stored = localStorage.getItem('socar-theme');
+            var stored = localStorage.getItem('aegis-theme') || localStorage.getItem('socar-theme');
             var theme = stored === 'light' ? 'light' : 'dark';
             document.documentElement.setAttribute('data-theme', theme);
         })();
@@ -33,12 +33,12 @@
     <link rel="preload" id="webassembly" />
     <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="css/app.css" />
-    <link rel="icon" type="image/png" href="socar-logo.png" />
-    <link rel="apple-touch-icon" href="socar-logo.png" />
+    <link rel="icon" type="image/png" href="aegis-logo.png" />
+    <link rel="apple-touch-icon" href="aegis-logo.png" />
     <link href="SocarDispatch.Web.styles.css" rel="stylesheet" />
 </head>
 <script>
-    window.socarAudio = {
+    window.aegisAudio = window.socarAudio = {
         playEmergencyBeep: function () {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -46,7 +46,7 @@
                 const gain = audioCtx.createGain();
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
-                // Çift tonlu acil durum sinyali (A5 -> D6)
+                // Dual-tone emergency signal (A5 -> D6)
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(880, audioCtx.currentTime); // 880 Hz
                 osc.frequency.setValueAtTime(1174.66, audioCtx.currentTime + 0.12); // 1174 Hz

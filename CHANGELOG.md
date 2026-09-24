@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to the **SOCAR Dispatch** platform will be documented in this file.
+All notable changes to the **AegisDispatch** platform will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * **SDDC-71 & SDDC-72:** Server-side filtering and ID lookup endpoints for incidents, response teams, and personnel directories.
 * **SDDC-73 & SDDC-82:** Team discovery portal, responder self-join/leave workflows, and vacant leadership succession protocols.
 * **SDDC-77 & SDDC-86:** Entity ID badges (`#INC-XXXX`, `#TEAM-XX`) across Web Leaflet markers and Flutter mobile cards.
-* **SDDC-78 & SDDC-86:** Facility boundary geofence lock on Leaflet and Flutter map viewports (STAR Refinery / Petkim coordinates).
+* **SDDC-78 & SDDC-86:** Facility boundary geofence lock on Leaflet and Flutter map viewports (industrial facility perimeter coordinates).
 * **SDDC-79:** First-launch KVKK privacy consent and system location permission onboarding gate for mobile users.
 * **SDDC-80:** Single-button rapid emergency incident reporting (Fire, Gas Leak, Medical Emergency, SOS) with background GPS capture.
 * **SDDC-83:** 1-Click operational dispatch action bar for response units (`En Route`, `On Scene`).

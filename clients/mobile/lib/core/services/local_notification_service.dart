@@ -10,8 +10,8 @@ class LocalNotificationService {
   final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
-  static const String channelId = 'socar_dispatch_high_importance';
-  static const String channelName = 'SOCAR Emergency Alerts';
+  static const String channelId = 'aegis_dispatch_high_importance';
+  static const String channelName = 'Aegis Emergency Alerts';
   static const String channelDescription =
       'High priority notifications for emergency dispatch and incident response.';
 

@@ -6,7 +6,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:${DOTNET_VERSION}-alpine AS base
 LABEL org.opencontainers.image.title="socar-dispatch-api" \
       org.opencontainers.image.description="SOCAR Dispatch Core Backend API (.NET 10)" \
       org.opencontainers.image.vendor="SOCAR" \
-      org.opencontainers.image.source="https://github.com/Decuayer/socar-dispatch"
+      org.opencontainers.image.source="https://github.com/Decuayer/aegis-dispatch"
 
 RUN apk update && apk upgrade --no-cache && \
     apk add --no-cache \

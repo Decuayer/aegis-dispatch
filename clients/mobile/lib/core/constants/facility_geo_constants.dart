@@ -4,7 +4,7 @@ import 'package:latlong2/latlong.dart';
 class FacilityGeoConstants {
   FacilityGeoConstants._();
 
-  // SOCAR Aliaga / STAR Refinery geofence bounds
+  // Industrial facility geofence bounds
   static const double southWestLat = 38.7650;
   static const double southWestLng = 26.8900;
   static const double northEastLat = 38.8350;
