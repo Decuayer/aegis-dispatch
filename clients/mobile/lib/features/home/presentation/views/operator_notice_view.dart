@@ -55,7 +55,7 @@ class OperatorNoticeView extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'Hello ${user.fullName}, dispatch operators must use the SOCAR Dispatch Web Console to manage live dispatches and team assignments.',
+                'Hello ${user.fullName}, dispatch operators must use the AegisDispatch Command Console to manage live dispatches and team assignments.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 14,

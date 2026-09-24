@@ -22,7 +22,7 @@ FROM nginx:${NGINX_VERSION} AS final
 LABEL org.opencontainers.image.title="socar-dispatch-web" \
       org.opencontainers.image.description="SOCAR Dispatch Web Panel (Blazor WebAssembly)" \
       org.opencontainers.image.vendor="SOCAR" \
-      org.opencontainers.image.source="https://github.com/Decuayer/socar-dispatch"
+      org.opencontainers.image.source="https://github.com/Decuayer/aegis-dispatch"
 
 # Remove default Nginx welcome page and configuration
 RUN rm -rf /usr/share/nginx/html/* /etc/nginx/conf.d/default.conf

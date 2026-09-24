@@ -76,7 +76,7 @@ class _LiveRouteMiniMapState extends State<LiveRouteMiniMap> {
               children: [
                 TileLayer(
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.socar.dispatch',
+                  userAgentPackageName: 'com.aegis.dispatch',
                 ),
                 if (widget.routePoints.isNotEmpty)
                   PolylineLayer(

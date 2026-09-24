@@ -49,7 +49,7 @@ class PermissionRationaleDialog extends StatelessWidget {
       content: Text(
         isPermanentlyDenied
             ? 'Location permissions have been permanently denied. To enable rapid emergency dispatch and responder telemetry, please allow location access in your device settings.'
-            : 'SOCAR Dispatch requires location permissions to pinpoint emergency sites and dispatch nearest response teams. Please grant permissions to continue.',
+            : 'AegisDispatch requires location permissions to pinpoint emergency sites and dispatch nearest response teams. Please grant permissions to continue.',
         style: const TextStyle(
           fontSize: 13,
           height: 1.5,

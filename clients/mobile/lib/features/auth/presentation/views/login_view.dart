@@ -115,14 +115,14 @@ class _LoginViewState extends State<LoginView> {
                             ],
                           ),
                           child: Image.asset(
-                            'assets/images/socar_logo.png',
+                            'assets/images/aegis_logo.png',
                             fit: BoxFit.contain,
                           ),
                         ),
                       ),
                       const SizedBox(height: 24),
                       const Text(
-                        'SOCAR Dispatch',
+                        'AegisDispatch',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 26,
@@ -163,7 +163,7 @@ class _LoginViewState extends State<LoginView> {
                             CustomTextField(
                               controller: _emailController,
                               labelText: 'Email Address',
-                              hintText: 'name@socar.az',
+                              hintText: 'name@aegisdispatch.internal',
                               prefixIcon: Icons.alternate_email_rounded,
                               keyboardType: TextInputType.emailAddress,
                               validator: Validators.validateEmail,
@@ -275,7 +275,7 @@ class _LoginViewState extends State<LoginView> {
                       ),
                       const SizedBox(height: 24),
                       const Text(
-                        'Authorized Personnel Only • SOCAR Security',
+                        'Authorized Personnel Only • Aegis Security',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 12,

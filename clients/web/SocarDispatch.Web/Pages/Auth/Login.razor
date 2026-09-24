@@ -9,7 +9,7 @@
 @inject ILocationHubClient LocationHubClient
 @implements IAsyncDisposable
 
-<PageTitle>Sign In — SOCAR Dispatch</PageTitle>
+<PageTitle>Sign In — AegisDispatch</PageTitle>
 
 <div class="login-shell">
     <div class="login-card">
@@ -17,11 +17,11 @@
         <!-- Brand -->
         <div class="login-brand">
             <div class="login-brand-icon">
-                <img src="socar-logo.png" alt="SOCAR Logo" style="width: 32px; height: 32px; object-fit: contain;" />
+                <img src="aegis-logo.png" alt="AegisDispatch Logo" style="width: 32px; height: 32px; object-fit: contain;" />
             </div>
             <div>
-                <div class="login-brand-name">SOCAR Dispatch</div>
-                <div class="login-brand-sub">Operator Control Panel</div>
+                <div class="login-brand-name">AegisDispatch</div>
+                <div class="login-brand-sub">Command Control Panel</div>
             </div>
         </div>
 
@@ -40,7 +40,7 @@
                 <InputText id="email"
                            class="form-control"
                            type="email"
-                           placeholder="operator@socar.az"
+                           placeholder="operator@aegisdispatch.internal"
                            @bind-Value="_loginModel.Email"
                            autocomplete="email"
                            disabled="@_isSubmitting" />
@@ -218,7 +218,7 @@
 
             try
             {
-                await JSRuntime.InvokeVoidAsync("socarGoogleAuth.init", _dotNetRef, googleClientId);
+                await JSRuntime.InvokeVoidAsync("aegisGoogleAuth.init", _dotNetRef, googleClientId);
             }
             catch (Exception ex)
             {

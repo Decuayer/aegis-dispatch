@@ -181,7 +181,7 @@ class _RegisterViewState extends State<RegisterView> {
                             ],
                           ),
                           child: Image.asset(
-                            'assets/images/socar_logo.png',
+                            'assets/images/aegis_logo.png',
                             fit: BoxFit.contain,
                           ),
                         ),
@@ -199,7 +199,7 @@ class _RegisterViewState extends State<RegisterView> {
                       ),
                       const SizedBox(height: 4),
                       const Text(
-                        'SOCAR Emergency & Field Reporting Account',
+                        'Aegis Emergency & Field Reporting Account',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 13,
@@ -306,7 +306,7 @@ class _RegisterViewState extends State<RegisterView> {
                             CustomTextField(
                               controller: _emailController,
                               labelText: 'Corporate Email',
-                              hintText: 'name@socar.az',
+                              hintText: 'name@aegisdispatch.internal',
                               prefixIcon: Icons.alternate_email_rounded,
                               keyboardType: TextInputType.emailAddress,
                               validator: Validators.validateEmail,
@@ -318,7 +318,7 @@ class _RegisterViewState extends State<RegisterView> {
                             CustomTextField(
                               controller: _phoneController,
                               labelText: 'Phone Number',
-                              hintText: '+994501234567',
+                              hintText: '+15551234567',
                               prefixIcon: Icons.phone_outlined,
                               keyboardType: TextInputType.phone,
                               validator: Validators.validatePhone,

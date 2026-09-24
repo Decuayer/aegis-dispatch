@@ -62,7 +62,7 @@ class MapSettingsTile extends StatelessWidget {
                     ),
                   ),
                   subtitle: const Text(
-                    'Constrains map camera and viewport to SOCAR Aliaga & STAR Refinery grounds.',
+                    'Constrains map camera and viewport to industrial facility perimeter.',
                     style: TextStyle(
                       fontSize: 12,
                       color: AppColors.textSecondary,

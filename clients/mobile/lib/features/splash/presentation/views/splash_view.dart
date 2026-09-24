@@ -28,13 +28,13 @@ class SplashView extends StatelessWidget {
                 ],
               ),
               child: Image.asset(
-                'assets/images/socar_logo.png',
+                'assets/images/aegis_logo.png',
                 fit: BoxFit.contain,
               ),
             ),
             const SizedBox(height: 28),
             const Text(
-              'SOCAR Dispatch',
+              'AegisDispatch',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,

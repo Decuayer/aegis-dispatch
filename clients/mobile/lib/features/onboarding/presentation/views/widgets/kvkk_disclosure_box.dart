@@ -47,7 +47,7 @@ class _KvkkDisclosureBoxState extends State<KvkkDisclosureBox> {
               ),
               SizedBox(height: 8),
               Text(
-                'In accordance with Law No. 6698 on the Protection of Personal Data (KVKK), SOCAR Dispatch processes essential personal and telemetry data strictly for facility occupational health, emergency response, and life-safety operations across industrial plants.',
+                'In accordance with Law No. 6698 on the Protection of Personal Data (KVKK), AegisDispatch processes essential personal and telemetry data strictly for facility occupational health, emergency response, and life-safety operations across industrial plants.',
                 style: TextStyle(
                   fontSize: 12,
                   height: 1.5,
