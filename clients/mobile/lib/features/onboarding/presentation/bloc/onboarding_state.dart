@@ -49,11 +49,11 @@ class OnboardingRequired extends OnboardingState {
 
   @override
   int get hashCode => Object.hash(
-        isConsentChecked,
-        isSubmitting,
-        errorMessage,
-        isPermanentlyDenied,
-      );
+    isConsentChecked,
+    isSubmitting,
+    errorMessage,
+    isPermanentlyDenied,
+  );
 }
 
 class OnboardingCompleted extends OnboardingState {

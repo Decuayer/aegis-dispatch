@@ -13,11 +13,13 @@ class RapidDispatchService {
   const RapidDispatchService({
     required IncidentRepository incidentRepository,
     required LocationService locationService,
-  })  : _incidentRepository = incidentRepository,
-        _locationService = locationService;
+  }) : _incidentRepository = incidentRepository,
+       _locationService = locationService;
 
   /// Acquires location silently within a 2-second threshold and submits a 1-tap incident.
-  Future<IncidentResponseModel> dispatchRapidIncident(RapidEmergencyPreset preset) async {
+  Future<IncidentResponseModel> dispatchRapidIncident(
+    RapidEmergencyPreset preset,
+  ) async {
     Position? position;
 
     try {
@@ -30,13 +32,16 @@ class RapidDispatchService {
     }
 
     if (position == null) {
-      throw Exception('Unable to acquire device coordinates for emergency alert.');
+      throw Exception(
+        'Unable to acquire device coordinates for emergency alert.',
+      );
     }
 
     final request = CreateIncidentRequestModel(
       category: preset.category,
       emergencyCode: preset.emergencyCode,
-      description: 'Rapid 1-Tap Emergency Alert triggered by user (${preset.title})',
+      description:
+          'Rapid 1-Tap Emergency Alert triggered by user (${preset.title})',
       latitude: position.latitude,
       longitude: position.longitude,
       mediaAttachments: const [],

@@ -5,11 +5,7 @@ class TrackingStatusChip extends StatefulWidget {
   final bool isTracking;
   final VoidCallback? onTap;
 
-  const TrackingStatusChip({
-    super.key,
-    required this.isTracking,
-    this.onTap,
-  });
+  const TrackingStatusChip({super.key, required this.isTracking, this.onTap});
 
   @override
   State<TrackingStatusChip> createState() => _TrackingStatusChipState();
@@ -68,14 +64,16 @@ class _TrackingStatusChipState extends State<TrackingStatusChip>
         duration: const Duration(milliseconds: 300),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: widget.isTracking
-              ? activeColor.withValues(alpha: 0.12)
-              : AppColors.surfaceMuted,
+          color:
+              widget.isTracking
+                  ? activeColor.withValues(alpha: 0.12)
+                  : AppColors.surfaceMuted,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: widget.isTracking
-                ? activeColor.withValues(alpha: 0.35)
-                : AppColors.border,
+            color:
+                widget.isTracking
+                    ? activeColor.withValues(alpha: 0.35)
+                    : AppColors.border,
             width: 1,
           ),
         ),
@@ -84,31 +82,31 @@ class _TrackingStatusChipState extends State<TrackingStatusChip>
           children: [
             widget.isTracking
                 ? FadeTransition(
-                    opacity: _pulseAnimation,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: activeColor,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: activeColor.withValues(alpha: 0.6),
-                            blurRadius: 4,
-                            spreadRadius: 1,
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                : Container(
+                  opacity: _pulseAnimation,
+                  child: Container(
                     width: 8,
                     height: 8,
                     decoration: BoxDecoration(
-                      color: inactiveColor,
+                      color: activeColor,
                       shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: activeColor.withValues(alpha: 0.6),
+                          blurRadius: 4,
+                          spreadRadius: 1,
+                        ),
+                      ],
                     ),
                   ),
+                )
+                : Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: inactiveColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
             const SizedBox(width: 6),
             Text(
               widget.isTracking ? 'Live GPS Active' : 'GPS Standby',

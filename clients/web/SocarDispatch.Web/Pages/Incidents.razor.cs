@@ -49,6 +49,7 @@ public partial class Incidents : ComponentBase, IDisposable
         IncidentHub.OnNewIncidentReceived += HandleNewIncidentReceivedRealtime;
         IncidentHub.OnIncidentStatusChanged += HandleIncidentStatusChangedRealtime;
         IncidentHub.OnIncidentUpdated += HandleIncidentUpdatedRealtime;
+        IncidentHub.OnTeamDispatched += HandleTeamDispatchedRealtime;
     }
 
     private (DateTime? from, DateTime? to) GetDateRangeBoundaries()
@@ -308,6 +309,25 @@ public partial class Incidents : ComponentBase, IDisposable
         });
     }
 
+    private async void HandleTeamDispatchedRealtime(object? sender, TeamDispatchedEventArgs e)
+    {
+        await InvokeAsync(async () =>
+        {
+            var incident = _pagedIncidents.FirstOrDefault(x => x.Id == e.IncidentId);
+            if (incident != null)
+            {
+                incident.Status = "Assigned";
+                incident.AssignedTeamId = e.TeamId;
+                StateHasChanged();
+            }
+            else if (CurrentPage == 1)
+            {
+                await LoadIncidentsAsync();
+            }
+            await LoadActiveOpenCountAsync();
+        });
+    }
+
     public void Dispose()
     {
         _searchCts?.Cancel();
@@ -316,5 +336,6 @@ public partial class Incidents : ComponentBase, IDisposable
         IncidentHub.OnNewIncidentReceived -= HandleNewIncidentReceivedRealtime;
         IncidentHub.OnIncidentStatusChanged -= HandleIncidentStatusChangedRealtime;
         IncidentHub.OnIncidentUpdated -= HandleIncidentUpdatedRealtime;
+        IncidentHub.OnTeamDispatched -= HandleTeamDispatchedRealtime;
     }
 }

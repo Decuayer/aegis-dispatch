@@ -4,7 +4,6 @@ import '../../../../core/constants/app_colors.dart';
 import '../../data/models/task_detail_model.dart';
 import '../../../../core/widgets/entity_id_badge.dart';
 
-
 class TaskHistoryView extends StatelessWidget {
   final List<TeamTaskModel> history;
   final VoidCallback onRefresh;
@@ -22,11 +21,19 @@ class TaskHistoryView extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.history_rounded, size: 64, color: AppColors.textMuted.withValues(alpha: 0.5)),
+            Icon(
+              Icons.history_rounded,
+              size: 64,
+              color: AppColors.textMuted.withValues(alpha: 0.5),
+            ),
             const SizedBox(height: 12),
             const Text(
               'No completed assignments found',
-              style: TextStyle(fontSize: 16, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontSize: 16,
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(height: 8),
             TextButton.icon(
@@ -47,9 +54,10 @@ class TaskHistoryView extends StatelessWidget {
         separatorBuilder: (_, __) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
           final task = history[index];
-          final dateStr = task.completedAt != null
-              ? DateFormat('dd.MM.yyyy HH:mm').format(task.completedAt!)
-              : DateFormat('dd.MM.yyyy HH:mm').format(task.createdAt);
+          final dateStr =
+              task.completedAt != null
+                  ? DateFormat('dd.MM.yyyy HH:mm').format(task.completedAt!)
+                  : DateFormat('dd.MM.yyyy HH:mm').format(task.createdAt);
 
           return Card(
             elevation: 0,
@@ -68,7 +76,10 @@ class TaskHistoryView extends StatelessWidget {
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
                             decoration: BoxDecoration(
                               color: AppColors.success.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(6),
@@ -92,20 +103,29 @@ class TaskHistoryView extends StatelessWidget {
                       ),
                       Text(
                         dateStr,
-                        style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                        style: const TextStyle(
+                          color: AppColors.textMuted,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
                   Text(
                     task.category,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
                   ),
                   if (task.completionNotes?.isNotEmpty == true) ...[
                     const SizedBox(height: 6),
                     Text(
                       'Debrief: ${task.completionNotes}',
-                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 13,
+                      ),
                     ),
                   ],
                 ],

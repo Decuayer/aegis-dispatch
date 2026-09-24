@@ -154,5 +154,45 @@ public class UserService : IUserService
             return ApiResponse<bool>.FailureResult($"Failed to delete user: {ex.Message}");
         }
     }
+
+    public async Task<ApiResponse<UserDto>?> LinkGoogleAccountAsync(string idToken, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await _http.PostAsJsonAsync("api/v1/users/me/link-google", new { idToken }, cancellationToken);
+            var result = await response.Content.ReadFromJsonAsync<ApiResponse<UserDto>>(cancellationToken: cancellationToken);
+
+            if (result != null && result.Success && result.Data != null)
+            {
+                OnUserProfileUpdated?.Invoke(result.Data);
+            }
+
+            return result ?? ApiResponse<UserDto>.FailureResult("Google hesabı bağlanamadı.");
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<UserDto>.FailureResult($"Google hesabı bağlanırken hata oluştu: {ex.Message}");
+        }
+    }
+
+    public async Task<ApiResponse<UserDto>?> UnlinkGoogleAccountAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await _http.PostAsync("api/v1/users/me/unlink-google", null, cancellationToken);
+            var result = await response.Content.ReadFromJsonAsync<ApiResponse<UserDto>>(cancellationToken: cancellationToken);
+
+            if (result != null && result.Success && result.Data != null)
+            {
+                OnUserProfileUpdated?.Invoke(result.Data);
+            }
+
+            return result ?? ApiResponse<UserDto>.FailureResult("Google hesabı bağlantısı kaldırılamadı.");
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<UserDto>.FailureResult($"Google hesabı bağlantısı kaldırılırken hata oluştu: {ex.Message}");
+        }
+    }
 }
 

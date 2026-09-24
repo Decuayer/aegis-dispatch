@@ -2,22 +2,29 @@ import 'dart:convert';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class LocalNotificationService {
-  static final LocalNotificationService _instance = LocalNotificationService._internal();
+  static final LocalNotificationService _instance =
+      LocalNotificationService._internal();
   factory LocalNotificationService() => _instance;
   LocalNotificationService._internal();
 
-  final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _notificationsPlugin =
+      FlutterLocalNotificationsPlugin();
 
   static const String channelId = 'socar_dispatch_high_importance';
   static const String channelName = 'SOCAR Emergency Alerts';
-  static const String channelDescription = 'High priority notifications for emergency dispatch and incident response.';
+  static const String channelDescription =
+      'High priority notifications for emergency dispatch and incident response.';
 
   void Function(String? payload)? onNotificationTapped;
 
-  Future<void> initialize({void Function(String? payload)? onSelectNotification}) async {
+  Future<void> initialize({
+    void Function(String? payload)? onSelectNotification,
+  }) async {
     onNotificationTapped = onSelectNotification;
 
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: false,
       requestBadgePermission: false,
@@ -36,8 +43,11 @@ class LocalNotificationService {
       },
     );
 
-    final androidImplementation = _notificationsPlugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    final androidImplementation =
+        _notificationsPlugin
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
 
     if (androidImplementation != null) {
       const androidChannel = AndroidNotificationChannel(

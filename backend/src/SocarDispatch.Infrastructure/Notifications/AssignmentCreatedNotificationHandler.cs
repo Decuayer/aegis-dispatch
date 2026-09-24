@@ -43,7 +43,6 @@ public class AssignmentCreatedNotificationHandler : INotificationHandler<Assignm
             };
 
             await _hubContext.Clients.All.SendAsync("TeamDispatched", dispatchPayload, cancellationToken);
-            await _hubContext.Clients.All.SendAsync("ReceiveAssignmentCreated", dispatchPayload, cancellationToken);
 
             // 2. FCM Push Notification
             var teamMembers = await _context.TeamMembers

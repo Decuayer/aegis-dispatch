@@ -19,10 +19,15 @@ class IncidentRepository {
       if (responseData['success'] == true && responseData['data'] != null) {
         final List<dynamic> list = responseData['data'] as List<dynamic>;
         return list
-            .map((item) => EmergencyCodeModel.fromJson(item as Map<String, dynamic>))
+            .map(
+              (item) =>
+                  EmergencyCodeModel.fromJson(item as Map<String, dynamic>),
+            )
             .toList();
       } else {
-        final message = responseData['message'] as String? ?? 'Failed to fetch emergency codes.';
+        final message =
+            responseData['message'] as String? ??
+            'Failed to fetch emergency codes.';
         throw Exception(message);
       }
     } on DioException catch (e) {
@@ -34,19 +39,14 @@ class IncidentRepository {
     try {
       final fileName = file.path.split(Platform.pathSeparator).last;
       final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(
-          file.path,
-          filename: fileName,
-        ),
+        'file': await MultipartFile.fromFile(file.path, filename: fileName),
         'category': 'Incident',
       });
 
       final response = await _apiClient.dio.post(
         ApiEndpoints.uploadMedia,
         data: formData,
-        options: Options(
-          contentType: 'multipart/form-data',
-        ),
+        options: Options(contentType: 'multipart/form-data'),
       );
 
       final responseData = response.data as Map<String, dynamic>;
@@ -56,9 +56,12 @@ class IncidentRepository {
         if (mediaUrl != null && mediaUrl.isNotEmpty) {
           return mediaUrl;
         }
-        throw Exception('Media upload succeeded but returned an invalid media URL.');
+        throw Exception(
+          'Media upload succeeded but returned an invalid media URL.',
+        );
       } else {
-        final message = responseData['message'] as String? ?? 'Media upload failed.';
+        final message =
+            responseData['message'] as String? ?? 'Media upload failed.';
         throw Exception(message);
       }
     } on DioException catch (e) {
@@ -66,7 +69,9 @@ class IncidentRepository {
     }
   }
 
-  Future<IncidentResponseModel> createIncident(CreateIncidentRequestModel request) async {
+  Future<IncidentResponseModel> createIncident(
+    CreateIncidentRequestModel request,
+  ) async {
     try {
       final response = await _apiClient.dio.post(
         ApiEndpoints.incidents,
@@ -79,7 +84,9 @@ class IncidentRepository {
           responseData['data'] as Map<String, dynamic>,
         );
       } else {
-        final message = responseData['message'] as String? ?? 'Failed to submit incident report.';
+        final message =
+            responseData['message'] as String? ??
+            'Failed to submit incident report.';
         throw Exception(message);
       }
     } on DioException catch (e) {
@@ -99,7 +106,8 @@ class IncidentRepository {
       if (responseData['success'] == true) {
         return true;
       } else {
-        final message = responseData['message'] as String? ?? 'Failed to cancel incident.';
+        final message =
+            responseData['message'] as String? ?? 'Failed to cancel incident.';
         throw Exception(message);
       }
     } on DioException catch (e) {
@@ -107,9 +115,9 @@ class IncidentRepository {
     }
   }
 
-
   String _extractErrorMessage(DioException error) {
-    if (error.response?.data != null && error.response?.data is Map<String, dynamic>) {
+    if (error.response?.data != null &&
+        error.response?.data is Map<String, dynamic>) {
       final data = error.response!.data as Map<String, dynamic>;
       if (data['message'] != null && data['message'].toString().isNotEmpty) {
         return data['message'].toString();
@@ -118,6 +126,7 @@ class IncidentRepository {
         return (data['errors'] as List).first.toString();
       }
     }
-    return error.message ?? 'An unexpected network error occurred. Please try again.';
+    return error.message ??
+        'An unexpected network error occurred. Please try again.';
   }
 }

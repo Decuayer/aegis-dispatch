@@ -1,6 +1,7 @@
 namespace SocarDispatch.Application.Common.Interfaces;
 
 public record GoogleUserInfo(
+    string GoogleId,
     string Email,
     string FirstName,
     string LastName,

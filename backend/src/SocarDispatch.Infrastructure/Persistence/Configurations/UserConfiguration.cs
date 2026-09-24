@@ -24,6 +24,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.AvatarUrl).HasMaxLength(500);
         builder.Property(u => u.DeviceToken).HasMaxLength(500);
         builder.Property(u => u.DeviceTokenUpdatedAt);
+        builder.Property(u => u.GoogleId).HasMaxLength(100);
+        builder.HasIndex(u => u.GoogleId).IsUnique();
+        builder.Property(u => u.GoogleEmail).HasMaxLength(255);
         builder.Property(u => u.CreatedAt).HasDefaultValueSql("NOW()");
 
         // Composite index for user directory filtering and role-based lookups

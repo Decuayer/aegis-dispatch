@@ -100,5 +100,55 @@ window.socarGoogleAuth = {
                 this.dotNetRef.invokeMethodAsync('OnGoogleSignInFailure', err.message || 'Error triggering Google prompt.');
             }
         }
+    },
+
+    linkDotNetRef: null,
+    initLink: function (dotNetHelper, googleClientId, containerId) {
+        this.linkDotNetRef = dotNetHelper;
+        const clientId = googleClientId || this.clientId;
+        const targetId = containerId || 'google-link-btn-container';
+
+        if (typeof google === 'undefined' || !google.accounts || !google.accounts.id) {
+            setTimeout(() => this.initLink(dotNetHelper, clientId, targetId), 200);
+            return;
+        }
+
+        const container = document.getElementById(targetId);
+        if (!container) return;
+
+        try {
+            google.accounts.id.initialize({
+                client_id: clientId,
+                callback: (response) => {
+                    if (response && response.credential) {
+                        if (this.linkDotNetRef) {
+                            this.linkDotNetRef.invokeMethodAsync('OnGoogleLinkSuccess', response.credential);
+                        }
+                    } else if (this.linkDotNetRef) {
+                        this.linkDotNetRef.invokeMethodAsync('OnGoogleLinkFailure', 'No credential received from Google.');
+                    }
+                },
+                auto_select: false,
+                cancel_on_tap_outside: true,
+                itp_support: true
+            });
+
+            container.innerHTML = '';
+            google.accounts.id.renderButton(container, {
+                type: 'standard',
+                theme: 'filled_black',
+                size: 'large',
+                text: 'continue_with',
+                shape: 'rectangular',
+                logo_alignment: 'left',
+                width: 250
+            });
+            console.log('[GoogleAuth] Link button initialized successfully.');
+        } catch (err) {
+            console.error('[GoogleAuth] Link init error:', err);
+            if (this.linkDotNetRef) {
+                this.linkDotNetRef.invokeMethodAsync('OnGoogleLinkFailure', err.message);
+            }
+        }
     }
 };

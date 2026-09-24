@@ -5,10 +5,7 @@ import '../../../../core/widgets/entity_id_badge.dart';
 class IncidentMapMarker extends StatelessWidget {
   final String? incidentId;
 
-  const IncidentMapMarker({
-    super.key,
-    this.incidentId,
-  });
+  const IncidentMapMarker({super.key, this.incidentId});
 
   @override
   Widget build(BuildContext context) {
@@ -53,10 +50,7 @@ class IncidentMapMarker extends StatelessWidget {
 class ResponderMapMarker extends StatelessWidget {
   final String? teamId;
 
-  const ResponderMapMarker({
-    super.key,
-    this.teamId,
-  });
+  const ResponderMapMarker({super.key, this.teamId});
 
   @override
   Widget build(BuildContext context) {

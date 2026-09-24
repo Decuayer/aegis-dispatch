@@ -10,10 +10,7 @@ import '../../widgets/gps_status_indicator.dart';
 class StepLocationConfirm extends StatelessWidget {
   final LocationService locationService;
 
-  const StepLocationConfirm({
-    super.key,
-    required this.locationService,
-  });
+  const StepLocationConfirm({super.key, required this.locationService});
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +18,9 @@ class StepLocationConfirm extends StatelessWidget {
       builder: (context, state) {
         Color badgeColor;
         try {
-          final hex = state.selectedEmergencyCode?.colorHex.replaceFirst('#', '') ?? 'E30613';
+          final hex =
+              state.selectedEmergencyCode?.colorHex.replaceFirst('#', '') ??
+              'E30613';
           badgeColor = Color(int.parse('0xFF$hex'));
         } catch (_) {
           badgeColor = AppColors.accent;
@@ -46,7 +45,9 @@ class StepLocationConfirm extends StatelessWidget {
                 isFetching: state.isFetchingLocation,
                 errorMessage: state.locationError,
                 onRefresh: () {
-                  context.read<IncidentReportBloc>().add(const LocationRequested());
+                  context.read<IncidentReportBloc>().add(
+                    const LocationRequested(),
+                  );
                 },
                 onOpenSettings: () {
                   locationService.openAppSettings();
@@ -67,7 +68,10 @@ class StepLocationConfirm extends StatelessWidget {
                 initialValue: state.description,
                 decoration: InputDecoration(
                   hintText: 'Describe details, hazards, or immediate risks...',
-                  hintStyle: const TextStyle(fontSize: 13, color: AppColors.textMuted),
+                  hintStyle: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textMuted,
+                  ),
                   filled: true,
                   fillColor: AppColors.surface,
                   border: OutlineInputBorder(
@@ -76,7 +80,9 @@ class StepLocationConfirm extends StatelessWidget {
                   ),
                 ),
                 onChanged: (val) {
-                  context.read<IncidentReportBloc>().add(DescriptionChanged(val));
+                  context.read<IncidentReportBloc>().add(
+                    DescriptionChanged(val),
+                  );
                 },
               ),
               const SizedBox(height: 24),
@@ -101,7 +107,10 @@ class StepLocationConfirm extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Category:', style: TextStyle(color: AppColors.textSecondary)),
+                        const Text(
+                          'Category:',
+                          style: TextStyle(color: AppColors.textSecondary),
+                        ),
                         Text(
                           state.selectedCategory ?? '-',
                           style: const TextStyle(fontWeight: FontWeight.bold),
@@ -112,9 +121,15 @@ class StepLocationConfirm extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Severity:', style: TextStyle(color: AppColors.textSecondary)),
+                        const Text(
+                          'Severity:',
+                          style: TextStyle(color: AppColors.textSecondary),
+                        ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: badgeColor.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(6),
@@ -136,7 +151,10 @@ class StepLocationConfirm extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Attached Media:', style: TextStyle(color: AppColors.textSecondary)),
+                        const Text(
+                          'Attached Media:',
+                          style: TextStyle(color: AppColors.textSecondary),
+                        ),
                         Text(
                           '${state.selectedMediaFiles.length} item(s)',
                           style: const TextStyle(fontWeight: FontWeight.bold),
@@ -148,13 +166,14 @@ class StepLocationConfirm extends StatelessWidget {
               ),
               const SizedBox(height: 28),
               ElevatedButton(
-                onPressed: state.canSubmit
-                    ? () {
-                        context
-                            .read<IncidentReportBloc>()
-                            .add(const SubmitIncidentReportRequested());
-                      }
-                    : null,
+                onPressed:
+                    state.canSubmit
+                        ? () {
+                          context.read<IncidentReportBloc>().add(
+                            const SubmitIncidentReportRequested(),
+                          );
+                        }
+                        : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.accent,
                   foregroundColor: Colors.white,
@@ -164,43 +183,44 @@ class StepLocationConfirm extends StatelessWidget {
                   ),
                   elevation: 2,
                 ),
-                child: state.isSubmitting
-                    ? Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
+                child:
+                    state.isSubmitting
+                        ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            state.uploadProgressMessage ?? 'Submitting...',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
+                            const SizedBox(width: 12),
+                            Text(
+                              state.uploadProgressMessage ?? 'Submitting...',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
                             ),
-                          ),
-                        ],
-                      )
-                    : const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.warning_amber_rounded, size: 22),
-                          SizedBox(width: 8),
-                          Text(
-                            'SUBMIT EMERGENCY REPORT',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                              letterSpacing: 0.5,
+                          ],
+                        )
+                        : const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.warning_amber_rounded, size: 22),
+                            SizedBox(width: 8),
+                            Text(
+                              'SUBMIT EMERGENCY REPORT',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                                letterSpacing: 0.5,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
+                          ],
+                        ),
               ),
             ],
           ),

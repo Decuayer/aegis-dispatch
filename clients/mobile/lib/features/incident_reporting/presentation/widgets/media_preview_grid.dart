@@ -20,10 +20,14 @@ class MediaPreviewGrid extends StatelessWidget {
       builder: (dialogContext) {
         return Dialog(
           backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          child: media.isVideo
-              ? _VideoPreviewCard(media: media)
-              : _PhotoPreviewCard(media: media),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 24,
+          ),
+          child:
+              media.isVideo
+                  ? _VideoPreviewCard(media: media)
+                  : _PhotoPreviewCard(media: media),
         );
       },
     );
@@ -48,7 +52,8 @@ class MediaPreviewGrid extends StatelessWidget {
       itemBuilder: (context, index) {
         final media = mediaFiles[index];
         final isVideo = media.isVideo;
-        final hasThumbnail = media.thumbnailPath != null &&
+        final hasThumbnail =
+            media.thumbnailPath != null &&
             File(media.thumbnailPath!).existsSync();
 
         return Stack(
@@ -58,41 +63,39 @@ class MediaPreviewGrid extends StatelessWidget {
                 onTap: () => _showMediaPreview(context, media),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(10),
-                  child: isVideo
-                      ? (hasThumbnail
-                          ? Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                Image.file(
-                                  File(media.thumbnailPath!),
-                                  fit: BoxFit.cover,
-                                ),
-                                Container(
-                                  color: Colors.black26,
-                                  child: const Center(
-                                    child: Icon(
-                                      Icons.play_circle_fill_rounded,
-                                      color: Colors.white,
-                                      size: 32,
+                  child:
+                      isVideo
+                          ? (hasThumbnail
+                              ? Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  Image.file(
+                                    File(media.thumbnailPath!),
+                                    fit: BoxFit.cover,
+                                  ),
+                                  Container(
+                                    color: Colors.black26,
+                                    child: const Center(
+                                      child: Icon(
+                                        Icons.play_circle_fill_rounded,
+                                        color: Colors.white,
+                                        size: 32,
+                                      ),
                                     ),
                                   ),
+                                ],
+                              )
+                              : Container(
+                                color: AppColors.textPrimary,
+                                child: const Center(
+                                  child: Icon(
+                                    Icons.videocam_rounded,
+                                    color: Colors.white,
+                                    size: 36,
+                                  ),
                                 ),
-                              ],
-                            )
-                          : Container(
-                              color: AppColors.textPrimary,
-                              child: const Center(
-                                child: Icon(
-                                  Icons.videocam_rounded,
-                                  color: Colors.white,
-                                  size: 36,
-                                ),
-                              ),
-                            ))
-                      : Image.file(
-                          media.file,
-                          fit: BoxFit.cover,
-                        ),
+                              ))
+                          : Image.file(media.file, fit: BoxFit.cover),
                 ),
               ),
             ),
@@ -102,7 +105,10 @@ class MediaPreviewGrid extends StatelessWidget {
                 bottom: 4,
                 left: 4,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.75),
                     borderRadius: BorderRadius.circular(4),
@@ -110,7 +116,11 @@ class MediaPreviewGrid extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.play_arrow_rounded, size: 12, color: Colors.white),
+                      const Icon(
+                        Icons.play_arrow_rounded,
+                        size: 12,
+                        color: Colors.white,
+                      ),
                       const SizedBox(width: 2),
                       Text(
                         media.durationSeconds != null
@@ -159,11 +169,7 @@ class MediaPreviewGrid extends StatelessWidget {
                     color: Colors.black54,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.close,
-                    size: 14,
-                    color: Colors.white,
-                  ),
+                  child: const Icon(Icons.close, size: 14, color: Colors.white),
                 ),
               ),
             ),
@@ -225,14 +231,13 @@ class _PhotoPreviewCard extends StatelessWidget {
           ),
           Flexible(
             child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(16),
+              ),
               child: InteractiveViewer(
                 minScale: 0.8,
                 maxScale: 3.5,
-                child: Image.file(
-                  media.file,
-                  fit: BoxFit.contain,
-                ),
+                child: Image.file(media.file, fit: BoxFit.contain),
               ),
             ),
           ),
@@ -249,8 +254,8 @@ class _VideoPreviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasThumbnail = media.thumbnailPath != null &&
-        File(media.thumbnailPath!).existsSync();
+    final hasThumbnail =
+        media.thumbnailPath != null && File(media.thumbnailPath!).existsSync();
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -295,10 +300,7 @@ class _VideoPreviewCard extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   if (hasThumbnail)
-                    Image.file(
-                      File(media.thumbnailPath!),
-                      fit: BoxFit.cover,
-                    ),
+                    Image.file(File(media.thumbnailPath!), fit: BoxFit.cover),
                   Container(
                     color: Colors.black38,
                     child: const Center(
@@ -323,7 +325,10 @@ class _VideoPreviewCard extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildInfoColumn('Format', media.fileName.split('.').last.toUpperCase()),
+                _buildInfoColumn(
+                  'Format',
+                  media.fileName.split('.').last.toUpperCase(),
+                ),
                 _buildInfoColumn('Size', media.formattedFileSize),
                 _buildInfoColumn(
                   'Duration',

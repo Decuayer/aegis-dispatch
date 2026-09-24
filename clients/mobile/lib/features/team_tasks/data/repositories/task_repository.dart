@@ -19,8 +19,12 @@ class TaskRepository {
         final list = responseData['data'] as List<dynamic>;
         for (var item in list) {
           final team = TeamModel.fromJson(item as Map<String, dynamic>);
-          final isMember = team.members.any((m) => m.userId.toLowerCase() == userId.toLowerCase()) ||
-              (team.leaderId != null && team.leaderId!.toLowerCase() == userId.toLowerCase());
+          final isMember =
+              team.members.any(
+                (m) => m.userId.toLowerCase() == userId.toLowerCase(),
+              ) ||
+              (team.leaderId != null &&
+                  team.leaderId!.toLowerCase() == userId.toLowerCase());
           if (isMember) {
             return team;
           }
@@ -41,8 +45,10 @@ class TaskRepository {
         final list = _extractListFromData(responseData['data']);
         for (var item in list) {
           final incident = TeamTaskModel.fromJson(item as Map<String, dynamic>);
-          final isTeamAssigned = incident.assignedTeamId?.toLowerCase() == teamId.toLowerCase();
-          final isActive = incident.status != 'Resolved' && incident.status != 'Canceled';
+          final isTeamAssigned =
+              incident.assignedTeamId?.toLowerCase() == teamId.toLowerCase();
+          final isActive =
+              incident.status != 'Resolved' && incident.status != 'Canceled';
 
           if (isTeamAssigned && isActive) {
             return incident;
@@ -66,7 +72,10 @@ class TaskRepository {
         final list = _extractListFromData(responseData['data']);
         return list
             .map((item) => TeamTaskModel.fromJson(item as Map<String, dynamic>))
-            .where((task) => task.assignedTeamId?.toLowerCase() == teamId.toLowerCase())
+            .where(
+              (task) =>
+                  task.assignedTeamId?.toLowerCase() == teamId.toLowerCase(),
+            )
             .toList();
       }
       return [];
@@ -74,6 +83,7 @@ class TaskRepository {
       throw Exception(_extractErrorMessage(e));
     }
   }
+
   /// Safely extracts dynamic list whether backend returns raw List or PagedResult { items: [] }
   List<dynamic> _extractListFromData(dynamic data) {
     if (data is List<dynamic>) {
@@ -92,14 +102,20 @@ class TaskRepository {
       );
       final responseData = response.data as Map<String, dynamic>;
       if (responseData['success'] != true) {
-        throw Exception(responseData['message'] ?? 'Failed to update team status.');
+        throw Exception(
+          responseData['message'] ?? 'Failed to update team status.',
+        );
       }
     } on DioException catch (e) {
       throw Exception(_extractErrorMessage(e));
     }
   }
 
-  Future<void> updateMemberStatus(String teamId, String userId, MemberStatus status) async {
+  Future<void> updateMemberStatus(
+    String teamId,
+    String userId,
+    MemberStatus status,
+  ) async {
     try {
       final response = await _apiClient.dio.patch(
         ApiEndpoints.teamMemberStatus(teamId, userId),
@@ -107,7 +123,9 @@ class TaskRepository {
       );
       final responseData = response.data as Map<String, dynamic>;
       if (responseData['success'] != true) {
-        throw Exception(responseData['message'] ?? 'Failed to update member status.');
+        throw Exception(
+          responseData['message'] ?? 'Failed to update member status.',
+        );
       }
     } on DioException catch (e) {
       throw Exception(_extractErrorMessage(e));
@@ -122,11 +140,7 @@ class TaskRepository {
     try {
       await _apiClient.dio.post(
         ApiEndpoints.teamLocation,
-        data: {
-          'teamId': teamId,
-          'latitude': latitude,
-          'longitude': longitude,
-        },
+        data: {'teamId': teamId, 'latitude': latitude, 'longitude': longitude},
       );
     } catch (_) {
       // Ignored for background location streaming resilience
@@ -137,10 +151,7 @@ class TaskRepository {
     try {
       final fileName = file.path.split(Platform.pathSeparator).last;
       final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(
-          file.path,
-          filename: fileName,
-        ),
+        'file': await MultipartFile.fromFile(file.path, filename: fileName),
         'category': 'IncidentReport',
       });
 
@@ -175,24 +186,19 @@ class TaskRepository {
       // 1. Submit incident report
       final reportResponse = await _apiClient.dio.post(
         ApiEndpoints.incidentReports(incidentId),
-        data: {
-          'teamId': teamId,
-          'content': notes,
-          'mediaUrl': mediaUrl,
-        },
+        data: {'teamId': teamId, 'content': notes, 'mediaUrl': mediaUrl},
       );
       final reportData = reportResponse.data as Map<String, dynamic>;
       if (reportData['success'] != true) {
-        throw Exception(reportData['message'] ?? 'Failed to create completion report.');
+        throw Exception(
+          reportData['message'] ?? 'Failed to create completion report.',
+        );
       }
 
       // 2. Mark incident as Resolved
       final statusResponse = await _apiClient.dio.patch(
         ApiEndpoints.incidentStatus(incidentId),
-        data: {
-          'status': 'Resolved',
-          'completionNotes': notes,
-        },
+        data: {'status': 'Resolved', 'completionNotes': notes},
       );
       final statusData = statusResponse.data as Map<String, dynamic>;
       if (statusData['success'] != true) {
@@ -207,7 +213,8 @@ class TaskRepository {
   }
 
   String _extractErrorMessage(DioException error) {
-    if (error.response?.data != null && error.response?.data is Map<String, dynamic>) {
+    if (error.response?.data != null &&
+        error.response?.data is Map<String, dynamic>) {
       final data = error.response!.data as Map<String, dynamic>;
       if (data['message'] != null && data['message'].toString().isNotEmpty) {
         return data['message'].toString();
@@ -216,6 +223,7 @@ class TaskRepository {
         return (data['errors'] as List).first.toString();
       }
     }
-    return error.message ?? 'An unexpected network error occurred. Please try again.';
+    return error.message ??
+        'An unexpected network error occurred. Please try again.';
   }
 }

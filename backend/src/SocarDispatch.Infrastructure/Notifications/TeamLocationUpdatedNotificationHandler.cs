@@ -32,7 +32,6 @@ public class TeamLocationUpdatedNotificationHandler : INotificationHandler<TeamL
             };
 
             await _hubContext.Clients.All.SendAsync("TeamLocationUpdated", payload, cancellationToken);
-            await _hubContext.Clients.All.SendAsync("ReceiveTeamLocationUpdated", payload, cancellationToken);
         }
         catch (Exception ex)
         {

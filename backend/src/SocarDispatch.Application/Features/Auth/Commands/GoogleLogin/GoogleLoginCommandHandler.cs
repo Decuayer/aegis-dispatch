@@ -30,11 +30,14 @@ public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, Api
         var googleUser = await _googleAuthService.VerifyIdTokenAsync(request.IdToken, cancellationToken);
         var emailNormalized = googleUser.Email.Trim().ToLowerInvariant();
 
-        // 2. Check if the user exists in the database.
+        // 2. Check if the user exists in the database by GoogleId or normalized Email/GoogleEmail.
         var user = await _context.Users
-            .FirstOrDefaultAsync(u => u.Email.ToLower() == emailNormalized, cancellationToken);
+            .FirstOrDefaultAsync(u => u.GoogleId == googleUser.GoogleId ||
+                                      u.Email.ToLower() == emailNormalized ||
+                                      (u.GoogleEmail != null && u.GoogleEmail.ToLower() == emailNormalized),
+                                 cancellationToken);
 
-        // 3. Automatically save if the user is visiting for the first time (Design Doc Sequence Diagram Flow)
+        // 3. Automatically save if the user is visiting for the first time
         if (user == null)
         {
             user = new User
@@ -48,17 +51,34 @@ public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, Api
                 Department = "Genel",
                 RoleType = RoleType.Employee,
                 AvatarUrl = googleUser.PictureUrl,
+                GoogleId = googleUser.GoogleId,
+                GoogleEmail = googleUser.Email,
                 CreatedAt = DateTime.UtcNow
             };
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync(cancellationToken);
         }
-        else if (!string.IsNullOrEmpty(googleUser.PictureUrl) && string.IsNullOrEmpty(user.AvatarUrl))
+        else
         {
-            // Update with Google profile picture if user avatar is not available
-            user.AvatarUrl = googleUser.PictureUrl;
-            await _context.SaveChangesAsync(cancellationToken);
+            var isDirty = false;
+            if (string.IsNullOrEmpty(user.GoogleId))
+            {
+                user.GoogleId = googleUser.GoogleId;
+                user.GoogleEmail = googleUser.Email;
+                isDirty = true;
+            }
+
+            if (!string.IsNullOrEmpty(googleUser.PictureUrl) && string.IsNullOrEmpty(user.AvatarUrl))
+            {
+                user.AvatarUrl = googleUser.PictureUrl;
+                isDirty = true;
+            }
+
+            if (isDirty)
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+            }
         }
 
         // 4. Generating a JWT
@@ -78,7 +98,8 @@ public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, Api
                 Department = user.Department,
                 RoleType = user.RoleType,
                 SubRole = user.SubRole,
-                AvatarUrl = user.AvatarUrl
+                AvatarUrl = user.AvatarUrl,
+                GoogleEmail = user.GoogleEmail
             }
         };
 

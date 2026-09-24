@@ -9,7 +9,9 @@ void main() {
   const testTeamLoc = LatLng(38.7950, 26.9250);
 
   group('TaskRouteMapView Widget Tests', () {
-    testWidgets('renders Facility Lock badge when boundary lock is enabled', (tester) async {
+    testWidgets('renders Facility Lock badge when boundary lock is enabled', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -33,7 +35,9 @@ void main() {
       expect(find.text('#TEAM-04'), findsOneWidget);
     });
 
-    testWidgets('renders Unrestricted badge when boundary lock is disabled', (tester) async {
+    testWidgets('renders Unrestricted badge when boundary lock is disabled', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -53,24 +57,27 @@ void main() {
       expect(find.byIcon(Icons.lock_open_rounded), findsOneWidget);
     });
 
-    testWidgets('IncidentMapMarker and ResponderMapMarker render expected icons', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: Column(
-              children: [
-                IncidentMapMarker(incidentId: 'INC-A1B2'),
-                ResponderMapMarker(teamId: 'TEAM-07'),
-              ],
+    testWidgets(
+      'IncidentMapMarker and ResponderMapMarker render expected icons',
+      (tester) async {
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: Column(
+                children: [
+                  IncidentMapMarker(incidentId: 'INC-A1B2'),
+                  ResponderMapMarker(teamId: 'TEAM-07'),
+                ],
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      expect(find.text('#INC-A1B2'), findsOneWidget);
-      expect(find.text('#TEAM-07'), findsOneWidget);
-      expect(find.byIcon(Icons.local_fire_department), findsOneWidget);
-      expect(find.byIcon(Icons.navigation_rounded), findsOneWidget);
-    });
+        expect(find.text('#INC-A1B2'), findsOneWidget);
+        expect(find.text('#TEAM-07'), findsOneWidget);
+        expect(find.byIcon(Icons.local_fire_department), findsOneWidget);
+        expect(find.byIcon(Icons.navigation_rounded), findsOneWidget);
+      },
+    );
   });
 }

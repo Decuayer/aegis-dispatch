@@ -183,8 +183,6 @@
 
     private async void HandleNewIncident(object? sender, NewIncidentReceivedEventArgs e)
     {
-        ToastService.ShowEmergencyAlert(e.Category, e.EmergencyCode, e.ReporterFullName);
-
         var incident = new MapIncidentDto
         {
             Id = e.Id,

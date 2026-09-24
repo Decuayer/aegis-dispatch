@@ -21,8 +21,12 @@ class MapSettingsCubit extends Cubit<MapSettingsState> {
   final MapSettingsRepository _repository;
 
   MapSettingsCubit({required MapSettingsRepository repository})
-      : _repository = repository,
-        super(MapSettingsState(isBoundaryLockEnabled: repository.isBoundaryLockEnabled()));
+    : _repository = repository,
+      super(
+        MapSettingsState(
+          isBoundaryLockEnabled: repository.isBoundaryLockEnabled(),
+        ),
+      );
 
   /// Updates local storage and emits the new boundary lock state
   Future<void> toggleBoundaryLock(bool enabled) async {

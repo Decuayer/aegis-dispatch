@@ -12,6 +12,7 @@
 @inject NavigationManager NavigationManager
 @inject IIncidentHubClient IncidentHubClient
 @inject ILocationHubClient LocationHubClient
+@inject AuthenticationStateProvider AuthStateProvider
 
 <div class="page">
     <div class="sidebar">
@@ -74,6 +75,7 @@
     protected override void OnInitialized()
     {
         AuthEventService.OnSessionExpired += HandleSessionExpiredAsync;
+        IncidentHubClient.OnNewIncidentReceived += HandleGlobalNewIncidentReceived;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -82,6 +84,14 @@
         {
             var stored = await JS.InvokeAsync<string>("localStorage.getItem", "socar-theme");
             _isDark = stored != "light";
+
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            if (authState.User.Identity?.IsAuthenticated == true)
+            {
+                _ = IncidentHubClient.StartAsync();
+                _ = LocationHubClient.StartAsync();
+            }
+
             StateHasChanged();
         }
     }
@@ -129,8 +139,21 @@
     }
 
 
+    private void HandleGlobalNewIncidentReceived(object? sender, SocarDispatch.Web.Events.NewIncidentReceivedEventArgs e)
+    {
+        ToastService.ShowEmergencyAlert(
+            category: e.Category,
+            emergencyCode: e.EmergencyCode,
+            reporter: e.ReporterFullName,
+            incidentId: e.Id,
+            latitude: e.Latitude,
+            longitude: e.Longitude
+        );
+    }
+
     public void Dispose()
     {
         AuthEventService.OnSessionExpired -= HandleSessionExpiredAsync;
+        IncidentHubClient.OnNewIncidentReceived -= HandleGlobalNewIncidentReceived;
     }
 }

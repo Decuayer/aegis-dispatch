@@ -19,10 +19,12 @@ class TeamPortalRepository {
         final list = _extractListFromData(responseData['data']);
         for (var item in list) {
           final team = TeamModel.fromJson(item as Map<String, dynamic>);
-          final isMember = team.members.any(
+          final isMember =
+              team.members.any(
                 (m) => m.userId.toLowerCase() == userId.toLowerCase(),
               ) ||
-              (team.leaderId != null && team.leaderId!.toLowerCase() == userId.toLowerCase());
+              (team.leaderId != null &&
+                  team.leaderId!.toLowerCase() == userId.toLowerCase());
           if (isMember) {
             return team;
           }
@@ -43,7 +45,10 @@ class TeamPortalRepository {
       if (responseData['success'] == true && responseData['data'] != null) {
         final list = _extractListFromData(responseData['data']);
         return list
-            .map((item) => AvailableTeamModel.fromJson(item as Map<String, dynamic>))
+            .map(
+              (item) =>
+                  AvailableTeamModel.fromJson(item as Map<String, dynamic>),
+            )
             .toList();
       }
       return [];
@@ -53,7 +58,10 @@ class TeamPortalRepository {
   }
 
   /// Adds the current user to an open team (self-join).
-  Future<TeamModel> joinTeam({required String teamId, required String userId}) async {
+  Future<TeamModel> joinTeam({
+    required String teamId,
+    required String userId,
+  }) async {
     try {
       final response = await _apiClient.dio.post(
         ApiEndpoints.teamMembers(teamId),
@@ -70,7 +78,10 @@ class TeamPortalRepository {
   }
 
   /// Provisions a new response team and designates the creator as leader if requested.
-  Future<TeamModel> createTeam({required String teamName, String? leaderId}) async {
+  Future<TeamModel> createTeam({
+    required String teamName,
+    String? leaderId,
+  }) async {
     try {
       final response = await _apiClient.dio.post(
         ApiEndpoints.teams,
@@ -98,10 +109,7 @@ class TeamPortalRepository {
     try {
       final response = await _apiClient.dio.put(
         ApiEndpoints.teamById(teamId),
-        data: {
-          'teamName': teamName,
-          'leaderId': userId,
-        },
+        data: {'teamName': teamName, 'leaderId': userId},
       );
       final responseData = response.data as Map<String, dynamic>;
       if (responseData['success'] == true && responseData['data'] != null) {
@@ -122,10 +130,7 @@ class TeamPortalRepository {
     try {
       final response = await _apiClient.dio.put(
         ApiEndpoints.teamById(teamId),
-        data: {
-          'teamName': newTeamName.trim(),
-          'leaderId': leaderId,
-        },
+        data: {'teamName': newTeamName.trim(), 'leaderId': leaderId},
       );
       final responseData = response.data as Map<String, dynamic>;
       if (responseData['success'] == true && responseData['data'] != null) {
@@ -138,7 +143,10 @@ class TeamPortalRepository {
   }
 
   /// Removes current user from team roster (self-leave off-call).
-  Future<void> leaveTeam({required String teamId, required String userId}) async {
+  Future<void> leaveTeam({
+    required String teamId,
+    required String userId,
+  }) async {
     try {
       final response = await _apiClient.dio.delete(
         ApiEndpoints.teamMember(teamId, userId),
@@ -153,7 +161,10 @@ class TeamPortalRepository {
   }
 
   /// Removes a member from team roster (leader permission required).
-  Future<TeamModel> removeMember({required String teamId, required String memberId}) async {
+  Future<TeamModel> removeMember({
+    required String teamId,
+    required String memberId,
+  }) async {
     try {
       final response = await _apiClient.dio.delete(
         ApiEndpoints.teamMember(teamId, memberId),
@@ -162,14 +173,19 @@ class TeamPortalRepository {
       if (responseData['success'] == true && responseData['data'] != null) {
         return TeamModel.fromJson(responseData['data'] as Map<String, dynamic>);
       }
-      throw Exception(responseData['message'] ?? 'Failed to remove team member.');
+      throw Exception(
+        responseData['message'] ?? 'Failed to remove team member.',
+      );
     } on DioException catch (e) {
       throw Exception(_extractErrorMessage(e));
     }
   }
 
   /// Updates team operational status (Idle / Busy).
-  Future<void> updateTeamStatus({required String teamId, required TeamStatus status}) async {
+  Future<void> updateTeamStatus({
+    required String teamId,
+    required TeamStatus status,
+  }) async {
     try {
       final response = await _apiClient.dio.patch(
         ApiEndpoints.teamStatus(teamId),
@@ -177,7 +193,9 @@ class TeamPortalRepository {
       );
       final responseData = response.data as Map<String, dynamic>;
       if (responseData['success'] != true) {
-        throw Exception(responseData['message'] ?? 'Failed to update team status.');
+        throw Exception(
+          responseData['message'] ?? 'Failed to update team status.',
+        );
       }
     } on DioException catch (e) {
       throw Exception(_extractErrorMessage(e));
@@ -197,7 +215,9 @@ class TeamPortalRepository {
       );
       final responseData = response.data as Map<String, dynamic>;
       if (responseData['success'] != true) {
-        throw Exception(responseData['message'] ?? 'Failed to update member status.');
+        throw Exception(
+          responseData['message'] ?? 'Failed to update member status.',
+        );
       }
     } on DioException catch (e) {
       throw Exception(_extractErrorMessage(e));
@@ -214,7 +234,8 @@ class TeamPortalRepository {
   }
 
   String _extractErrorMessage(DioException error) {
-    if (error.response?.data != null && error.response!.data is Map<String, dynamic>) {
+    if (error.response?.data != null &&
+        error.response!.data is Map<String, dynamic>) {
       final data = error.response!.data as Map<String, dynamic>;
       if (data['message'] != null && data['message'].toString().isNotEmpty) {
         return data['message'].toString();
@@ -223,6 +244,7 @@ class TeamPortalRepository {
         return (data['errors'] as List).first.toString();
       }
     }
-    return error.message ?? 'An unexpected network error occurred. Please try again.';
+    return error.message ??
+        'An unexpected network error occurred. Please try again.';
   }
 }

@@ -16,8 +16,8 @@ class MediaPickerService {
   MediaPickerService({
     ImagePicker? picker,
     ThumbnailGeneratorService? thumbnailService,
-  })  : _picker = picker ?? ImagePicker(),
-        _thumbnailService = thumbnailService ?? ThumbnailGeneratorService();
+  }) : _picker = picker ?? ImagePicker(),
+       _thumbnailService = thumbnailService ?? ThumbnailGeneratorService();
 
   /// Captures a single photo from the camera.
   Future<SelectedMediaFile?> pickImageFromCamera() async {
@@ -77,9 +77,13 @@ class MediaPickerService {
     for (final xFile in xFiles) {
       final ext = xFile.path.split('.').last.toLowerCase();
       final isVideo = MediaValidationRules.allowedVideoExtensions.contains(ext);
-      final mediaType = isVideo ? IncidentMediaType.video : IncidentMediaType.photo;
+      final mediaType =
+          isVideo ? IncidentMediaType.video : IncidentMediaType.photo;
 
-      final processed = await _validateAndProcessFile(File(xFile.path), mediaType);
+      final processed = await _validateAndProcessFile(
+        File(xFile.path),
+        mediaType,
+      );
       if (processed != null) {
         results.add(processed);
       }

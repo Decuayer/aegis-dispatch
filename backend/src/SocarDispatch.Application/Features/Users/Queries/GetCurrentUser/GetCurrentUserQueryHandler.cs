@@ -44,7 +44,8 @@ public class GetCurrentUserQueryHandler : IRequestHandler<GetCurrentUserQuery, A
             RoleType = user.RoleType,
             SubRole = user.SubRole,
             AvatarUrl = user.AvatarUrl,
-            ActiveTeamId = activeTeamId
+            ActiveTeamId = activeTeamId,
+            GoogleEmail = user.GoogleEmail
         };
 
         return ApiResponse<CurrentUserDto>.SuccessResult(dto, "User information successfully retrieved.");

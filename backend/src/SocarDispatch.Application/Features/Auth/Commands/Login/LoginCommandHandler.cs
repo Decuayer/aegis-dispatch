@@ -61,7 +61,8 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, ApiResponse<Aut
                 Department = user.Department,
                 RoleType = user.RoleType,
                 SubRole = user.SubRole,
-                AvatarUrl = user.AvatarUrl
+                AvatarUrl = user.AvatarUrl,
+                GoogleEmail = user.GoogleEmail
             }
         };
 

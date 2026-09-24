@@ -4,7 +4,9 @@ import 'package:socar_dispatch_mobile/features/team_portal/presentation/widgets/
 
 void main() {
   group('ClaimLeadershipBanner Widget Tests', () {
-    testWidgets('renders vacant leadership alert and responds to tap', (tester) async {
+    testWidgets('renders vacant leadership alert and responds to tap', (
+      tester,
+    ) async {
       bool wasClaimTapped = false;
 
       await tester.pumpWidget(

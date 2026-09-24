@@ -29,11 +29,12 @@ class _TeamHomeViewState extends State<TeamHomeView> {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<TeamPortalBloc, TeamPortalState>(
-      listenWhen: (prev, current) =>
-          current is TeamPortalActionFailure ||
-          current is TeamPortalActionSuccess ||
-          (prev is TeamUnassignedLoaded && current is TeamAssignedLoaded) ||
-          (prev is TeamAssignedLoaded && current is TeamUnassignedLoaded),
+      listenWhen:
+          (prev, current) =>
+              current is TeamPortalActionFailure ||
+              current is TeamPortalActionSuccess ||
+              (prev is TeamUnassignedLoaded && current is TeamAssignedLoaded) ||
+              (prev is TeamAssignedLoaded && current is TeamUnassignedLoaded),
       listener: (context, state) {
         if (state is TeamPortalActionFailure) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -57,10 +58,11 @@ class _TeamHomeViewState extends State<TeamHomeView> {
           context.read<TaskBloc>().add(LoadActiveTask(state.team.id));
         }
       },
-      buildWhen: (prev, current) =>
-          current is TeamPortalLoading ||
-          current is TeamUnassignedLoaded ||
-          current is TeamAssignedLoaded,
+      buildWhen:
+          (prev, current) =>
+              current is TeamPortalLoading ||
+              current is TeamUnassignedLoaded ||
+              current is TeamAssignedLoaded,
       builder: (context, state) {
         if (state is TeamUnassignedLoaded) {
           return UnassignedTeamView(
@@ -80,9 +82,7 @@ class _TeamHomeViewState extends State<TeamHomeView> {
 
         return const Scaffold(
           backgroundColor: AppColors.background,
-          body: Center(
-            child: CircularProgressIndicator(),
-          ),
+          body: Center(child: CircularProgressIndicator()),
         );
       },
     );

@@ -7,21 +7,19 @@ void main() {
     testWidgets('renders inactive standby status correctly', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: TrackingStatusChip(isTracking: false),
-          ),
+          home: Scaffold(body: TrackingStatusChip(isTracking: false)),
         ),
       );
 
       expect(find.text('GPS Standby'), findsOneWidget);
     });
 
-    testWidgets('renders active live tracking status with pulse', (tester) async {
+    testWidgets('renders active live tracking status with pulse', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: TrackingStatusChip(isTracking: true),
-          ),
+          home: Scaffold(body: TrackingStatusChip(isTracking: true)),
         ),
       );
 

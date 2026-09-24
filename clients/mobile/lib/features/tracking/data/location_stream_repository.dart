@@ -8,10 +8,11 @@ class LocationStreamRepository {
   LocationStreamRepository({
     BackgroundLocationService? backgroundService,
     required SecureStorageService storageService,
-  })  : _backgroundService = backgroundService ?? BackgroundLocationService(),
-        _storageService = storageService;
+  }) : _backgroundService = backgroundService ?? BackgroundLocationService(),
+       _storageService = storageService;
 
-  Stream<Map<String, dynamic>?> get onLocationUpdate => _backgroundService.onLocationUpdate;
+  Stream<Map<String, dynamic>?> get onLocationUpdate =>
+      _backgroundService.onLocationUpdate;
 
   Future<bool> startTracking(String teamId) async {
     final token = await _storageService.getAccessToken();
@@ -19,10 +20,7 @@ class LocationStreamRepository {
       return false;
     }
 
-    return await _backgroundService.startTracking(
-      teamId: teamId,
-      token: token,
-    );
+    return await _backgroundService.startTracking(teamId: teamId, token: token);
   }
 
   Future<void> stopTracking() async {

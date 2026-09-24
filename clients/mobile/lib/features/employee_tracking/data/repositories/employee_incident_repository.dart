@@ -8,7 +8,7 @@ class EmployeeIncidentRepository {
   final ApiClient _apiClient;
 
   EmployeeIncidentRepository({required ApiClient apiClient})
-      : _apiClient = apiClient;
+    : _apiClient = apiClient;
 
   // Fetches incidents reported by the employee (default: active Open,Assigned)
   Future<List<TrackedIncidentModel>> getMyReportedIncidents({
@@ -28,15 +28,21 @@ class EmployeeIncidentRepository {
       final responseData = response.data as Map<String, dynamic>;
       if (responseData['success'] == true && responseData['data'] != null) {
         final data = responseData['data'];
-        final List<dynamic> items = data is Map<String, dynamic> && data['items'] != null
-            ? data['items'] as List<dynamic>
-            : (data is List<dynamic> ? data : []);
+        final List<dynamic> items =
+            data is Map<String, dynamic> && data['items'] != null
+                ? data['items'] as List<dynamic>
+                : (data is List<dynamic> ? data : []);
 
         return items
-            .map((json) => TrackedIncidentModel.fromJson(json as Map<String, dynamic>))
+            .map(
+              (json) =>
+                  TrackedIncidentModel.fromJson(json as Map<String, dynamic>),
+            )
             .toList();
       } else {
-        final message = responseData['message'] as String? ?? 'Failed to load reported incidents.';
+        final message =
+            responseData['message'] as String? ??
+            'Failed to load reported incidents.';
         throw Exception(message);
       }
     } on DioException catch (e) {
@@ -58,7 +64,8 @@ class EmployeeIncidentRepository {
         );
 
         // If a team is assigned, fetch the team's latest GPS coordinate
-        if (incident.assignedTeamId != null && incident.assignedTeamId!.isNotEmpty) {
+        if (incident.assignedTeamId != null &&
+            incident.assignedTeamId!.isNotEmpty) {
           try {
             final teamResponse = await _apiClient.dio.get(
               ApiEndpoints.teamById(incident.assignedTeamId!),
@@ -66,8 +73,10 @@ class EmployeeIncidentRepository {
             final teamData = teamResponse.data as Map<String, dynamic>;
             if (teamData['success'] == true && teamData['data'] != null) {
               final teamJson = teamData['data'] as Map<String, dynamic>;
-              final double? teamLat = (teamJson['currentLatitude'] as num?)?.toDouble();
-              final double? teamLng = (teamJson['currentLongitude'] as num?)?.toDouble();
+              final double? teamLat =
+                  (teamJson['currentLatitude'] as num?)?.toDouble();
+              final double? teamLng =
+                  (teamJson['currentLongitude'] as num?)?.toDouble();
               final String? teamStatus = teamJson['status'] as String?;
               final String? leaderPhone = teamJson['leaderPhone'] as String?;
 
@@ -75,7 +84,8 @@ class EmployeeIncidentRepository {
                 teamLatitude: teamLat,
                 teamLongitude: teamLng,
                 assignedTeamStatus: teamStatus ?? incident.assignedTeamStatus,
-                assignedTeamLeaderPhone: leaderPhone ?? incident.assignedTeamLeaderPhone,
+                assignedTeamLeaderPhone:
+                    leaderPhone ?? incident.assignedTeamLeaderPhone,
               );
             }
           } catch (_) {
@@ -85,7 +95,9 @@ class EmployeeIncidentRepository {
 
         return incident;
       } else {
-        final message = responseData['message'] as String? ?? 'Failed to load incident details.';
+        final message =
+            responseData['message'] as String? ??
+            'Failed to load incident details.';
         throw Exception(message);
       }
     } on DioException catch (e) {
@@ -122,7 +134,9 @@ class EmployeeIncidentRepository {
           responseData['data'] as Map<String, dynamic>,
         );
       } else {
-        final message = responseData['message'] as String? ?? 'Failed to update incident details.';
+        final message =
+            responseData['message'] as String? ??
+            'Failed to update incident details.';
         throw Exception(message);
       }
     } on DioException catch (e) {
@@ -135,10 +149,7 @@ class EmployeeIncidentRepository {
     try {
       final fileName = file.path.split(Platform.pathSeparator).last;
       final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(
-          file.path,
-          filename: fileName,
-        ),
+        'file': await MultipartFile.fromFile(file.path, filename: fileName),
         'category': 'Incident',
       });
 
@@ -157,7 +168,8 @@ class EmployeeIncidentRepository {
         }
         throw Exception('Media upload succeeded but returned an empty URL.');
       } else {
-        final message = responseData['message'] as String? ?? 'Media upload failed.';
+        final message =
+            responseData['message'] as String? ?? 'Media upload failed.';
         throw Exception(message);
       }
     } on DioException catch (e) {
@@ -166,7 +178,8 @@ class EmployeeIncidentRepository {
   }
 
   String _extractErrorMessage(DioException error) {
-    if (error.response?.data != null && error.response?.data is Map<String, dynamic>) {
+    if (error.response?.data != null &&
+        error.response?.data is Map<String, dynamic>) {
       final data = error.response!.data as Map<String, dynamic>;
       if (data.containsKey('message')) {
         return data['message'] as String;

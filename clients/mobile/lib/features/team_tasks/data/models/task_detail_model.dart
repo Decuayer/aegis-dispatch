@@ -18,10 +18,13 @@ class TaskMediaModel {
       id: (json['id'] ?? json['Id'] ?? '').toString(),
       mediaUrl: (json['mediaUrl'] ?? json['MediaUrl'] ?? '').toString(),
       mediaType: (json['mediaType'] ?? json['MediaType'] ?? 'image').toString(),
-      thumbnailUrl: json['thumbnailUrl'] as String? ?? json['ThumbnailUrl'] as String?,
-      createdAt: json['createdAt'] != null
-          ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
-          : DateTime.now(),
+      thumbnailUrl:
+          json['thumbnailUrl'] as String? ?? json['ThumbnailUrl'] as String?,
+      createdAt:
+          json['createdAt'] != null
+              ? DateTime.tryParse(json['createdAt'].toString()) ??
+                  DateTime.now()
+              : DateTime.now(),
     );
   }
 
@@ -65,13 +68,19 @@ class IncidentReportModel {
       incidentId: (json['incidentId'] ?? json['IncidentId'] ?? '').toString(),
       teamId: (json['teamId'] ?? json['TeamId'] ?? '').toString(),
       teamName: (json['teamName'] ?? json['TeamName'] ?? '').toString(),
-      reportedByUserId: (json['reportedByUserId'] ?? json['ReportedByUserId'] ?? '').toString(),
-      reportedByFullName: (json['reportedByFullName'] ?? json['ReportedByFullName'] ?? '').toString(),
+      reportedByUserId:
+          (json['reportedByUserId'] ?? json['ReportedByUserId'] ?? '')
+              .toString(),
+      reportedByFullName:
+          (json['reportedByFullName'] ?? json['ReportedByFullName'] ?? '')
+              .toString(),
       content: (json['content'] ?? json['Content'] ?? '').toString(),
       mediaUrl: json['mediaUrl'] as String? ?? json['MediaUrl'] as String?,
-      reportedAt: json['reportedAt'] != null
-          ? DateTime.tryParse(json['reportedAt'].toString()) ?? DateTime.now()
-          : DateTime.now(),
+      reportedAt:
+          json['reportedAt'] != null
+              ? DateTime.tryParse(json['reportedAt'].toString()) ??
+                  DateTime.now()
+              : DateTime.now(),
     );
   }
 
@@ -145,47 +154,73 @@ class TeamTaskModel {
     var rawMedia = json['mediaAttachments'] ?? json['MediaAttachments'] ?? [];
     List<TaskMediaModel> mediaList = [];
     if (rawMedia is List) {
-      mediaList = rawMedia
-          .map((m) => TaskMediaModel.fromJson(m as Map<String, dynamic>))
-          .toList();
+      mediaList =
+          rawMedia
+              .map((m) => TaskMediaModel.fromJson(m as Map<String, dynamic>))
+              .toList();
     }
 
     var rawReports = json['reports'] ?? json['Reports'] ?? [];
     List<IncidentReportModel> reportList = [];
     if (rawReports is List) {
-      reportList = rawReports
-          .map((r) => IncidentReportModel.fromJson(r as Map<String, dynamic>))
-          .toList();
+      reportList =
+          rawReports
+              .map(
+                (r) => IncidentReportModel.fromJson(r as Map<String, dynamic>),
+              )
+              .toList();
     }
 
     return TeamTaskModel(
       id: (json['id'] ?? json['Id'] ?? '').toString(),
       reporterId: (json['reporterId'] ?? json['ReporterId'] ?? '').toString(),
-      reporterFullName: (json['reporterFullName'] ?? json['ReporterFullName'] ?? '').toString(),
-      reporterPhone: (json['reporterPhone'] ?? json['ReporterPhone'] ?? '').toString(),
-      reporterDepartment: (json['reporterDepartment'] ?? json['ReporterDepartment'] ?? '').toString(),
-      reporterEmail: (json['reporterEmail'] ?? json['ReporterEmail'] ?? '').toString(),
-      reporterSubRole: json['reporterSubRole'] as String? ?? json['ReporterSubRole'] as String?,
-      reporterAvatarUrl: json['reporterAvatarUrl'] as String? ?? json['ReporterAvatarUrl'] as String?,
+      reporterFullName:
+          (json['reporterFullName'] ?? json['ReporterFullName'] ?? '')
+              .toString(),
+      reporterPhone:
+          (json['reporterPhone'] ?? json['ReporterPhone'] ?? '').toString(),
+      reporterDepartment:
+          (json['reporterDepartment'] ?? json['ReporterDepartment'] ?? '')
+              .toString(),
+      reporterEmail:
+          (json['reporterEmail'] ?? json['ReporterEmail'] ?? '').toString(),
+      reporterSubRole:
+          json['reporterSubRole'] as String? ??
+          json['ReporterSubRole'] as String?,
+      reporterAvatarUrl:
+          json['reporterAvatarUrl'] as String? ??
+          json['ReporterAvatarUrl'] as String?,
       category: (json['category'] ?? json['Category'] ?? '').toString(),
-      emergencyCode: (json['emergencyCode'] ?? json['EmergencyCode'] ?? '').toString(),
-      description: json['description'] as String? ?? json['Description'] as String?,
+      emergencyCode:
+          (json['emergencyCode'] ?? json['EmergencyCode'] ?? '').toString(),
+      description:
+          json['description'] as String? ?? json['Description'] as String?,
       mediaAttachments: mediaList,
       status: (json['status'] ?? json['Status'] ?? 'Assigned').toString(),
       latitude: double.tryParse(json['latitude']?.toString() ?? '0.0') ?? 0.0,
       longitude: double.tryParse(json['longitude']?.toString() ?? '0.0') ?? 0.0,
-      createdAt: json['createdAt'] != null
-          ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
-          : DateTime.now(),
-      assignedAt: json['assignedAt'] != null
-          ? DateTime.tryParse(json['assignedAt'].toString())
-          : null,
-      completedAt: json['completedAt'] != null
-          ? DateTime.tryParse(json['completedAt'].toString())
-          : null,
-      assignedTeamId: json['assignedTeamId'] as String? ?? json['AssignedTeamId'] as String?,
-      assignedTeamName: json['assignedTeamName'] as String? ?? json['AssignedTeamName'] as String?,
-      completionNotes: json['completionNotes'] as String? ?? json['CompletionNotes'] as String?,
+      createdAt:
+          json['createdAt'] != null
+              ? DateTime.tryParse(json['createdAt'].toString()) ??
+                  DateTime.now()
+              : DateTime.now(),
+      assignedAt:
+          json['assignedAt'] != null
+              ? DateTime.tryParse(json['assignedAt'].toString())
+              : null,
+      completedAt:
+          json['completedAt'] != null
+              ? DateTime.tryParse(json['completedAt'].toString())
+              : null,
+      assignedTeamId:
+          json['assignedTeamId'] as String? ??
+          json['AssignedTeamId'] as String?,
+      assignedTeamName:
+          json['assignedTeamName'] as String? ??
+          json['AssignedTeamName'] as String?,
+      completionNotes:
+          json['completionNotes'] as String? ??
+          json['CompletionNotes'] as String?,
       reports: reportList,
     );
   }

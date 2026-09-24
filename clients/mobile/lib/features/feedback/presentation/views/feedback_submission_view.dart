@@ -23,14 +23,16 @@ class FeedbackSubmissionView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final repo = feedbackRepository ?? RepositoryProvider.of<FeedbackRepository>(context);
-    final pickerService = mediaPickerService ?? RepositoryProvider.of<MediaPickerService>(context);
+    final repo =
+        feedbackRepository ??
+        RepositoryProvider.of<FeedbackRepository>(context);
+    final pickerService =
+        mediaPickerService ??
+        RepositoryProvider.of<MediaPickerService>(context);
 
     return BlocProvider(
       create: (ctx) => FeedbackBloc(repository: repo),
-      child: _FeedbackSubmissionViewContent(
-        mediaPickerService: pickerService,
-      ),
+      child: _FeedbackSubmissionViewContent(mediaPickerService: pickerService),
     );
   }
 }
@@ -38,9 +40,7 @@ class FeedbackSubmissionView extends StatelessWidget {
 class _FeedbackSubmissionViewContent extends StatefulWidget {
   final MediaPickerService mediaPickerService;
 
-  const _FeedbackSubmissionViewContent({
-    required this.mediaPickerService,
-  });
+  const _FeedbackSubmissionViewContent({required this.mediaPickerService});
 
   @override
   State<_FeedbackSubmissionViewContent> createState() =>
@@ -72,7 +72,10 @@ class _FeedbackSubmissionViewContentState
     );
   }
 
-  void _showMediaPickerOptions(BuildContext context, int currentAttachmentsCount) {
+  void _showMediaPickerOptions(
+    BuildContext context,
+    int currentAttachmentsCount,
+  ) {
     if (currentAttachmentsCount >= CreateFeedbackRequest.maxAttachmentsCount) {
       _showErrorMessage(
         'Maximum ${CreateFeedbackRequest.maxAttachmentsCount} attachments allowed.',
@@ -94,50 +97,75 @@ class _FeedbackSubmissionViewContentState
               mainAxisSize: MainAxisSize.min,
               children: [
                 ListTile(
-                  leading: const Icon(Icons.photo_camera_rounded, color: AppColors.primary),
+                  leading: const Icon(
+                    Icons.photo_camera_rounded,
+                    color: AppColors.primary,
+                  ),
                   title: const Text('Take Photo'),
                   subtitle: const Text('Capture photo with camera (max 10 MB)'),
                   onTap: () async {
                     Navigator.pop(sheetContext);
                     try {
-                      final photo = await widget.mediaPickerService.pickImageFromCamera();
+                      final photo =
+                          await widget.mediaPickerService.pickImageFromCamera();
                       if (photo != null && context.mounted) {
-                        context.read<FeedbackBloc>().add(FeedbackMediaAdded([photo]));
+                        context.read<FeedbackBloc>().add(
+                          FeedbackMediaAdded([photo]),
+                        );
                       }
                     } catch (e) {
-                      _showErrorMessage(e.toString().replaceAll('Exception: ', ''));
+                      _showErrorMessage(
+                        e.toString().replaceAll('Exception: ', ''),
+                      );
                     }
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.videocam_rounded, color: AppColors.primary),
+                  leading: const Icon(
+                    Icons.videocam_rounded,
+                    color: AppColors.primary,
+                  ),
                   title: const Text('Record Video'),
                   subtitle: const Text('Record video with camera (max 50 MB)'),
                   onTap: () async {
                     Navigator.pop(sheetContext);
                     try {
-                      final video = await widget.mediaPickerService.recordVideoFromCamera();
+                      final video =
+                          await widget.mediaPickerService
+                              .recordVideoFromCamera();
                       if (video != null && context.mounted) {
-                        context.read<FeedbackBloc>().add(FeedbackMediaAdded([video]));
+                        context.read<FeedbackBloc>().add(
+                          FeedbackMediaAdded([video]),
+                        );
                       }
                     } catch (e) {
-                      _showErrorMessage(e.toString().replaceAll('Exception: ', ''));
+                      _showErrorMessage(
+                        e.toString().replaceAll('Exception: ', ''),
+                      );
                     }
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.perm_media_rounded, color: AppColors.primary),
+                  leading: const Icon(
+                    Icons.perm_media_rounded,
+                    color: AppColors.primary,
+                  ),
                   title: const Text('Choose from Gallery'),
                   subtitle: const Text('Select photos or videos (batch)'),
                   onTap: () async {
                     Navigator.pop(sheetContext);
                     try {
-                      final media = await widget.mediaPickerService.pickMultipleMedia();
+                      final media =
+                          await widget.mediaPickerService.pickMultipleMedia();
                       if (media.isNotEmpty && context.mounted) {
-                        context.read<FeedbackBloc>().add(FeedbackMediaAdded(media));
+                        context.read<FeedbackBloc>().add(
+                          FeedbackMediaAdded(media),
+                        );
                       }
                     } catch (e) {
-                      _showErrorMessage(e.toString().replaceAll('Exception: ', ''));
+                      _showErrorMessage(
+                        e.toString().replaceAll('Exception: ', ''),
+                      );
                     }
                   },
                 ),
@@ -163,13 +191,14 @@ class _FeedbackSubmissionViewContentState
           showDialog(
             context: context,
             barrierDismissible: false,
-            builder: (dialogCtx) => FeedbackSuccessDialog(
-              response: state.response,
-              onDismiss: () {
-                Navigator.of(dialogCtx).pop();
-                Navigator.of(context).pop();
-              },
-            ),
+            builder:
+                (dialogCtx) => FeedbackSuccessDialog(
+                  response: state.response,
+                  onDismiss: () {
+                    Navigator.of(dialogCtx).pop();
+                    Navigator.of(context).pop();
+                  },
+                ),
           );
         } else if (state is FeedbackFailure) {
           _showErrorMessage(state.errorMessage);
@@ -180,13 +209,14 @@ class _FeedbackSubmissionViewContentState
 
         return Scaffold(
           backgroundColor: AppColors.background,
-          appBar: AppBar(
-            title: const Text('Send Feedback'),
-          ),
+          appBar: AppBar(title: const Text('Send Feedback')),
           body: Stack(
             children: [
               SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -215,32 +245,47 @@ class _FeedbackSubmissionViewContentState
                             Wrap(
                               spacing: 8,
                               runSpacing: 8,
-                              children: FeedbackCategory.values.map((cat) {
-                                final isSelected = state.category == cat;
-                                return ChoiceChip(
-                                  avatar: Icon(
-                                    cat.icon,
-                                    size: 18,
-                                    color: isSelected ? Colors.white : AppColors.textSecondary,
-                                  ),
-                                  label: Text(cat.label),
-                                  selected: isSelected,
-                                  selectedColor: AppColors.primary,
-                                  backgroundColor: AppColors.background,
-                                  labelStyle: TextStyle(
-                                    color: isSelected ? Colors.white : AppColors.textPrimary,
-                                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                                    fontSize: 13,
-                                  ),
-                                  onSelected: isSubmitting
-                                      ? null
-                                      : (_) {
-                                          context
-                                              .read<FeedbackBloc>()
-                                              .add(FeedbackCategoryChanged(cat));
-                                        },
-                                );
-                              }).toList(),
+                              children:
+                                  FeedbackCategory.values.map((cat) {
+                                    final isSelected = state.category == cat;
+                                    return ChoiceChip(
+                                      avatar: Icon(
+                                        cat.icon,
+                                        size: 18,
+                                        color:
+                                            isSelected
+                                                ? Colors.white
+                                                : AppColors.textSecondary,
+                                      ),
+                                      label: Text(cat.label),
+                                      selected: isSelected,
+                                      selectedColor: AppColors.primary,
+                                      backgroundColor: AppColors.background,
+                                      labelStyle: TextStyle(
+                                        color:
+                                            isSelected
+                                                ? Colors.white
+                                                : AppColors.textPrimary,
+                                        fontWeight:
+                                            isSelected
+                                                ? FontWeight.w600
+                                                : FontWeight.normal,
+                                        fontSize: 13,
+                                      ),
+                                      onSelected:
+                                          isSubmitting
+                                              ? null
+                                              : (_) {
+                                                context
+                                                    .read<FeedbackBloc>()
+                                                    .add(
+                                                      FeedbackCategoryChanged(
+                                                        cat,
+                                                      ),
+                                                    );
+                                              },
+                                    );
+                                  }).toList(),
                             ),
                           ],
                         ),
@@ -273,17 +318,21 @@ class _FeedbackSubmissionViewContentState
                               maxLength: CreateFeedbackRequest.maxTitleLength,
                               decoration: const InputDecoration(
                                 labelText: 'Title *',
-                                hintText: 'Brief summary of issue or suggestion',
+                                hintText:
+                                    'Brief summary of issue or suggestion',
                                 prefixIcon: Icon(Icons.title_rounded, size: 20),
                               ),
                               onChanged: (val) {
-                                context.read<FeedbackBloc>().add(FeedbackTitleChanged(val));
+                                context.read<FeedbackBloc>().add(
+                                  FeedbackTitleChanged(val),
+                                );
                               },
                               validator: (val) {
                                 if (val == null || val.trim().isEmpty) {
                                   return 'Title is required.';
                                 }
-                                if (val.trim().length > CreateFeedbackRequest.maxTitleLength) {
+                                if (val.trim().length >
+                                    CreateFeedbackRequest.maxTitleLength) {
                                   return 'Title must not exceed ${CreateFeedbackRequest.maxTitleLength} characters.';
                                 }
                                 return null;
@@ -295,20 +344,26 @@ class _FeedbackSubmissionViewContentState
                               enabled: !isSubmitting,
                               minLines: 4,
                               maxLines: 8,
-                              maxLength: CreateFeedbackRequest.maxDescriptionLength,
+                              maxLength:
+                                  CreateFeedbackRequest.maxDescriptionLength,
                               decoration: const InputDecoration(
                                 labelText: 'Description *',
-                                hintText: 'Describe details, steps to reproduce, or operational impact...',
+                                hintText:
+                                    'Describe details, steps to reproduce, or operational impact...',
                                 alignLabelWithHint: true,
                               ),
                               onChanged: (val) {
-                                context.read<FeedbackBloc>().add(FeedbackDescriptionChanged(val));
+                                context.read<FeedbackBloc>().add(
+                                  FeedbackDescriptionChanged(val),
+                                );
                               },
                               validator: (val) {
                                 if (val == null || val.trim().isEmpty) {
                                   return 'Description is required.';
                                 }
-                                if (val.trim().length > CreateFeedbackRequest.maxDescriptionLength) {
+                                if (val.trim().length >
+                                    CreateFeedbackRequest
+                                        .maxDescriptionLength) {
                                   return 'Description must not exceed ${CreateFeedbackRequest.maxDescriptionLength} characters.';
                                 }
                                 return null;
@@ -363,13 +418,14 @@ class _FeedbackSubmissionViewContentState
                             if (state.attachments.isNotEmpty) ...[
                               MediaPreviewGrid(
                                 mediaFiles: state.attachments,
-                                onRemove: isSubmitting
-                                    ? (_) {}
-                                    : (index) {
-                                        context
-                                            .read<FeedbackBloc>()
-                                            .add(FeedbackMediaRemoved(index));
-                                      },
+                                onRemove:
+                                    isSubmitting
+                                        ? (_) {}
+                                        : (index) {
+                                          context.read<FeedbackBloc>().add(
+                                            FeedbackMediaRemoved(index),
+                                          );
+                                        },
                               ),
                               const SizedBox(height: 12),
                             ],
@@ -379,16 +435,29 @@ class _FeedbackSubmissionViewContentState
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                side: const BorderSide(color: AppColors.primary),
+                                side: const BorderSide(
+                                  color: AppColors.primary,
+                                ),
                               ),
-                              icon: const Icon(Icons.add_photo_alternate_outlined, size: 20),
+                              icon: const Icon(
+                                Icons.add_photo_alternate_outlined,
+                                size: 20,
+                              ),
                               label: Text(
-                                state.attachments.isEmpty ? 'Attach Media' : 'Add More Media',
-                                style: const TextStyle(fontWeight: FontWeight.w600),
+                                state.attachments.isEmpty
+                                    ? 'Attach Media'
+                                    : 'Add More Media',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
-                              onPressed: isSubmitting
-                                  ? null
-                                  : () => _showMediaPickerOptions(context, state.attachments.length),
+                              onPressed:
+                                  isSubmitting
+                                      ? null
+                                      : () => _showMediaPickerOptions(
+                                        context,
+                                        state.attachments.length,
+                                      ),
                             ),
                           ],
                         ),
@@ -398,16 +467,17 @@ class _FeedbackSubmissionViewContentState
                       // Submit Button
                       ElevatedButton(
                         onPressed: isSubmitting ? null : _onSubmit,
-                        child: isSubmitting
-                            ? const SizedBox(
-                                height: 22,
-                                width: 22,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2.2,
-                                ),
-                              )
-                            : const Text('Submit Feedback'),
+                        child:
+                            isSubmitting
+                                ? const SizedBox(
+                                  height: 22,
+                                  width: 22,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2.2,
+                                  ),
+                                )
+                                : const Text('Submit Feedback'),
                       ),
                       const SizedBox(height: 24),
                     ],
@@ -423,7 +493,10 @@ class _FeedbackSubmissionViewContentState
                     child: Card(
                       elevation: 4,
                       child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 20,
+                        ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [

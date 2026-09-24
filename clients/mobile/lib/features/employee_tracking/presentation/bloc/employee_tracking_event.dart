@@ -36,10 +36,7 @@ class TeamAssignedReceived extends EmployeeTrackingEvent {
   final String incidentId;
   final String teamId;
 
-  const TeamAssignedReceived({
-    required this.incidentId,
-    required this.teamId,
-  });
+  const TeamAssignedReceived({required this.incidentId, required this.teamId});
 }
 
 class TeamLocationReceived extends EmployeeTrackingEvent {

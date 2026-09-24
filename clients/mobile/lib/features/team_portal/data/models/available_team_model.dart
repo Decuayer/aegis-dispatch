@@ -23,13 +23,22 @@ class AvailableTeamModel {
       id: (json['id'] ?? json['Id'] ?? '').toString(),
       teamName: (json['teamName'] ?? json['TeamName'] ?? '').toString(),
       leaderId: json['leaderId'] as String? ?? json['LeaderId'] as String?,
-      leaderFullName: json['leaderFullName'] as String? ?? json['LeaderFullName'] as String?,
-      memberCount: int.tryParse((json['memberCount'] ?? json['MemberCount'] ?? 0).toString()) ?? 0,
-      createdAt: json['createdAt'] != null
-          ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
-          : (json['CreatedAt'] != null
-              ? DateTime.tryParse(json['CreatedAt'].toString()) ?? DateTime.now()
-              : DateTime.now()),
+      leaderFullName:
+          json['leaderFullName'] as String? ??
+          json['LeaderFullName'] as String?,
+      memberCount:
+          int.tryParse(
+            (json['memberCount'] ?? json['MemberCount'] ?? 0).toString(),
+          ) ??
+          0,
+      createdAt:
+          json['createdAt'] != null
+              ? DateTime.tryParse(json['createdAt'].toString()) ??
+                  DateTime.now()
+              : (json['CreatedAt'] != null
+                  ? DateTime.tryParse(json['CreatedAt'].toString()) ??
+                      DateTime.now()
+                  : DateTime.now()),
     );
   }
 

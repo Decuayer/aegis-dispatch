@@ -22,10 +22,7 @@ class JoinTeamRequested extends TeamPortalEvent {
   final String teamId;
   final String userId;
 
-  const JoinTeamRequested({
-    required this.teamId,
-    required this.userId,
-  });
+  const JoinTeamRequested({required this.teamId, required this.userId});
 }
 
 /// Dispatched when submitting the 'Create New Team' form.
@@ -72,10 +69,7 @@ class LeaveTeamRequested extends TeamPortalEvent {
   final String teamId;
   final String userId;
 
-  const LeaveTeamRequested({
-    required this.teamId,
-    required this.userId,
-  });
+  const LeaveTeamRequested({required this.teamId, required this.userId});
 }
 
 /// Dispatched by the team leader to dismiss a member from the roster.
@@ -83,10 +77,7 @@ class RemoveMemberRequested extends TeamPortalEvent {
   final String teamId;
   final String memberId;
 
-  const RemoveMemberRequested({
-    required this.teamId,
-    required this.memberId,
-  });
+  const RemoveMemberRequested({required this.teamId, required this.memberId});
 }
 
 /// Dispatched by the leader to toggle readiness between Idle and Busy.
@@ -94,10 +85,7 @@ class ToggleTeamStatusRequested extends TeamPortalEvent {
   final String teamId;
   final TeamStatus status;
 
-  const ToggleTeamStatusRequested({
-    required this.teamId,
-    required this.status,
-  });
+  const ToggleTeamStatusRequested({required this.teamId, required this.status});
 }
 
 /// Dispatched by an active member to toggle personal duty (Available / OffDuty).

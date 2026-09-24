@@ -10,7 +10,7 @@ class AssignedTeamInfoCard extends StatelessWidget {
   final String? leaderPhone;
   final int? memberCount;
   final String? operationalStatus; // Forwarded, EnRoute, OnScene, Busy
-  
+
   const AssignedTeamInfoCard({
     super.key,
     required this.teamName,
@@ -99,7 +99,11 @@ class AssignedTeamInfoCard extends StatelessWidget {
                           color: AppColors.primary.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.shield_outlined, color: AppColors.primary, size: 20),
+                        child: const Icon(
+                          Icons.shield_outlined,
+                          color: AppColors.primary,
+                          size: 20,
+                        ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -125,7 +129,10 @@ class AssignedTeamInfoCard extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
@@ -161,7 +168,9 @@ class AssignedTeamInfoCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      memberCount != null ? '$memberCount Responders' : 'Field Crew',
+                      memberCount != null
+                          ? '$memberCount Responders'
+                          : 'Field Crew',
                       style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.textSecondary,
@@ -179,12 +188,18 @@ class AssignedTeamInfoCard extends StatelessWidget {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
                     ),
                     icon: const Icon(Icons.phone_in_talk_rounded, size: 16),
                     label: const Text(
                       'Call',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     onPressed: () => _makePhoneCall(context, leaderPhone!),
                   ),

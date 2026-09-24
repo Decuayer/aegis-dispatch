@@ -46,17 +46,23 @@ class _TaskRouteMapViewState extends State<TaskRouteMapView> {
 
   void _fitRouteBounds() {
     try {
-      final points = widget.routePoints.isNotEmpty
-          ? widget.routePoints
-          : [widget.teamLocation, widget.incidentLocation];
+      final points =
+          widget.routePoints.isNotEmpty
+              ? widget.routePoints
+              : [widget.teamLocation, widget.incidentLocation];
 
       if (points.length >= 2) {
         final bounds = LatLngBounds.fromPoints(points);
-        final latDelta = (bounds.northEast.latitude - bounds.southWest.latitude).abs();
-        final lngDelta = (bounds.northEast.longitude - bounds.southWest.longitude).abs();
+        final latDelta =
+            (bounds.northEast.latitude - bounds.southWest.latitude).abs();
+        final lngDelta =
+            (bounds.northEast.longitude - bounds.southWest.longitude).abs();
 
         if (latDelta < 0.0005 && lngDelta < 0.0005) {
-          _mapController.move(widget.incidentLocation, FacilityGeoConstants.defaultZoom);
+          _mapController.move(
+            widget.incidentLocation,
+            FacilityGeoConstants.defaultZoom,
+          );
         } else {
           _mapController.fitCamera(
             CameraFit.bounds(
@@ -67,10 +73,16 @@ class _TaskRouteMapViewState extends State<TaskRouteMapView> {
           );
         }
       } else {
-        _mapController.move(widget.incidentLocation, FacilityGeoConstants.defaultZoom);
+        _mapController.move(
+          widget.incidentLocation,
+          FacilityGeoConstants.defaultZoom,
+        );
       }
     } catch (_) {
-      _mapController.move(widget.incidentLocation, FacilityGeoConstants.defaultZoom);
+      _mapController.move(
+        widget.incidentLocation,
+        FacilityGeoConstants.defaultZoom,
+      );
     }
   }
 
@@ -105,13 +117,17 @@ class _TaskRouteMapViewState extends State<TaskRouteMapView> {
               options: MapOptions(
                 initialCenter: widget.incidentLocation,
                 initialZoom: FacilityGeoConstants.defaultZoom,
-                minZoom: isLocked
-                    ? FacilityGeoConstants.lockedMinZoom
-                    : FacilityGeoConstants.unlockedMinZoom,
+                minZoom:
+                    isLocked
+                        ? FacilityGeoConstants.lockedMinZoom
+                        : FacilityGeoConstants.unlockedMinZoom,
                 maxZoom: FacilityGeoConstants.maxZoom,
-                cameraConstraint: isLocked
-                    ? CameraConstraint.contain(bounds: FacilityGeoConstants.facilityBounds)
-                    : const CameraConstraint.unconstrained(),
+                cameraConstraint:
+                    isLocked
+                        ? CameraConstraint.contain(
+                          bounds: FacilityGeoConstants.facilityBounds,
+                        )
+                        : const CameraConstraint.unconstrained(),
               ),
               children: [
                 TileLayer(
@@ -124,7 +140,10 @@ class _TaskRouteMapViewState extends State<TaskRouteMapView> {
                       Polyline(
                         points: widget.routePoints,
                         strokeWidth: 4.5,
-                        color: widget.isRouteFallback ? AppColors.warning : AppColors.primary,
+                        color:
+                            widget.isRouteFallback
+                                ? AppColors.warning
+                                : AppColors.primary,
                       ),
                     ],
                   ),
@@ -163,7 +182,11 @@ class _TaskRouteMapViewState extends State<TaskRouteMapView> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.timer_outlined, color: Colors.white, size: 14),
+                  const Icon(
+                    Icons.timer_outlined,
+                    color: Colors.white,
+                    size: 14,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     '${widget.estimatedMinutes} min (${widget.distanceKm} km)',
@@ -196,7 +219,9 @@ class _TaskRouteMapViewState extends State<TaskRouteMapView> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    isLocked ? Icons.lock_outline_rounded : Icons.lock_open_rounded,
+                    isLocked
+                        ? Icons.lock_outline_rounded
+                        : Icons.lock_open_rounded,
                     color: isLocked ? AppColors.secondary : Colors.white70,
                     size: 13,
                   ),

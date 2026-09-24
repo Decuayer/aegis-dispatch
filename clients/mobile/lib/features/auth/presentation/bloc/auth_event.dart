@@ -13,10 +13,7 @@ class AuthLoginRequested extends AuthEvent {
   final String email;
   final String password;
 
-  const AuthLoginRequested({
-    required this.email,
-    required this.password,
-  });
+  const AuthLoginRequested({required this.email, required this.password});
 }
 
 class AuthRegisterRequested extends AuthEvent {
@@ -29,6 +26,18 @@ class AuthGoogleLoginRequested extends AuthEvent {
   final String idToken;
 
   const AuthGoogleLoginRequested({required this.idToken});
+}
+
+class AuthGoogleRegisterRequested extends AuthEvent {
+  final String idToken;
+  final String? phone;
+  final String? department;
+
+  const AuthGoogleRegisterRequested({
+    required this.idToken,
+    this.phone,
+    this.department,
+  });
 }
 
 class AuthUserUpdated extends AuthEvent {

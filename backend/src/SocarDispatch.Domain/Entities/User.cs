@@ -16,6 +16,8 @@ public class User
     public string? AvatarUrl { get; set; }
     public string? DeviceToken { get; set; }
     public DateTime? DeviceTokenUpdatedAt { get; set; }
+    public string? GoogleId { get; set; }
+    public string? GoogleEmail { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     // Navigation Properties

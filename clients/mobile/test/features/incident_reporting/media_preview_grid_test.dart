@@ -24,24 +24,28 @@ void main() {
     }
   });
 
-  Widget createWidget(List<SelectedMediaFile> files, void Function(int) onRemove) {
+  Widget createWidget(
+    List<SelectedMediaFile> files,
+    void Function(int) onRemove,
+  ) {
     return MaterialApp(
       home: Scaffold(
-        body: MediaPreviewGrid(
-          mediaFiles: files,
-          onRemove: onRemove,
-        ),
+        body: MediaPreviewGrid(mediaFiles: files, onRemove: onRemove),
       ),
     );
   }
 
   group('MediaPreviewGrid Widget Tests', () {
-    testWidgets('renders empty SizedBox when mediaFiles is empty', (tester) async {
+    testWidgets('renders empty SizedBox when mediaFiles is empty', (
+      tester,
+    ) async {
       await tester.pumpWidget(createWidget([], (_) {}));
       expect(find.byType(GridView), findsNothing);
     });
 
-    testWidgets('renders media cards, size badge, and triggers onRemove', (tester) async {
+    testWidgets('renders media cards, size badge, and triggers onRemove', (
+      tester,
+    ) async {
       int? removedIndex;
 
       final files = [
@@ -60,9 +64,11 @@ void main() {
         ),
       ];
 
-      await tester.pumpWidget(createWidget(files, (index) {
-        removedIndex = index;
-      }));
+      await tester.pumpWidget(
+        createWidget(files, (index) {
+          removedIndex = index;
+        }),
+      );
 
       // Verify human-readable size badges
       expect(find.text('500.0 KB'), findsOneWidget);

@@ -1,0 +1,77 @@
+# ==============================================================================
+# SOCAR Dispatch — Root EditorConfig Code Style & Quality Standards
+# ==============================================================================
+
+root = true
+
+# All files
+[*]
+indent_style = space
+indent_size = 4
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# JSON, YAML, Markdown, XML
+[*.{json,yml,yaml,md,xml,config,props,targets,slnx}]
+indent_size = 2
+
+# C# Files
+[*.cs]
+indent_size = 4
+
+# Core Language Rules
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = true:suggestion
+csharp_style_expression_bodied_methods = when_on_single_line:suggestion
+csharp_style_expression_bodied_constructors = when_on_single_line:suggestion
+csharp_style_expression_bodied_operators = when_on_single_line:suggestion
+csharp_style_expression_bodied_properties = true:suggestion
+csharp_style_expression_bodied_indexers = true:suggestion
+csharp_style_expression_bodied_accessors = true:suggestion
+csharp_style_pattern_matching_over_is_syntax = true:suggestion
+csharp_style_pattern_matching_over_as_syntax = true:suggestion
+csharp_style_inlined_variable_declaration = true:suggestion
+csharp_style_throw_expression = true:suggestion
+csharp_style_conditional_delegate_call = true:suggestion
+csharp_style_prefer_null_check_over_type_check = true:suggestion
+csharp_style_unused_value_assignment_preference = discard_variable:suggestion
+
+# Null Checking Preferences
+csharp_style_null_check_over_type_check = true:suggestion
+
+# Formatting & Spacing
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+csharp_space_after_cast = false
+csharp_space_after_keywords_in_control_flow_statements = true
+csharp_space_between_method_declaration_parameter_list_parentheses = false
+csharp_space_between_method_call_parameter_list_parentheses = false
+
+# Organization of Usings
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+
+# Diagnostic & Quality Rules
+dotnet_diagnostic.CA1822.severity = suggestion   # Member can be made static
+dotnet_diagnostic.CA1860.severity = suggestion   # Avoid using Enumerable.Any() extension method
+dotnet_diagnostic.IDE0005.severity = suggestion   # Using directive is unnecessary
+dotnet_diagnostic.IDE0051.severity = suggestion   # Remove unused private members
+dotnet_diagnostic.IDE0052.severity = suggestion   # Remove unread private members
+
+# Web Client (Blazor / Razor)
+[*.razor]
+indent_size = 4
+tab_width = 4
+
+[*.{html,htm,css,scss,js,ts}]
+indent_size = 2
+
+# Dart & Flutter files
+[*.dart]
+indent_size = 2
+max_line_length = 120

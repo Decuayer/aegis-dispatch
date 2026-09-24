@@ -9,13 +9,16 @@ class MockEmptySecureStorage extends SecureStorageService {
 
 void main() {
   group('LocationStreamRepository Unit Tests', () {
-    test('startTracking returns false when user access token is null', () async {
-      final repository = LocationStreamRepository(
-        storageService: MockEmptySecureStorage(),
-      );
+    test(
+      'startTracking returns false when user access token is null',
+      () async {
+        final repository = LocationStreamRepository(
+          storageService: MockEmptySecureStorage(),
+        );
 
-      final result = await repository.startTracking('mock-team-123');
-      expect(result, isFalse);
-    });
+        final result = await repository.startTracking('mock-team-123');
+        expect(result, isFalse);
+      },
+    );
   });
 }

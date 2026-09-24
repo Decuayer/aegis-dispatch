@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/services/google_auth_service.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/utils/validators.dart';
 import '../bloc/auth_bloc.dart';
@@ -24,7 +25,7 @@ class _LoginViewState extends State<LoginView> {
 
   @override
   void dispose() {
-    _emailController.dispose;
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -32,11 +33,31 @@ class _LoginViewState extends State<LoginView> {
   void _onLoginPressed() {
     if (_formKey.currentState?.validate() ?? false) {
       context.read<AuthBloc>().add(
-            AuthLoginRequested(
-              email: _emailController.text.trim(),
-              password: _passwordController.text,
-            ),
-          );
+        AuthLoginRequested(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        ),
+      );
+    }
+  }
+
+  Future<void> _onGoogleLoginPressed() async {
+    try {
+      final idToken = await GoogleAuthService.signInAndGetIdToken();
+      if (idToken == null) return;
+      if (!mounted) return;
+      context.read<AuthBloc>().add(AuthGoogleLoginRequested(idToken: idToken));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Google Sign-In failed: ${e.toString().replaceAll('Exception: ', '')}',
+          ),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -65,7 +86,10 @@ class _LoginViewState extends State<LoginView> {
 
             return Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -172,21 +196,24 @@ class _LoginViewState extends State<LoginView> {
                             const SizedBox(height: 24),
                             ElevatedButton(
                               onPressed: isLoading ? null : _onLoginPressed,
-                              child: isLoading
-                                  ? const SizedBox(
-                                      height: 22,
-                                      width: 22,
-                                      child: CircularProgressIndicator(
-                                        color: Colors.white,
-                                        strokeWidth: 2.2,
-                                      ),
-                                    )
-                                  : const Text('Sign In'),
+                              child:
+                                  isLoading
+                                      ? const SizedBox(
+                                        height: 22,
+                                        width: 22,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2.2,
+                                        ),
+                                      )
+                                      : const Text('Sign In'),
                             ),
                             const SizedBox(height: 20),
                             Row(
                               children: const [
-                                Expanded(child: Divider(color: AppColors.border)),
+                                Expanded(
+                                  child: Divider(color: AppColors.border),
+                                ),
                                 Padding(
                                   padding: EdgeInsets.symmetric(horizontal: 12),
                                   child: Text(
@@ -198,21 +225,16 @@ class _LoginViewState extends State<LoginView> {
                                     ),
                                   ),
                                 ),
-                                Expanded(child: Divider(color: AppColors.border)),
+                                Expanded(
+                                  child: Divider(color: AppColors.border),
+                                ),
                               ],
                             ),
                             const SizedBox(height: 20),
                             SocialLoginButton(
                               text: 'Sign in with Google',
                               isLoading: isLoading,
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Google Sign-In will be configured with OAuth credentials.'),
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
-                              },
+                              onPressed: _onGoogleLoginPressed,
                             ),
                             const SizedBox(height: 18),
                             Row(
@@ -226,15 +248,17 @@ class _LoginViewState extends State<LoginView> {
                                   ),
                                 ),
                                 GestureDetector(
-                                  onTap: isLoading
-                                      ? null
-                                      : () {
-                                          Navigator.of(context).push(
-                                            MaterialPageRoute(
-                                              builder: (_) => const RegisterView(),
-                                            ),
-                                          );
-                                        },
+                                  onTap:
+                                      isLoading
+                                          ? null
+                                          : () {
+                                            Navigator.of(context).push(
+                                              MaterialPageRoute(
+                                                builder:
+                                                    (_) => const RegisterView(),
+                                              ),
+                                            );
+                                          },
                                   child: const Text(
                                     'Register as Employee',
                                     style: TextStyle(

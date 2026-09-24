@@ -19,9 +19,11 @@ class FeedbackMediaModel {
       feedbackId: json['feedbackId'] as String? ?? '',
       mediaUrl: json['mediaUrl'] as String? ?? '',
       mediaType: json['mediaType'] as String? ?? '',
-      createdAt: json['createdAt'] != null
-          ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
-          : DateTime.now(),
+      createdAt:
+          json['createdAt'] != null
+              ? DateTime.tryParse(json['createdAt'].toString()) ??
+                  DateTime.now()
+              : DateTime.now(),
     );
   }
 }
@@ -60,17 +62,25 @@ class FeedbackResponseModel {
       title: json['title'] as String? ?? '',
       description: json['description'] as String? ?? '',
       status: json['status']?.toString() ?? 'Pending',
-      createdAt: json['createdAt'] != null
-          ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
-          : DateTime.now(),
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.tryParse(json['updatedAt'].toString())
-          : null,
-      mediaAttachments: json['mediaAttachments'] != null
-          ? (json['mediaAttachments'] as List)
-              .map((item) => FeedbackMediaModel.fromJson(item as Map<String, dynamic>))
-              .toList()
-          : const [],
+      createdAt:
+          json['createdAt'] != null
+              ? DateTime.tryParse(json['createdAt'].toString()) ??
+                  DateTime.now()
+              : DateTime.now(),
+      updatedAt:
+          json['updatedAt'] != null
+              ? DateTime.tryParse(json['updatedAt'].toString())
+              : null,
+      mediaAttachments:
+          json['mediaAttachments'] != null
+              ? (json['mediaAttachments'] as List)
+                  .map(
+                    (item) => FeedbackMediaModel.fromJson(
+                      item as Map<String, dynamic>,
+                    ),
+                  )
+                  .toList()
+              : const [],
     );
   }
 }

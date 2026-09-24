@@ -54,20 +54,23 @@ class EmployeeTrackingLoaded extends EmployeeTrackingState {
   }) {
     return EmployeeTrackingLoaded(
       incidents: incidents ?? this.incidents,
-      selectedIncident: clearSelectedIncident
-          ? null
-          : (selectedIncident ?? this.selectedIncident),
+      selectedIncident:
+          clearSelectedIncident
+              ? null
+              : (selectedIncident ?? this.selectedIncident),
       activeRoute: clearRoute ? const [] : (activeRoute ?? this.activeRoute),
       distanceKm: clearRoute ? null : (distanceKm ?? this.distanceKm),
       etaMinutes: clearRoute ? null : (etaMinutes ?? this.etaMinutes),
       isRouteFallback: isRouteFallback ?? this.isRouteFallback,
       isUpdating: isUpdating ?? this.isUpdating,
-      updateSuccessMessage: clearFeedback
-          ? null
-          : (updateSuccessMessage ?? this.updateSuccessMessage),
-      updateErrorMessage: clearFeedback
-          ? null
-          : (updateErrorMessage ?? this.updateErrorMessage),
+      updateSuccessMessage:
+          clearFeedback
+              ? null
+              : (updateSuccessMessage ?? this.updateSuccessMessage),
+      updateErrorMessage:
+          clearFeedback
+              ? null
+              : (updateErrorMessage ?? this.updateErrorMessage),
     );
   }
 }

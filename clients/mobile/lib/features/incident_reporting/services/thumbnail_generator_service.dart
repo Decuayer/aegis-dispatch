@@ -1,14 +1,15 @@
 import 'dart:io';
+import 'package:flutter_video_thumbnail_plus/flutter_video_thumbnail_plus.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:video_thumbnail/video_thumbnail.dart';
 
-typedef VideoThumbnailGenerator = Future<String?> Function({
-  required String video,
-  String? thumbnailPath,
-  ImageFormat imageFormat,
-  int maxHeight,
-  int quality,
-});
+typedef VideoThumbnailGenerator =
+    Future<String?> Function({
+      required String video,
+      String? thumbnailPath,
+      ImageFormat imageFormat,
+      int maxHeight,
+      int quality,
+    });
 
 typedef TempDirectoryProvider = Future<Directory> Function();
 
@@ -19,8 +20,9 @@ class ThumbnailGeneratorService {
   ThumbnailGeneratorService({
     VideoThumbnailGenerator? thumbnailGenerator,
     TempDirectoryProvider? tempDirectoryProvider,
-  })  : _thumbnailGenerator = thumbnailGenerator ?? VideoThumbnail.thumbnailFile,
-        _tempDirectoryProvider = tempDirectoryProvider ?? getTemporaryDirectory;
+  }) : _thumbnailGenerator =
+           thumbnailGenerator ?? FlutterVideoThumbnailPlus.thumbnailFile,
+       _tempDirectoryProvider = tempDirectoryProvider ?? getTemporaryDirectory;
 
   /// Generates a lightweight JPEG thumbnail for the provided video file.
   Future<String?> generateVideoThumbnail(File videoFile) async {
@@ -31,7 +33,7 @@ class ThumbnailGeneratorService {
       final thumbnailPath = await _thumbnailGenerator(
         video: videoFile.path,
         thumbnailPath: tempDir.path,
-        imageFormat: ImageFormat.JPEG,
+        imageFormat: ImageFormat.jpeg,
         maxHeight: 256,
         quality: 75,
       );

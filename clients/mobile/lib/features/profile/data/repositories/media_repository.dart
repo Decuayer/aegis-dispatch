@@ -24,9 +24,7 @@ class MediaRepository {
       final response = await _apiClient.dio.post(
         ApiEndpoints.uploadMedia,
         data: formData,
-        options: Options(
-          contentType: 'multipart/form-data',
-        ),
+        options: Options(contentType: 'multipart/form-data'),
       );
 
       final responseData = response.data as Map<String, dynamic>;
@@ -36,7 +34,8 @@ class MediaRepository {
         );
         return mediaModel.mediaUrl;
       } else {
-        final message = responseData['message'] as String? ?? 'Media upload failed.';
+        final message =
+            responseData['message'] as String? ?? 'Media upload failed.';
         throw Exception(message);
       }
     } on DioException catch (e) {
@@ -46,7 +45,8 @@ class MediaRepository {
   }
 
   String _extractErrorMessage(DioException error) {
-    if (error.response?.data != null && error.response?.data is Map<String, dynamic>) {
+    if (error.response?.data != null &&
+        error.response?.data is Map<String, dynamic>) {
       final data = error.response!.data as Map<String, dynamic>;
       if (data['message'] != null) {
         return data['message'].toString();

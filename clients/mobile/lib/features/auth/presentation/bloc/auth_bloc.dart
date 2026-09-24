@@ -7,12 +7,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthRepository _authRepository;
 
   AuthBloc({required AuthRepository authRepository})
-      : _authRepository = authRepository,
-        super(const AuthInitial()) {
+    : _authRepository = authRepository,
+      super(const AuthInitial()) {
     on<AuthCheckRequested>(_onAuthCheckRequested);
     on<AuthLoginRequested>(_onAuthLoginRequested);
     on<AuthRegisterRequested>(_onAuthRegisterRequested);
     on<AuthGoogleLoginRequested>(_onAuthGoogleLoginRequested);
+    on<AuthGoogleRegisterRequested>(_onAuthGoogleRegisterRequested);
     on<AuthUserUpdated>(_onAuthUserUpdated);
     on<AuthLogoutRequested>(_onAuthLogoutRequested);
   }
@@ -76,10 +77,24 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  void _onAuthUserUpdated(
-    AuthUserUpdated event,
+  Future<void> _onAuthGoogleRegisterRequested(
+    AuthGoogleRegisterRequested event,
     Emitter<AuthState> emit,
-  ) {
+  ) async {
+    emit(const AuthLoading());
+    try {
+      final authResponse = await _authRepository.googleRegister(
+        idToken: event.idToken,
+        phone: event.phone,
+        department: event.department,
+      );
+      emit(Authenticated(authResponse.user));
+    } catch (e) {
+      emit(AuthFailure(e.toString().replaceAll('Exception: ', '')));
+    }
+  }
+
+  void _onAuthUserUpdated(AuthUserUpdated event, Emitter<AuthState> emit) {
     if (state is Authenticated) {
       emit(Authenticated(event.updatedUser));
     }

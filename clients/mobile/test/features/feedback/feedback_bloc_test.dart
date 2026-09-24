@@ -18,14 +18,17 @@ class FakeSecureStorage extends SecureStorageService {
 }
 
 class FakeFeedbackRepository extends FeedbackRepository {
-  FakeFeedbackRepository() : super(apiClient: ApiClient(storageService: FakeSecureStorage()));
+  FakeFeedbackRepository()
+    : super(apiClient: ApiClient(storageService: FakeSecureStorage()));
 
   bool shouldFail = false;
   String errorMessage = 'Server unreachable';
   CreateFeedbackRequest? capturedRequest;
 
   @override
-  Future<FeedbackResponseModel> submitFeedback(CreateFeedbackRequest request) async {
+  Future<FeedbackResponseModel> submitFeedback(
+    CreateFeedbackRequest request,
+  ) async {
     capturedRequest = request;
     if (shouldFail) {
       throw Exception(errorMessage);
@@ -83,92 +86,120 @@ void main() {
       expect(bloc.state.attachments, isEmpty);
     });
 
-    test('FeedbackTitleChanged, DescriptionChanged, and CategoryChanged update draft', () async {
-      bloc.add(const FeedbackTitleChanged('Pump issue'));
-      bloc.add(const FeedbackDescriptionChanged('Pressure dropping rapidly'));
-      bloc.add(const FeedbackCategoryChanged(FeedbackCategory.operationalIssue));
-      await pumpEventQueue();
+    test(
+      'FeedbackTitleChanged, DescriptionChanged, and CategoryChanged update draft',
+      () async {
+        bloc.add(const FeedbackTitleChanged('Pump issue'));
+        bloc.add(const FeedbackDescriptionChanged('Pressure dropping rapidly'));
+        bloc.add(
+          const FeedbackCategoryChanged(FeedbackCategory.operationalIssue),
+        );
+        await pumpEventQueue();
 
-      expect(bloc.state.title, 'Pump issue');
-      expect(bloc.state.description, 'Pressure dropping rapidly');
-      expect(bloc.state.category, FeedbackCategory.operationalIssue);
-    });
+        expect(bloc.state.title, 'Pump issue');
+        expect(bloc.state.description, 'Pressure dropping rapidly');
+        expect(bloc.state.category, FeedbackCategory.operationalIssue);
+      },
+    );
 
-    test('FeedbackMediaAdded and FeedbackMediaRemoved update attachments correctly', () async {
-      final media1 = createTestMedia('photo1.png');
-      final media2 = createTestMedia('photo2.png');
+    test(
+      'FeedbackMediaAdded and FeedbackMediaRemoved update attachments correctly',
+      () async {
+        final media1 = createTestMedia('photo1.png');
+        final media2 = createTestMedia('photo2.png');
 
-      bloc.add(FeedbackMediaAdded([media1, media2]));
-      await pumpEventQueue();
-      expect(bloc.state.attachments.length, 2);
+        bloc.add(FeedbackMediaAdded([media1, media2]));
+        await pumpEventQueue();
+        expect(bloc.state.attachments.length, 2);
 
-      bloc.add(const FeedbackMediaRemoved(0));
-      await pumpEventQueue();
-      expect(bloc.state.attachments.length, 1);
-      expect(bloc.state.attachments.first.fileName, 'photo2.png');
-    });
+        bloc.add(const FeedbackMediaRemoved(0));
+        await pumpEventQueue();
+        expect(bloc.state.attachments.length, 1);
+        expect(bloc.state.attachments.first.fileName, 'photo2.png');
+      },
+    );
 
-    test('FeedbackMediaAdded rejects exceeding 5 attachments limit with FeedbackFailure', () async {
-      final items = List.generate(6, (i) => createTestMedia('photo$i.png'));
+    test(
+      'FeedbackMediaAdded rejects exceeding 5 attachments limit with FeedbackFailure',
+      () async {
+        final items = List.generate(6, (i) => createTestMedia('photo$i.png'));
 
-      bloc.add(FeedbackMediaAdded(items));
-      await pumpEventQueue();
+        bloc.add(FeedbackMediaAdded(items));
+        await pumpEventQueue();
 
-      expect(bloc.state, isA<FeedbackFailure>());
-      expect((bloc.state as FeedbackFailure).errorMessage, contains('Maximum 5 media attachments allowed'));
-    });
+        expect(bloc.state, isA<FeedbackFailure>());
+        expect(
+          (bloc.state as FeedbackFailure).errorMessage,
+          contains('Maximum 5 media attachments allowed'),
+        );
+      },
+    );
 
     test('FeedbackSubmitted validates empty title and description', () async {
       bloc.add(const FeedbackSubmitted());
       await pumpEventQueue();
       expect(bloc.state, isA<FeedbackFailure>());
-      expect((bloc.state as FeedbackFailure).errorMessage, 'Title is required.');
+      expect(
+        (bloc.state as FeedbackFailure).errorMessage,
+        'Title is required.',
+      );
 
       bloc.add(const FeedbackTitleChanged('Valid Title'));
       bloc.add(const FeedbackSubmitted());
       await pumpEventQueue();
       expect(bloc.state, isA<FeedbackFailure>());
-      expect((bloc.state as FeedbackFailure).errorMessage, 'Description is required.');
-    });
-
-    test('FeedbackSubmitted emits FeedbackSubmitting and FeedbackSuccess on success', () async {
-      bloc.add(const FeedbackTitleChanged('Valve failure'));
-      bloc.add(const FeedbackDescriptionChanged('Valve 4 is stuck in closed position.'));
-      bloc.add(const FeedbackCategoryChanged(FeedbackCategory.operationalIssue));
-      await pumpEventQueue();
-
-      expectLater(
-        bloc.stream,
-        emitsInOrder([
-          isA<FeedbackSubmitting>(),
-          isA<FeedbackSuccess>(),
-        ]),
+      expect(
+        (bloc.state as FeedbackFailure).errorMessage,
+        'Description is required.',
       );
-
-      bloc.add(const FeedbackSubmitted());
     });
 
-    test('FeedbackSubmitted emits FeedbackFailure and preserves draft on error', () async {
-      repository.shouldFail = true;
-      repository.errorMessage = 'Network connection failed.';
+    test(
+      'FeedbackSubmitted emits FeedbackSubmitting and FeedbackSuccess on success',
+      () async {
+        bloc.add(const FeedbackTitleChanged('Valve failure'));
+        bloc.add(
+          const FeedbackDescriptionChanged(
+            'Valve 4 is stuck in closed position.',
+          ),
+        );
+        bloc.add(
+          const FeedbackCategoryChanged(FeedbackCategory.operationalIssue),
+        );
+        await pumpEventQueue();
 
-      bloc.add(const FeedbackTitleChanged('Cooling leak'));
-      bloc.add(const FeedbackDescriptionChanged('Cooling pipe leaking water.'));
-      await pumpEventQueue();
+        expectLater(
+          bloc.stream,
+          emitsInOrder([isA<FeedbackSubmitting>(), isA<FeedbackSuccess>()]),
+        );
 
-      expectLater(
-        bloc.stream,
-        emitsInOrder([
-          isA<FeedbackSubmitting>(),
-          isA<FeedbackFailure>(),
-        ]),
-      );
+        bloc.add(const FeedbackSubmitted());
+      },
+    );
 
-      bloc.add(const FeedbackSubmitted());
-      await pumpEventQueue();
+    test(
+      'FeedbackSubmitted emits FeedbackFailure and preserves draft on error',
+      () async {
+        repository.shouldFail = true;
+        repository.errorMessage = 'Network connection failed.';
 
-      expect(bloc.state.title, 'Cooling leak');
-      expect(bloc.state.description, 'Cooling pipe leaking water.');
-    });
+        bloc.add(const FeedbackTitleChanged('Cooling leak'));
+        bloc.add(
+          const FeedbackDescriptionChanged('Cooling pipe leaking water.'),
+        );
+        await pumpEventQueue();
+
+        expectLater(
+          bloc.stream,
+          emitsInOrder([isA<FeedbackSubmitting>(), isA<FeedbackFailure>()]),
+        );
+
+        bloc.add(const FeedbackSubmitted());
+        await pumpEventQueue();
+
+        expect(bloc.state.title, 'Cooling leak');
+        expect(bloc.state.description, 'Cooling pipe leaking water.');
+      },
+    );
   });
 }

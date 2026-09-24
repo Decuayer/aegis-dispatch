@@ -52,7 +52,8 @@ class PermissionHandlerService {
   }
 
   Future<bool> isLocationPermanentlyDenied() async {
-    final whenInUseDenied = await Permission.locationWhenInUse.isPermanentlyDenied;
+    final whenInUseDenied =
+        await Permission.locationWhenInUse.isPermanentlyDenied;
     final alwaysDenied = await Permission.locationAlways.isPermanentlyDenied;
     return whenInUseDenied || alwaysDenied;
   }

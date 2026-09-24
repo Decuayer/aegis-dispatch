@@ -72,20 +72,25 @@ class IncidentReportState {
       emergencyCodes: emergencyCodes ?? this.emergencyCodes,
       isLoadingCodes: isLoadingCodes ?? this.isLoadingCodes,
       selectedCategory: selectedCategory ?? this.selectedCategory,
-      selectedEmergencyCode: selectedEmergencyCode ?? this.selectedEmergencyCode,
+      selectedEmergencyCode:
+          selectedEmergencyCode ?? this.selectedEmergencyCode,
       selectedMediaFiles: selectedMediaFiles ?? this.selectedMediaFiles,
       currentPosition: currentPosition ?? this.currentPosition,
       isFetchingLocation: isFetchingLocation ?? this.isFetchingLocation,
-      locationError: clearLocationError ? null : (locationError ?? this.locationError),
+      locationError:
+          clearLocationError ? null : (locationError ?? this.locationError),
       description: description ?? this.description,
       isSubmitting: isSubmitting ?? this.isSubmitting,
-      uploadProgressMessage: clearUploadProgress
-          ? null
-          : (uploadProgressMessage ?? this.uploadProgressMessage),
-      submissionSuccess: clearSubmissionSuccess
-          ? null
-          : (submissionSuccess ?? this.submissionSuccess),
-      errorMessage: clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
+      uploadProgressMessage:
+          clearUploadProgress
+              ? null
+              : (uploadProgressMessage ?? this.uploadProgressMessage),
+      submissionSuccess:
+          clearSubmissionSuccess
+              ? null
+              : (submissionSuccess ?? this.submissionSuccess),
+      errorMessage:
+          clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
     );
   }
 }

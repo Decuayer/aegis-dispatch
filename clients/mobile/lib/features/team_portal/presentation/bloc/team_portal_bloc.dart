@@ -8,8 +8,8 @@ class TeamPortalBloc extends Bloc<TeamPortalEvent, TeamPortalState> {
   final TeamPortalRepository _repository;
 
   TeamPortalBloc({required TeamPortalRepository repository})
-      : _repository = repository,
-        super(const TeamPortalInitial()) {
+    : _repository = repository,
+      super(const TeamPortalInitial()) {
     on<LoadTeamPortal>(_onLoadTeamPortal);
     on<RefreshAvailableTeams>(_onRefreshAvailableTeams);
     on<JoinTeamRequested>(_onJoinTeamRequested);
@@ -95,7 +95,11 @@ class TeamPortalBloc extends Bloc<TeamPortalEvent, TeamPortalState> {
         teamName: event.teamName,
         leaderId: leaderId,
       );
-      emit(TeamPortalActionSuccess('Team "${team.teamName}" created successfully.'));
+      emit(
+        TeamPortalActionSuccess(
+          'Team "${team.teamName}" created successfully.',
+        ),
+      );
       emit(TeamAssignedLoaded(team: team));
     } catch (e) {
       emit(TeamPortalActionFailure(_cleanErrorMessage(e)));
@@ -120,7 +124,11 @@ class TeamPortalBloc extends Bloc<TeamPortalEvent, TeamPortalState> {
         userId: event.userId,
         teamName: event.teamName,
       );
-      emit(TeamPortalActionSuccess('You have claimed leadership of ${team.teamName}.'));
+      emit(
+        TeamPortalActionSuccess(
+          'You have claimed leadership of ${team.teamName}.',
+        ),
+      );
       emit(TeamAssignedLoaded(team: team));
     } catch (e) {
       emit(TeamPortalActionFailure(_cleanErrorMessage(e)));
@@ -165,10 +173,7 @@ class TeamPortalBloc extends Bloc<TeamPortalEvent, TeamPortalState> {
     }
 
     try {
-      await _repository.leaveTeam(
-        teamId: event.teamId,
-        userId: event.userId,
-      );
+      await _repository.leaveTeam(teamId: event.teamId, userId: event.userId);
       emit(const TeamPortalActionSuccess('You have left the team.'));
       final availableTeams = await _repository.getAvailableTeams();
       emit(TeamUnassignedLoaded(availableTeams: availableTeams));
@@ -217,7 +222,11 @@ class TeamPortalBloc extends Bloc<TeamPortalEvent, TeamPortalState> {
         status: event.status,
       );
       final updatedTeam = currentAssigned.team.copyWith(status: event.status);
-      emit(TeamPortalActionSuccess('Team readiness updated to ${event.status.label}.'));
+      emit(
+        TeamPortalActionSuccess(
+          'Team readiness updated to ${event.status.label}.',
+        ),
+      );
       emit(TeamAssignedLoaded(team: updatedTeam));
     } catch (e) {
       emit(TeamPortalActionFailure(_cleanErrorMessage(e)));
@@ -239,25 +248,32 @@ class TeamPortalBloc extends Bloc<TeamPortalEvent, TeamPortalState> {
         status: event.status,
       );
 
-      final updatedMembers = currentAssigned.team.members.map((m) {
-        if (m.userId.toLowerCase() == event.userId.toLowerCase()) {
-          return TeamMemberModel(
-            userId: m.userId,
-            fullName: m.fullName,
-            email: m.email,
-            phone: m.phone,
-            department: m.department,
-            subRole: m.subRole,
-            memberStatus: event.status,
-            statusUpdatedAt: DateTime.now(),
-            joinedAt: m.joinedAt,
-          );
-        }
-        return m;
-      }).toList();
+      final updatedMembers =
+          currentAssigned.team.members.map((m) {
+            if (m.userId.toLowerCase() == event.userId.toLowerCase()) {
+              return TeamMemberModel(
+                userId: m.userId,
+                fullName: m.fullName,
+                email: m.email,
+                phone: m.phone,
+                department: m.department,
+                subRole: m.subRole,
+                memberStatus: event.status,
+                statusUpdatedAt: DateTime.now(),
+                joinedAt: m.joinedAt,
+              );
+            }
+            return m;
+          }).toList();
 
-      final updatedTeam = currentAssigned.team.copyWith(members: updatedMembers);
-      emit(TeamPortalActionSuccess('Duty status updated to ${event.status.label}.'));
+      final updatedTeam = currentAssigned.team.copyWith(
+        members: updatedMembers,
+      );
+      emit(
+        TeamPortalActionSuccess(
+          'Duty status updated to ${event.status.label}.',
+        ),
+      );
       emit(TeamAssignedLoaded(team: updatedTeam));
     } catch (e) {
       emit(TeamPortalActionFailure(_cleanErrorMessage(e)));

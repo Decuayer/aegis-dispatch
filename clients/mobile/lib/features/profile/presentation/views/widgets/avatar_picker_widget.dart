@@ -83,9 +83,15 @@ class AvatarPickerWidget extends StatelessWidget {
                       color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.camera_alt_rounded, color: AppColors.primary),
+                    child: const Icon(
+                      Icons.camera_alt_rounded,
+                      color: AppColors.primary,
+                    ),
                   ),
-                  title: const Text('Take Photo', style: TextStyle(fontWeight: FontWeight.w600)),
+                  title: const Text(
+                    'Take Photo',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                   onTap: () => _pickImage(context, ImageSource.camera),
                 ),
                 ListTile(
@@ -95,9 +101,15 @@ class AvatarPickerWidget extends StatelessWidget {
                       color: AppColors.secondary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.photo_library_rounded, color: AppColors.secondary),
+                    child: const Icon(
+                      Icons.photo_library_rounded,
+                      color: AppColors.secondary,
+                    ),
                   ),
-                  title: const Text('Choose from Gallery', style: TextStyle(fontWeight: FontWeight.w600)),
+                  title: const Text(
+                    'Choose from Gallery',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                   onTap: () => _pickImage(context, ImageSource.gallery),
                 ),
               ],
@@ -118,7 +130,10 @@ class AvatarPickerWidget extends StatelessWidget {
             height: 104,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: AppColors.primary.withValues(alpha: 0.2), width: 3),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.2),
+                width: 3,
+              ),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.06),
@@ -128,25 +143,29 @@ class AvatarPickerWidget extends StatelessWidget {
               ],
             ),
             child: ClipOval(
-              child: isUploading
-                  ? Container(
-                      color: AppColors.surfaceMuted,
-                      child: const Center(
-                        child: CircularProgressIndicator(strokeWidth: 2.5),
-                      ),
-                    )
-                  : avatarUrl != null && avatarUrl!.isNotEmpty
+              child:
+                  isUploading
+                      ? Container(
+                        color: AppColors.surfaceMuted,
+                        child: const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2.5),
+                        ),
+                      )
+                      : avatarUrl != null && avatarUrl!.isNotEmpty
                       ? CachedNetworkImage(
-                          imageUrl: avatarUrl!,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => Container(
-                            color: AppColors.surfaceMuted,
-                            child: const Center(
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                        imageUrl: avatarUrl!,
+                        fit: BoxFit.cover,
+                        placeholder:
+                            (context, url) => Container(
+                              color: AppColors.surfaceMuted,
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
                             ),
-                          ),
-                          errorWidget: (context, url, error) => _buildInitials(),
-                        )
+                        errorWidget: (context, url, error) => _buildInitials(),
+                      )
                       : _buildInitials(),
             ),
           ),

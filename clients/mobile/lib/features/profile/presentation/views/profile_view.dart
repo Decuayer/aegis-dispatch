@@ -11,7 +11,7 @@ import '../cubit/profile_state.dart';
 import 'widgets/avatar_picker_widget.dart';
 import '../widgets/map_settings_tile.dart';
 import '../widgets/feedback_navigation_tile.dart';
-
+import '../widgets/google_account_tile.dart';
 
 class ProfileView extends StatefulWidget {
   final UserModel currentUser;
@@ -34,12 +34,20 @@ class _ProfileViewState extends State<ProfileView> {
   @override
   void initState() {
     super.initState();
-    _firstNameController = TextEditingController(text: widget.currentUser.firstName);
-    _lastNameController = TextEditingController(text: widget.currentUser.lastName);
+    _firstNameController = TextEditingController(
+      text: widget.currentUser.firstName,
+    );
+    _lastNameController = TextEditingController(
+      text: widget.currentUser.lastName,
+    );
     _emailController = TextEditingController(text: widget.currentUser.email);
     _phoneController = TextEditingController(text: widget.currentUser.phone);
-    _departmentController = TextEditingController(text: widget.currentUser.department);
-    _subRoleController = TextEditingController(text: widget.currentUser.subRole ?? '');
+    _departmentController = TextEditingController(
+      text: widget.currentUser.department,
+    );
+    _subRoleController = TextEditingController(
+      text: widget.currentUser.subRole ?? '',
+    );
 
     context.read<ProfileCubit>().loadProfile(initialUser: widget.currentUser);
   }
@@ -58,46 +66,49 @@ class _ProfileViewState extends State<ProfileView> {
   void _onSavePressed(UserModel activeUser) {
     if (_formKey.currentState?.validate() ?? false) {
       context.read<ProfileCubit>().saveProfileDetails(
-            currentUser: activeUser,
-            firstName: _firstNameController.text.trim(),
-            lastName: _lastNameController.text.trim(),
-            phone: _phoneController.text.trim(),
-            department: _departmentController.text.trim(),
-            subRole: _subRoleController.text.trim().isNotEmpty
+        currentUser: activeUser,
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        phone: _phoneController.text.trim(),
+        department: _departmentController.text.trim(),
+        subRole:
+            _subRoleController.text.trim().isNotEmpty
                 ? _subRoleController.text.trim()
                 : null,
-          );
+      );
     }
   }
 
-    void _showLogoutConfirmation(BuildContext context) {
+  void _showLogoutConfirmation(BuildContext context) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Sign Out'),
-        content: const Text('Are you sure you want to end your current session?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              minimumSize: const Size(90, 40),
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Sign Out'),
+            content: const Text(
+              'Are you sure you want to end your current session?',
             ),
-            onPressed: () {
-              Navigator.pop(ctx);
-              Navigator.of(context).popUntil((route) => route.isFirst); 
-              context.read<AuthBloc>().add(const AuthLogoutRequested());
-            },
-            child: const Text('Sign Out'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.error,
+                  minimumSize: const Size(90, 40),
+                ),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                  context.read<AuthBloc>().add(const AuthLogoutRequested());
+                },
+                child: const Text('Sign Out'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
-
 
   String _getInitials(UserModel user) {
     final first = user.firstName.isNotEmpty ? user.firstName[0] : '';
@@ -188,7 +199,10 @@ class _ProfileViewState extends State<ProfileView> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
@@ -205,7 +219,10 @@ class _ProfileViewState extends State<ProfileView> {
                       if (user.department.isNotEmpty) ...[
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.secondary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(20),
@@ -251,7 +268,11 @@ class _ProfileViewState extends State<ProfileView> {
                                 controller: _firstNameController,
                                 labelText: 'First Name',
                                 prefixIcon: Icons.person_outline_rounded,
-                                validator: (v) => Validators.validateRequired(v, 'First name'),
+                                validator:
+                                    (v) => Validators.validateRequired(
+                                      v,
+                                      'First name',
+                                    ),
                                 enabled: !isUpdating,
                               ),
                             ),
@@ -261,7 +282,11 @@ class _ProfileViewState extends State<ProfileView> {
                                 controller: _lastNameController,
                                 labelText: 'Last Name',
                                 prefixIcon: Icons.person_outline_rounded,
-                                validator: (v) => Validators.validateRequired(v, 'Last name'),
+                                validator:
+                                    (v) => Validators.validateRequired(
+                                      v,
+                                      'Last name',
+                                    ),
                                 enabled: !isUpdating,
                               ),
                             ),
@@ -288,7 +313,9 @@ class _ProfileViewState extends State<ProfileView> {
                           controller: _departmentController,
                           labelText: 'Department',
                           prefixIcon: Icons.business_outlined,
-                          validator: (v) => Validators.validateRequired(v, 'Department'),
+                          validator:
+                              (v) =>
+                                  Validators.validateRequired(v, 'Department'),
                           enabled: !isUpdating,
                         ),
                         const SizedBox(height: 16),
@@ -305,22 +332,25 @@ class _ProfileViewState extends State<ProfileView> {
                   const SizedBox(height: 16),
                   const MapSettingsTile(),
                   const SizedBox(height: 16),
+                  GoogleAccountTile(user: user, isUpdating: isUpdating),
+                  const SizedBox(height: 16),
                   const FeedbackNavigationTile(),
                   const SizedBox(height: 24),
 
                   // Save Button
                   ElevatedButton(
                     onPressed: isUpdating ? null : () => _onSavePressed(user),
-                    child: isUpdating
-                        ? const SizedBox(
-                            height: 22,
-                            width: 22,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2.2,
-                            ),
-                          )
-                        : const Text('Save Changes'),
+                    child:
+                        isUpdating
+                            ? const SizedBox(
+                              height: 22,
+                              width: 22,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2.2,
+                              ),
+                            )
+                            : const Text('Save Changes'),
                   ),
                   const SizedBox(height: 16),
                 ],

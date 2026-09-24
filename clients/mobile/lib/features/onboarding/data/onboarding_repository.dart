@@ -17,7 +17,10 @@ class OnboardingRepository {
   Future<bool> setKvkkAccepted(bool accepted) async {
     final success = await _prefs.setBool(_keyKvkkAccepted, accepted);
     if (accepted) {
-      await _prefs.setString(_keyKvkkAcceptedAt, DateTime.now().toIso8601String());
+      await _prefs.setString(
+        _keyKvkkAcceptedAt,
+        DateTime.now().toIso8601String(),
+      );
     } else {
       await _prefs.remove(_keyKvkkAcceptedAt);
     }

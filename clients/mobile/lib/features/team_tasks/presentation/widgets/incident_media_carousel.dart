@@ -19,7 +19,11 @@ class IncidentMediaCarousel extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Icon(Icons.photo_library_outlined, size: 18, color: AppColors.textSecondary),
+            const Icon(
+              Icons.photo_library_outlined,
+              size: 18,
+              color: AppColors.textSecondary,
+            ),
             const SizedBox(width: 6),
             Text(
               'Incident Attachments (${mediaList.length})',
@@ -63,22 +67,31 @@ class IncidentMediaCarousel extends StatelessWidget {
               CachedNetworkImage(
                 imageUrl: media.mediaUrl,
                 fit: BoxFit.cover,
-                placeholder: (context, url) => const Center(
-                  child: SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                ),
-                errorWidget: (context, url, error) => const Center(
-                  child: Icon(Icons.broken_image_outlined, color: AppColors.textMuted),
-                ),
+                placeholder:
+                    (context, url) => const Center(
+                      child: SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                errorWidget:
+                    (context, url, error) => const Center(
+                      child: Icon(
+                        Icons.broken_image_outlined,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
               ),
               if (media.mediaType.toLowerCase().contains('video'))
                 Container(
                   color: Colors.black38,
                   child: const Center(
-                    child: Icon(Icons.play_circle_fill, color: Colors.white, size: 32),
+                    child: Icon(
+                      Icons.play_circle_fill,
+                      color: Colors.white,
+                      size: 32,
+                    ),
                   ),
                 ),
             ],
@@ -91,37 +104,43 @@ class IncidentMediaCarousel extends StatelessWidget {
   void _openFullscreenViewer(BuildContext context, String imageUrl) {
     showDialog(
       context: context,
-      builder: (ctx) => Dialog(
-        backgroundColor: Colors.black,
-        insetPadding: EdgeInsets.zero,
-        child: Stack(
-          children: [
-            Center(
-              child: InteractiveViewer(
-                minScale: 0.5,
-                maxScale: 4.0,
-                child: CachedNetworkImage(
-                  imageUrl: imageUrl,
-                  fit: BoxFit.contain,
-                  errorWidget: (_, __, ___) => const Icon(
-                    Icons.broken_image,
-                    color: Colors.white70,
-                    size: 64,
+      builder:
+          (ctx) => Dialog(
+            backgroundColor: Colors.black,
+            insetPadding: EdgeInsets.zero,
+            child: Stack(
+              children: [
+                Center(
+                  child: InteractiveViewer(
+                    minScale: 0.5,
+                    maxScale: 4.0,
+                    child: CachedNetworkImage(
+                      imageUrl: imageUrl,
+                      fit: BoxFit.contain,
+                      errorWidget:
+                          (_, __, ___) => const Icon(
+                            Icons.broken_image,
+                            color: Colors.white70,
+                            size: 64,
+                          ),
+                    ),
                   ),
                 ),
-              ),
+                Positioned(
+                  top: 40,
+                  right: 16,
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 30,
+                    ),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ),
+              ],
             ),
-            Positioned(
-              top: 40,
-              right: 16,
-              child: IconButton(
-                icon: const Icon(Icons.close, color: Colors.white, size: 30),
-                onPressed: () => Navigator.pop(ctx),
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 }

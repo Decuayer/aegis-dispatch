@@ -25,29 +25,31 @@ void main() {
         RepositoryProvider.value(value: feedbackRepository),
         RepositoryProvider.value(value: mediaPickerService),
       ],
-      child: const MaterialApp(
-        home: Scaffold(
-          body: FeedbackNavigationTile(),
-        ),
-      ),
+      child: const MaterialApp(home: Scaffold(body: FeedbackNavigationTile())),
     );
   }
 
   group('FeedbackNavigationTile Widget Tests', () {
-    testWidgets('renders feedback navigation tile text and icons accurately', (tester) async {
+    testWidgets('renders feedback navigation tile text and icons accurately', (
+      tester,
+    ) async {
       await tester.pumpWidget(createWidget());
       await tester.pumpAndSettle();
 
       expect(find.text('Send Feedback / Report Issue'), findsOneWidget);
       expect(
-        find.text('Report bugs, operational challenges, or submit improvements.'),
+        find.text(
+          'Report bugs, operational challenges, or submit improvements.',
+        ),
         findsOneWidget,
       );
       expect(find.byIcon(Icons.feedback_outlined), findsOneWidget);
       expect(find.byIcon(Icons.chevron_right_rounded), findsOneWidget);
     });
 
-    testWidgets('tapping tile navigates to FeedbackSubmissionView', (tester) async {
+    testWidgets('tapping tile navigates to FeedbackSubmissionView', (
+      tester,
+    ) async {
       await tester.pumpWidget(createWidget());
       await tester.pumpAndSettle();
 

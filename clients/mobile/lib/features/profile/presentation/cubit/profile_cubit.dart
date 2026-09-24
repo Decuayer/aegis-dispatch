@@ -13,9 +13,9 @@ class ProfileCubit extends Cubit<ProfileState> {
   ProfileCubit({
     required ProfileRepository profileRepository,
     required MediaRepository mediaRepository,
-  })  : _profileRepository = profileRepository,
-        _mediaRepository = mediaRepository,
-        super(const ProfileInitial());
+  }) : _profileRepository = profileRepository,
+       _mediaRepository = mediaRepository,
+       super(const ProfileInitial());
 
   Future<void> loadProfile({UserModel? initialUser}) async {
     if (initialUser != null) {
@@ -47,7 +47,9 @@ class ProfileCubit extends Cubit<ProfileState> {
         avatarUrl: uploadedUrl,
       );
 
-      final updatedUser = await _profileRepository.updateUserProfile(updateRequest);
+      final updatedUser = await _profileRepository.updateUserProfile(
+        updateRequest,
+      );
       emit(ProfileUpdateSuccess(updatedUser, 'Avatar updated successfully.'));
     } catch (e) {
       final errorMsg = e.toString().replaceAll('Exception: ', '');
@@ -74,8 +76,42 @@ class ProfileCubit extends Cubit<ProfileState> {
         avatarUrl: currentUser.avatarUrl,
       );
 
-      final updatedUser = await _profileRepository.updateUserProfile(updateRequest);
+      final updatedUser = await _profileRepository.updateUserProfile(
+        updateRequest,
+      );
       emit(ProfileUpdateSuccess(updatedUser, 'Profile updated successfully.'));
+    } catch (e) {
+      final errorMsg = e.toString().replaceAll('Exception: ', '');
+      emit(ProfileError(errorMsg, cachedUser: currentUser));
+    }
+  }
+
+  Future<void> linkGoogleAccount(UserModel currentUser, String idToken) async {
+    emit(ProfileUpdating(currentUser));
+    try {
+      final updatedUser = await _profileRepository.linkGoogleAccount(idToken);
+      emit(
+        ProfileUpdateSuccess(
+          updatedUser,
+          'Google hesabı (${updatedUser.googleEmail ?? ''}) başarıyla bağlandı.',
+        ),
+      );
+    } catch (e) {
+      final errorMsg = e.toString().replaceAll('Exception: ', '');
+      emit(ProfileError(errorMsg, cachedUser: currentUser));
+    }
+  }
+
+  Future<void> unlinkGoogleAccount(UserModel currentUser) async {
+    emit(ProfileUpdating(currentUser));
+    try {
+      final updatedUser = await _profileRepository.unlinkGoogleAccount();
+      emit(
+        ProfileUpdateSuccess(
+          updatedUser,
+          'Google hesabı bağlantısı başarıyla kaldırıldı.',
+        ),
+      );
     } catch (e) {
       final errorMsg = e.toString().replaceAll('Exception: ', '');
       emit(ProfileError(errorMsg, cachedUser: currentUser));

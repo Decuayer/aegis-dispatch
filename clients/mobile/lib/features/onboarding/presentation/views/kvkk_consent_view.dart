@@ -14,16 +14,21 @@ class KvkkConsentView extends StatelessWidget {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => PermissionRationaleDialog(
-        isPermanentlyDenied: isPermanentlyDenied,
-        onAction: () {
-          if (isPermanentlyDenied) {
-            context.read<OnboardingBloc>().add(const OnboardingOpenSettingsRequested());
-          } else {
-            context.read<OnboardingBloc>().add(const OnboardingPermissionsRequested());
-          }
-        },
-      ),
+      builder:
+          (ctx) => PermissionRationaleDialog(
+            isPermanentlyDenied: isPermanentlyDenied,
+            onAction: () {
+              if (isPermanentlyDenied) {
+                context.read<OnboardingBloc>().add(
+                  const OnboardingOpenSettingsRequested(),
+                );
+              } else {
+                context.read<OnboardingBloc>().add(
+                  const OnboardingPermissionsRequested(),
+                );
+              }
+            },
+          ),
     );
   }
 
@@ -47,7 +52,9 @@ class KvkkConsentView extends StatelessWidget {
                       label: 'Retry',
                       textColor: Colors.white,
                       onPressed: () {
-                        context.read<OnboardingBloc>().add(const OnboardingPermissionsRequested());
+                        context.read<OnboardingBloc>().add(
+                          const OnboardingPermissionsRequested(),
+                        );
                       },
                     ),
                   ),
@@ -56,12 +63,17 @@ class KvkkConsentView extends StatelessWidget {
             }
           },
           builder: (context, state) {
-            final isChecked = state is OnboardingRequired && state.isConsentChecked;
-            final isSubmitting = state is OnboardingRequired && state.isSubmitting;
+            final isChecked =
+                state is OnboardingRequired && state.isConsentChecked;
+            final isSubmitting =
+                state is OnboardingRequired && state.isSubmitting;
 
             return Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -122,13 +134,14 @@ class KvkkConsentView extends StatelessWidget {
                     // Consent Agreement Checkbox Card
                     InkWell(
                       borderRadius: BorderRadius.circular(12),
-                      onTap: isSubmitting
-                          ? null
-                          : () {
-                              context.read<OnboardingBloc>().add(
-                                    KvkkConsentToggled(!isChecked),
-                                  );
-                            },
+                      onTap:
+                          isSubmitting
+                              ? null
+                              : () {
+                                context.read<OnboardingBloc>().add(
+                                  KvkkConsentToggled(!isChecked),
+                                );
+                              },
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 6),
                         child: Row(
@@ -143,13 +156,14 @@ class KvkkConsentView extends StatelessWidget {
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(6),
                                 ),
-                                onChanged: isSubmitting
-                                    ? null
-                                    : (val) {
-                                        context.read<OnboardingBloc>().add(
-                                              KvkkConsentToggled(val ?? false),
-                                            );
-                                      },
+                                onChanged:
+                                    isSubmitting
+                                        ? null
+                                        : (val) {
+                                          context.read<OnboardingBloc>().add(
+                                            KvkkConsentToggled(val ?? false),
+                                          );
+                                        },
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -172,38 +186,42 @@ class KvkkConsentView extends StatelessWidget {
 
                     // Continue CTA Button
                     ElevatedButton(
-                      onPressed: (!isChecked || isSubmitting)
-                          ? null
-                          : () {
-                              context.read<OnboardingBloc>().add(
-                                    const OnboardingPermissionsRequested(),
-                                  );
-                            },
+                      onPressed:
+                          (!isChecked || isSubmitting)
+                              ? null
+                              : () {
+                                context.read<OnboardingBloc>().add(
+                                  const OnboardingPermissionsRequested(),
+                                );
+                              },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
-                        disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.35),
+                        disabledBackgroundColor: AppColors.primary.withValues(
+                          alpha: 0.35,
+                        ),
                         minimumSize: const Size.fromHeight(52),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                      child: isSubmitting
-                          ? const SizedBox(
-                              height: 22,
-                              width: 22,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2.2,
+                      child:
+                          isSubmitting
+                              ? const SizedBox(
+                                height: 22,
+                                width: 22,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2.2,
+                                ),
+                              )
+                              : const Text(
+                                'Continue & Grant Permissions',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
                               ),
-                            )
-                          : const Text(
-                              'Continue & Grant Permissions',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
                     ),
                     const SizedBox(height: 16),
 

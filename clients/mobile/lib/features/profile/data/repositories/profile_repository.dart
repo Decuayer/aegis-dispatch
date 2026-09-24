@@ -12,8 +12,8 @@ class ProfileRepository {
   ProfileRepository({
     required ApiClient apiClient,
     required SecureStorageService storageService,
-  })  : _apiClient = apiClient,
-        _storageService = storageService;
+  }) : _apiClient = apiClient,
+       _storageService = storageService;
 
   Future<UserModel> fetchUserProfile() async {
     try {
@@ -21,11 +21,14 @@ class ProfileRepository {
       final responseData = response.data as Map<String, dynamic>;
 
       if (responseData['success'] == true && responseData['data'] != null) {
-        final user = UserModel.fromJson(responseData['data'] as Map<String, dynamic>);
+        final user = UserModel.fromJson(
+          responseData['data'] as Map<String, dynamic>,
+        );
         await _storageService.saveUserData(user);
         return user;
       } else {
-        final message = responseData['message'] as String? ?? 'Failed to load profile.';
+        final message =
+            responseData['message'] as String? ?? 'Failed to load profile.';
         throw Exception(message);
       }
     } on DioException catch (e) {
@@ -43,11 +46,14 @@ class ProfileRepository {
 
       final responseData = response.data as Map<String, dynamic>;
       if (responseData['success'] == true && responseData['data'] != null) {
-        final updatedUser = UserModel.fromJson(responseData['data'] as Map<String, dynamic>);
+        final updatedUser = UserModel.fromJson(
+          responseData['data'] as Map<String, dynamic>,
+        );
         await _storageService.saveUserData(updatedUser);
         return updatedUser;
       } else {
-        final message = responseData['message'] as String? ?? 'Failed to update profile.';
+        final message =
+            responseData['message'] as String? ?? 'Failed to update profile.';
         throw Exception(message);
       }
     } on DioException catch (e) {
@@ -65,7 +71,9 @@ class ProfileRepository {
 
       final responseData = response.data as Map<String, dynamic>;
       if (responseData['success'] != true) {
-        final message = responseData['message'] as String? ?? 'Failed to update device token.';
+        final message =
+            responseData['message'] as String? ??
+            'Failed to update device token.';
         throw Exception(message);
       }
     } on DioException catch (e) {
@@ -74,9 +82,60 @@ class ProfileRepository {
     }
   }
 
+  Future<UserModel> linkGoogleAccount(String idToken) async {
+    try {
+      final response = await _apiClient.dio.post(
+        ApiEndpoints.linkGoogleAccount,
+        data: {'idToken': idToken},
+      );
+
+      final responseData = response.data as Map<String, dynamic>;
+      if (responseData['success'] == true && responseData['data'] != null) {
+        final updatedUser = UserModel.fromJson(
+          responseData['data'] as Map<String, dynamic>,
+        );
+        await _storageService.saveUserData(updatedUser);
+        return updatedUser;
+      } else {
+        final message =
+            responseData['message'] as String? ??
+            'Failed to link Google account.';
+        throw Exception(message);
+      }
+    } on DioException catch (e) {
+      final errorMsg = _extractErrorMessage(e);
+      throw Exception(errorMsg);
+    }
+  }
+
+  Future<UserModel> unlinkGoogleAccount() async {
+    try {
+      final response = await _apiClient.dio.post(
+        ApiEndpoints.unlinkGoogleAccount,
+      );
+
+      final responseData = response.data as Map<String, dynamic>;
+      if (responseData['success'] == true && responseData['data'] != null) {
+        final updatedUser = UserModel.fromJson(
+          responseData['data'] as Map<String, dynamic>,
+        );
+        await _storageService.saveUserData(updatedUser);
+        return updatedUser;
+      } else {
+        final message =
+            responseData['message'] as String? ??
+            'Failed to unlink Google account.';
+        throw Exception(message);
+      }
+    } on DioException catch (e) {
+      final errorMsg = _extractErrorMessage(e);
+      throw Exception(errorMsg);
+    }
+  }
 
   String _extractErrorMessage(DioException error) {
-    if (error.response?.data != null && error.response?.data is Map<String, dynamic>) {
+    if (error.response?.data != null &&
+        error.response?.data is Map<String, dynamic>) {
       final data = error.response!.data as Map<String, dynamic>;
       if (data['message'] != null) {
         return data['message'].toString();

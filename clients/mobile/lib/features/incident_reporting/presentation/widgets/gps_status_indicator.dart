@@ -58,7 +58,11 @@ class GpsStatusIndicator extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.location_off_rounded, color: AppColors.error, size: 20),
+                const Icon(
+                  Icons.location_off_rounded,
+                  color: AppColors.error,
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -110,7 +114,11 @@ class GpsStatusIndicator extends StatelessWidget {
                 color: AppColors.secondary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.my_location_rounded, color: AppColors.secondary, size: 22),
+              child: const Icon(
+                Icons.my_location_rounded,
+                color: AppColors.secondary,
+                size: 22,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -137,7 +145,11 @@ class GpsStatusIndicator extends StatelessWidget {
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.refresh_rounded, color: AppColors.primary, size: 20),
+              icon: const Icon(
+                Icons.refresh_rounded,
+                color: AppColors.primary,
+                size: 20,
+              ),
               tooltip: 'Update GPS Location',
               onPressed: onRefresh,
             ),

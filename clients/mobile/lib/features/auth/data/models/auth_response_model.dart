@@ -18,9 +18,11 @@ class AuthResponseModel {
 
     return AuthResponseModel(
       accessToken: token.toString(),
-      expiresAt: expires != null
-          ? DateTime.tryParse(expires.toString()) ?? DateTime.now().add(const Duration(days: 7))
-          : DateTime.now().add(const Duration(days: 7)),
+      expiresAt:
+          expires != null
+              ? DateTime.tryParse(expires.toString()) ??
+                  DateTime.now().add(const Duration(days: 7))
+              : DateTime.now().add(const Duration(days: 7)),
       user: UserModel.fromJson(userMap is Map<String, dynamic> ? userMap : {}),
     );
   }

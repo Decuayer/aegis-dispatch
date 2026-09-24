@@ -16,7 +16,7 @@ class MockSecureStorage extends SecureStorageService {
 
 class MockIncidentRepository extends IncidentRepository {
   MockIncidentRepository()
-      : super(apiClient: ApiClient(storageService: MockSecureStorage()));
+    : super(apiClient: ApiClient(storageService: MockSecureStorage()));
 
   CreateIncidentRequestModel? lastCreatedRequest;
   bool shouldFailCreate = false;
@@ -24,7 +24,9 @@ class MockIncidentRepository extends IncidentRepository {
   String? canceledIncidentId;
 
   @override
-  Future<IncidentResponseModel> createIncident(CreateIncidentRequestModel request) async {
+  Future<IncidentResponseModel> createIncident(
+    CreateIncidentRequestModel request,
+  ) async {
     lastCreatedRequest = request;
     if (shouldFailCreate) {
       throw Exception('Network error during incident creation');
@@ -57,7 +59,9 @@ class MockLocationService extends LocationService {
   const MockLocationService({this.mockPosition, this.shouldThrow = false});
 
   @override
-  Future<Position> getCurrentLocation({Duration timeout = const Duration(seconds: 8)}) async {
+  Future<Position> getCurrentLocation({
+    Duration timeout = const Duration(seconds: 8),
+  }) async {
     if (shouldThrow) {
       throw const LocationServiceException('GPS fix timed out');
     }
@@ -81,38 +85,46 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('RapidDispatchService Unit Tests', () {
-    test('dispatchRapidIncident creates incident request with accurate coordinates', () async {
-      final repository = MockIncidentRepository();
-      const locationService = MockLocationService();
-      final service = RapidDispatchService(
-        incidentRepository: repository,
-        locationService: locationService,
-      );
+    test(
+      'dispatchRapidIncident creates incident request with accurate coordinates',
+      () async {
+        final repository = MockIncidentRepository();
+        const locationService = MockLocationService();
+        final service = RapidDispatchService(
+          incidentRepository: repository,
+          locationService: locationService,
+        );
 
-      final preset = RapidEmergencyPreset.presets.first; // Fire
-      final result = await service.dispatchRapidIncident(preset);
+        final preset = RapidEmergencyPreset.presets.first; // Fire
+        final result = await service.dispatchRapidIncident(preset);
 
-      expect(result.id, equals('mock-incident-1234'));
-      expect(repository.lastCreatedRequest, isNotNull);
-      expect(repository.lastCreatedRequest!.category, equals('Fire'));
-      expect(repository.lastCreatedRequest!.emergencyCode, equals('Red'));
-      expect(repository.lastCreatedRequest!.latitude, equals(38.654321));
-      expect(repository.lastCreatedRequest!.longitude, equals(27.123456));
-    });
+        expect(result.id, equals('mock-incident-1234'));
+        expect(repository.lastCreatedRequest, isNotNull);
+        expect(repository.lastCreatedRequest!.category, equals('Fire'));
+        expect(repository.lastCreatedRequest!.emergencyCode, equals('Red'));
+        expect(repository.lastCreatedRequest!.latitude, equals(38.654321));
+        expect(repository.lastCreatedRequest!.longitude, equals(27.123456));
+      },
+    );
 
-    test('cancelDispatchedIncident delegates call to repository cancelIncident', () async {
-      final repository = MockIncidentRepository();
-      const locationService = MockLocationService();
-      final service = RapidDispatchService(
-        incidentRepository: repository,
-        locationService: locationService,
-      );
+    test(
+      'cancelDispatchedIncident delegates call to repository cancelIncident',
+      () async {
+        final repository = MockIncidentRepository();
+        const locationService = MockLocationService();
+        final service = RapidDispatchService(
+          incidentRepository: repository,
+          locationService: locationService,
+        );
 
-      final isSuccess = await service.cancelDispatchedIncident('mock-incident-1234');
+        final isSuccess = await service.cancelDispatchedIncident(
+          'mock-incident-1234',
+        );
 
-      expect(isSuccess, isTrue);
-      expect(repository.wasCancelCalled, isTrue);
-      expect(repository.canceledIncidentId, equals('mock-incident-1234'));
-    });
+        expect(isSuccess, isTrue);
+        expect(repository.wasCancelCalled, isTrue);
+        expect(repository.canceledIncidentId, equals('mock-incident-1234'));
+      },
+    );
   });
 }

@@ -186,13 +186,17 @@ class TeamMemberModel {
       phone: (json['phone'] ?? json['Phone'] ?? '').toString(),
       department: (json['department'] ?? json['Department'] ?? '').toString(),
       subRole: json['subRole'] as String? ?? json['SubRole'] as String?,
-      memberStatus: MemberStatus.fromString(json['memberStatus'] ?? json['MemberStatus']),
-      statusUpdatedAt: json['statusUpdatedAt'] != null
-          ? DateTime.tryParse(json['statusUpdatedAt'].toString())
-          : null,
-      joinedAt: json['joinedAt'] != null
-          ? DateTime.tryParse(json['joinedAt'].toString()) ?? DateTime.now()
-          : DateTime.now(),
+      memberStatus: MemberStatus.fromString(
+        json['memberStatus'] ?? json['MemberStatus'],
+      ),
+      statusUpdatedAt:
+          json['statusUpdatedAt'] != null
+              ? DateTime.tryParse(json['statusUpdatedAt'].toString())
+              : null,
+      joinedAt:
+          json['joinedAt'] != null
+              ? DateTime.tryParse(json['joinedAt'].toString()) ?? DateTime.now()
+              : DateTime.now(),
     );
   }
 
@@ -238,9 +242,10 @@ class TeamModel {
     var rawMembers = json['members'] ?? json['Members'] ?? [];
     List<TeamMemberModel> memberList = [];
     if (rawMembers is List) {
-      memberList = rawMembers
-          .map((m) => TeamMemberModel.fromJson(m as Map<String, dynamic>))
-          .toList();
+      memberList =
+          rawMembers
+              .map((m) => TeamMemberModel.fromJson(m as Map<String, dynamic>))
+              .toList();
     }
 
     return TeamModel(
@@ -248,16 +253,22 @@ class TeamModel {
       teamName: (json['teamName'] ?? json['TeamName'] ?? '').toString(),
       status: TeamStatus.fromString(json['status'] ?? json['Status']),
       leaderId: json['leaderId'] as String? ?? json['LeaderId'] as String?,
-      leaderFullName: json['leaderFullName'] as String? ?? json['LeaderFullName'] as String?,
-      currentLatitude: json['currentLatitude'] != null
-          ? double.tryParse(json['currentLatitude'].toString())
-          : null,
-      currentLongitude: json['currentLongitude'] != null
-          ? double.tryParse(json['currentLongitude'].toString())
-          : null,
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.tryParse(json['updatedAt'].toString()) ?? DateTime.now()
-          : DateTime.now(),
+      leaderFullName:
+          json['leaderFullName'] as String? ??
+          json['LeaderFullName'] as String?,
+      currentLatitude:
+          json['currentLatitude'] != null
+              ? double.tryParse(json['currentLatitude'].toString())
+              : null,
+      currentLongitude:
+          json['currentLongitude'] != null
+              ? double.tryParse(json['currentLongitude'].toString())
+              : null,
+      updatedAt:
+          json['updatedAt'] != null
+              ? DateTime.tryParse(json['updatedAt'].toString()) ??
+                  DateTime.now()
+              : DateTime.now(),
       members: memberList,
     );
   }

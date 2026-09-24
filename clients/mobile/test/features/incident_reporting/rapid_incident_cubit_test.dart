@@ -16,18 +16,20 @@ class FakeSecureStorage extends SecureStorageService {
 
 class FakeRapidDispatchService extends RapidDispatchService {
   FakeRapidDispatchService()
-      : super(
-          incidentRepository: IncidentRepository(
-            apiClient: ApiClient(storageService: FakeSecureStorage()),
-          ),
-          locationService: const LocationService(),
-        );
+    : super(
+        incidentRepository: IncidentRepository(
+          apiClient: ApiClient(storageService: FakeSecureStorage()),
+        ),
+        locationService: const LocationService(),
+      );
 
   bool shouldFail = false;
   bool wasCancelCalled = false;
 
   @override
-  Future<IncidentResponseModel> dispatchRapidIncident(RapidEmergencyPreset preset) async {
+  Future<IncidentResponseModel> dispatchRapidIncident(
+    RapidEmergencyPreset preset,
+  ) async {
     if (shouldFail) {
       throw Exception('Failed to connect to emergency server.');
     }
@@ -82,22 +84,29 @@ void main() {
       cubit.close();
     });
 
-    test('cancelDispatchedIncident emits Canceled and resets to Initial', () async {
-      final dispatchService = FakeRapidDispatchService();
-      final cubit = RapidIncidentCubit(dispatchService: dispatchService);
+    test(
+      'cancelDispatchedIncident emits Canceled and resets to Initial',
+      () async {
+        final dispatchService = FakeRapidDispatchService();
+        final cubit = RapidIncidentCubit(dispatchService: dispatchService);
 
-      expectLater(
-        cubit.stream,
-        emitsInOrder([
-          isA<RapidIncidentCanceled>().having((s) => s.incidentId, 'id', 'rapid-id-777'),
-          isA<RapidIncidentInitial>(),
-        ]),
-      );
+        expectLater(
+          cubit.stream,
+          emitsInOrder([
+            isA<RapidIncidentCanceled>().having(
+              (s) => s.incidentId,
+              'id',
+              'rapid-id-777',
+            ),
+            isA<RapidIncidentInitial>(),
+          ]),
+        );
 
-      await cubit.cancelDispatchedIncident('rapid-id-777');
-      expect(dispatchService.wasCancelCalled, isTrue);
-      cubit.close();
-    });
+        await cubit.cancelDispatchedIncident('rapid-id-777');
+        expect(dispatchService.wasCancelCalled, isTrue);
+        cubit.close();
+      },
+    );
 
     test('triggerRapidIncident emits Failure on service error', () async {
       final dispatchService = FakeRapidDispatchService()..shouldFail = true;

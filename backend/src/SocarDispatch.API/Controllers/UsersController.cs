@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using SocarDispatch.Application.Common.Models;
 using SocarDispatch.Application.Features.Auth.DTOs;
 using SocarDispatch.Application.Features.Users.Commands.DeleteUser;
+using SocarDispatch.Application.Features.Users.Commands.LinkGoogleAccount;
+using SocarDispatch.Application.Features.Users.Commands.UnlinkGoogleAccount;
 using SocarDispatch.Application.Features.Users.Commands.UpdateDeviceToken;
 using SocarDispatch.Application.Features.Users.Commands.UpdateUserProfile;
 using SocarDispatch.Application.Features.Users.Commands.UpdateUserRole;
@@ -121,6 +123,30 @@ public class UsersController : ControllerBase
     {
         var operatorId = GetCurrentUserId();
         var command = new DeleteUserCommand(id, operatorId);
+        var result = await _sender.Send(command);
+        return Ok(result);
+    }
+
+    // POST /api/v1/users/me/link-google
+    // Links a Google account to the currently authenticated user.
+    [HttpPost("me/link-google")]
+    [ProducesResponseType(typeof(ApiResponse<CurrentUserDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<CurrentUserDto>>> LinkGoogleAccount([FromBody] LinkGoogleAccountRequestDto request)
+    {
+        var userId = GetCurrentUserId();
+        var command = new LinkGoogleAccountCommand(userId, request.IdToken);
+        var result = await _sender.Send(command);
+        return Ok(result);
+    }
+
+    // POST /api/v1/users/me/unlink-google
+    // Unlinks a Google account from the currently authenticated user.
+    [HttpPost("me/unlink-google")]
+    [ProducesResponseType(typeof(ApiResponse<CurrentUserDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<CurrentUserDto>>> UnlinkGoogleAccount()
+    {
+        var userId = GetCurrentUserId();
+        var command = new UnlinkGoogleAccountCommand(userId);
         var result = await _sender.Send(command);
         return Ok(result);
     }

@@ -13,6 +13,9 @@ class MapSettingsRepository {
 
   /// Persists the user's boundary lock preference to local storage
   Future<bool> setBoundaryLockEnabled(bool enabled) async {
-    return await _prefs.setBool(FacilityGeoConstants.prefKeyMapBoundaryLock, enabled);
+    return await _prefs.setBool(
+      FacilityGeoConstants.prefKeyMapBoundaryLock,
+      enabled,
+    );
   }
 }

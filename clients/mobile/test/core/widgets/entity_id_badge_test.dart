@@ -4,7 +4,9 @@ import 'package:socar_dispatch_mobile/core/widgets/entity_id_badge.dart';
 
 void main() {
   group('EntityIdBadge Widget Tests', () {
-    testWidgets('formats UUID into #INC-XXXX badge for incident type', (tester) async {
+    testWidgets('formats UUID into #INC-XXXX badge for incident type', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -20,14 +22,13 @@ void main() {
       expect(find.byIcon(Icons.copy_rounded), findsOneWidget);
     });
 
-    testWidgets('formats team ID into #TEAM-XX badge for team type', (tester) async {
+    testWidgets('formats team ID into #TEAM-XX badge for team type', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: EntityIdBadge(
-              id: '04',
-              type: EntityBadgeType.team,
-            ),
+            body: EntityIdBadge(id: '04', type: EntityBadgeType.team),
           ),
         ),
       );
@@ -67,7 +68,6 @@ void main() {
       expect(find.byIcon(Icons.copy_rounded), findsNothing);
     });
 
-    
     testWidgets('tapping disabled when isCopyable is false', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(

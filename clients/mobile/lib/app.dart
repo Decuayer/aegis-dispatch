@@ -41,7 +41,6 @@ import 'core/storage/map_settings_repository.dart';
 import 'features/profile/presentation/cubit/map_settings_cubit.dart';
 import 'features/feedback/data/feedback_repository.dart';
 
-
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
 class SocarDispatchApp extends StatelessWidget {
@@ -112,60 +111,64 @@ class SocarDispatchApp extends StatelessWidget {
       child: MultiBlocProvider(
         providers: [
           BlocProvider(
-            create: (ctx) => AuthBloc(
-              authRepository: authRepository,
-            )..add(const AuthCheckRequested()),
+            create:
+                (ctx) =>
+                    AuthBloc(authRepository: authRepository)
+                      ..add(const AuthCheckRequested()),
           ),
           BlocProvider(
-            create: (ctx) => ProfileCubit(
-              profileRepository: profileRepository,
-              mediaRepository: mediaRepository,
-            ),
+            create:
+                (ctx) => ProfileCubit(
+                  profileRepository: profileRepository,
+                  mediaRepository: mediaRepository,
+                ),
           ),
           BlocProvider(
-            create: (ctx) => IncidentReportBloc(
-              incidentRepository: incidentRepository,
-              locationService: locationService,
-            ),
+            create:
+                (ctx) => IncidentReportBloc(
+                  incidentRepository: incidentRepository,
+                  locationService: locationService,
+                ),
           ),
           BlocProvider(
-            create: (ctx) => RapidIncidentCubit(
-              dispatchService: RapidDispatchService(
-                incidentRepository: incidentRepository,
-                locationService: locationService,
-              ),
-            ),
+            create:
+                (ctx) => RapidIncidentCubit(
+                  dispatchService: RapidDispatchService(
+                    incidentRepository: incidentRepository,
+                    locationService: locationService,
+                  ),
+                ),
           ),
           BlocProvider(
-            create: (ctx) => TaskBloc(
-              taskRepository: taskRepository,
-              routeService: routeService,
-              locationService: locationService,
-              locationStreamRepository: locationStreamRepository,
-            ),
+            create:
+                (ctx) => TaskBloc(
+                  taskRepository: taskRepository,
+                  routeService: routeService,
+                  locationService: locationService,
+                  locationStreamRepository: locationStreamRepository,
+                ),
           ),
           BlocProvider(
-            create: (ctx) => TeamPortalBloc(
-              repository: teamPortalRepository,
-            ),
+            create: (ctx) => TeamPortalBloc(repository: teamPortalRepository),
           ),
           BlocProvider(
-            create: (ctx) => OnboardingBloc(
-              onboardingRepository: onboardingRepository,
-              permissionService: onboardingPermissionService,
-            )..add(const OnboardingCheckRequested()),
+            create:
+                (ctx) => OnboardingBloc(
+                  onboardingRepository: onboardingRepository,
+                  permissionService: onboardingPermissionService,
+                )..add(const OnboardingCheckRequested()),
           ),
           BlocProvider(
-            create: (ctx) => MapSettingsCubit(
-              repository: mapSettingsRepository,
-            ),
+            create:
+                (ctx) => MapSettingsCubit(repository: mapSettingsRepository),
           ),
           BlocProvider(
-            create: (ctx) => EmployeeTrackingBloc(
-              repository: employeeIncidentRepository,
-              routeService: routeService,
-              hubService: employeeTrackingHubService,
-            ),
+            create:
+                (ctx) => EmployeeTrackingBloc(
+                  repository: employeeIncidentRepository,
+                  routeService: routeService,
+                  hubService: employeeTrackingHubService,
+                ),
           ),
         ],
         child: MaterialApp(
@@ -211,21 +214,23 @@ class _AuthGateState extends State<AuthGate> {
         if (user.roleType == RoleType.team) {
           final teamId = data['teamId']?.toString();
           if (teamId != null) {
-            context.read<TaskBloc>().add(LoadActiveTask(teamId, isRefresh: true));
+            context.read<TaskBloc>().add(
+              LoadActiveTask(teamId, isRefresh: true),
+            );
           }
         }
       },
     );
 
-    if (user.roleType == RoleType.employee) {
-      widget.trackingHubService.initialize();
-    }
+    widget.trackingHubService.initialize();
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<AuthBloc, AuthState>(
-      listenWhen: (previous, current) => current is Unauthenticated || current is Authenticated,
+      listenWhen:
+          (previous, current) =>
+              current is Unauthenticated || current is Authenticated,
       listener: (context, state) {
         if (state is Unauthenticated) {
           _fcmInitialized = false;
@@ -237,7 +242,9 @@ class _AuthGateState extends State<AuthGate> {
         }
       },
       buildWhen: (previous, current) {
-        return current is Authenticated || current is Unauthenticated || current is AuthInitial;
+        return current is Authenticated ||
+            current is Unauthenticated ||
+            current is AuthInitial;
       },
       builder: (context, state) {
         if (state is Authenticated) {

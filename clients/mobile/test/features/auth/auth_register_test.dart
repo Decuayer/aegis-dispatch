@@ -27,10 +27,10 @@ class MockSecureStorageService extends SecureStorageService {
 
 class FakeAuthRepository extends AuthRepository {
   FakeAuthRepository()
-      : super(
-          apiClient: ApiClient(storageService: MockSecureStorageService()),
-          storageService: MockSecureStorageService(),
-        );
+    : super(
+        apiClient: ApiClient(storageService: MockSecureStorageService()),
+        storageService: MockSecureStorageService(),
+      );
 
   bool shouldFail = false;
   String errorMessage = 'Registration error';
@@ -97,48 +97,62 @@ void main() {
       authBloc.close();
     });
 
-    test('AuthRegisterRequested emits [AuthLoading, Authenticated] on success', () async {
-      const request = RegisterRequestModel(
-        firstName: 'Ali',
-        lastName: 'Mammadov',
-        email: 'ali@socar.az',
-        password: 'SecretPassword',
-        phone: '+994509998877',
-        department: 'HSSE',
-      );
+    test(
+      'AuthRegisterRequested emits [AuthLoading, Authenticated] on success',
+      () async {
+        const request = RegisterRequestModel(
+          firstName: 'Ali',
+          lastName: 'Mammadov',
+          email: 'ali@socar.az',
+          password: 'SecretPassword',
+          phone: '+994509998877',
+          department: 'HSSE',
+        );
 
-      final expectedStates = [
-        isA<AuthLoading>(),
-        isA<Authenticated>().having((s) => s.user.email, 'email', 'ali@socar.az'),
-      ];
+        final expectedStates = [
+          isA<AuthLoading>(),
+          isA<Authenticated>().having(
+            (s) => s.user.email,
+            'email',
+            'ali@socar.az',
+          ),
+        ];
 
-      expectLater(authBloc.stream, emitsInOrder(expectedStates));
+        expectLater(authBloc.stream, emitsInOrder(expectedStates));
 
-      authBloc.add(const AuthRegisterRequested(request));
-    });
+        authBloc.add(const AuthRegisterRequested(request));
+      },
+    );
 
-    test('AuthRegisterRequested emits [AuthLoading, AuthFailure] on error', () async {
-      repository.shouldFail = true;
-      repository.errorMessage = 'A user with this email already exists.';
+    test(
+      'AuthRegisterRequested emits [AuthLoading, AuthFailure] on error',
+      () async {
+        repository.shouldFail = true;
+        repository.errorMessage = 'A user with this email already exists.';
 
-      const request = RegisterRequestModel(
-        firstName: 'Ali',
-        lastName: 'Mammadov',
-        email: 'existing@socar.az',
-        password: 'SecretPassword',
-        phone: '+994509998877',
-        department: 'HSSE',
-      );
+        const request = RegisterRequestModel(
+          firstName: 'Ali',
+          lastName: 'Mammadov',
+          email: 'existing@socar.az',
+          password: 'SecretPassword',
+          phone: '+994509998877',
+          department: 'HSSE',
+        );
 
-      final expectedStates = [
-        isA<AuthLoading>(),
-        isA<AuthFailure>().having((s) => s.errorMessage, 'errorMessage', contains('already exists')),
-      ];
+        final expectedStates = [
+          isA<AuthLoading>(),
+          isA<AuthFailure>().having(
+            (s) => s.errorMessage,
+            'errorMessage',
+            contains('already exists'),
+          ),
+        ];
 
-      expectLater(authBloc.stream, emitsInOrder(expectedStates));
+        expectLater(authBloc.stream, emitsInOrder(expectedStates));
 
-      authBloc.add(const AuthRegisterRequested(request));
-    });
+        authBloc.add(const AuthRegisterRequested(request));
+      },
+    );
   });
 
   group('RegisterView Widget Tests', () {
@@ -154,7 +168,9 @@ void main() {
       authBloc.close();
     });
 
-    testWidgets('renders all registration form fields and buttons', (tester) async {
+    testWidgets('renders all registration form fields and buttons', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: BlocProvider.value(
