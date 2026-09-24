@@ -6,7 +6,7 @@
     }
   },
   "ConnectionStrings": {
-    "DefaultConnection": "Host=localhost;Port=5432;Database=socar_dispatch;Username=postgres;Password=postgrespassword"
+    "DefaultConnection": "Host=localhost;Port=5432;Database=aegis_dispatch;Username=postgres;Password=postgrespassword"
   },
   "Redis": {
     "ConnectionString": "localhost:6379"
@@ -15,13 +15,13 @@
     "Endpoint": "localhost:9000",
     "AccessKey": "minioadmin",
     "SecretKey": "miniopassword",
-    "BucketName": "socar-dispatch-media",
+    "BucketName": "aegis-dispatch-media",
     "WithSSL": false
   },
   "Jwt": {
     "Secret": "your_secure_random_jwt_secret_key_minimum_32_bytes_long!",
-    "Issuer": "SocarDispatchAPI",
-    "Audience": "SocarDispatchUsers",
+    "Issuer": "AegisDispatchAPI",
+    "Audience": "AegisDispatchUsers",
     "ExpiryMinutes": 1440
   },
   "Firebase": {

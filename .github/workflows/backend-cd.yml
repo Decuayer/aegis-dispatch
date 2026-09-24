@@ -94,8 +94,8 @@ jobs:
     needs: [dockerfile-lint, database-migration-guard]
     runs-on: ubuntu-latest
     env:
-      REGISTRY_API_IMAGE: ${{ secrets.DOCKERHUB_USERNAME || 'decuayer' }}/socar-dispatch-api
-      REGISTRY_WEB_IMAGE: ${{ secrets.DOCKERHUB_USERNAME || 'decuayer' }}/socar-dispatch-web
+      REGISTRY_API_IMAGE: ${{ secrets.DOCKERHUB_USERNAME || 'decuayer' }}/aegis-dispatch-api
+      REGISTRY_WEB_IMAGE: ${{ secrets.DOCKERHUB_USERNAME || 'decuayer' }}/aegis-dispatch-web
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
