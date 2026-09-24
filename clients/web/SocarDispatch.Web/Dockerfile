@@ -24,6 +24,9 @@ LABEL org.opencontainers.image.title="socar-dispatch-web" \
       org.opencontainers.image.vendor="SOCAR" \
       org.opencontainers.image.source="https://github.com/Decuayer/aegis-dispatch"
 
+# Security hardening: upgrade OS packages to patch vulnerabilities (e.g. CVE-2026-93990 libexpat)
+RUN apk update && apk upgrade --no-cache
+
 # Remove default Nginx welcome page and configuration
 RUN rm -rf /usr/share/nginx/html/* /etc/nginx/conf.d/default.conf
 
