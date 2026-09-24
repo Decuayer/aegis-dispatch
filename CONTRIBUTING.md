@@ -1,21 +1,21 @@
-# Contributing to SOCAR Dispatch
+# Contributing to AegisDispatch
 
-First off, thank you for contributing to **SOCAR Dispatch**! This platform is mission-critical for industrial safety, occupational health, and rapid emergency dispatch across refinery operations. To maintain code excellence, security, and traceability, all contributors are expected to follow the guidelines outlined below.
+Thank you for your interest in contributing to **AegisDispatch**. This platform provides mission-critical emergency management, spatial telemetry, and rapid incident dispatch services for continuous-process industrial facilities and refineries. To maintain rigorous code quality, security, and traceability, all contributors are expected to follow the guidelines outlined below.
 
 ---
 
-## 🧭 Code of Conduct & Corporate Ethics
+## 1. Code of Conduct and Corporate Ethics
 
 As an enterprise engineering project:
-* Security, operational resilience, and data privacy (KVKK / GDPR) are non-negotiable priorities.
+* Security, operational resilience, and data privacy (KVKK / GDPR principles) are paramount.
 * Do **not** commit hardcoded credentials, production connection strings, or personal file paths under any circumstances.
-* Keep communications professional, constructive, and respectful across all issues and pull requests.
+* Keep technical communications professional, constructive, and focused across all issues and pull requests.
 
 ---
 
-## 🌿 Git Branching Strategy
+## 2. Git Branching Strategy
 
-We follow a structured Gitflow/Trunk-based workflow aligned with our corporate Jira project keys (**SDDC**):
+We follow a structured Gitflow/Trunk-based workflow aligned with issue tracking keys (`SDDC`):
 
 ### Branch Naming Format
 ```
@@ -33,16 +33,16 @@ We follow a structured Gitflow/Trunk-based workflow aligned with our corporate J
 
 ---
 
-## 📝 Conventional Commits Standard
+## 3. Conventional Commits Standard
 
-All commit messages must follow the [Conventional Commits v1.0.0](https://www.conventionalcommits.org/) specification:
+All commit messages must adhere to the [Conventional Commits v1.0.0](https://www.conventionalcommits.org/) specification:
 
 ```
 <type>(<scope>): <description>
 
 [optional body]
 
-[optional footer: Jira Reference]
+[optional footer: Issue Reference]
 ```
 
 ### Commit Types
@@ -60,7 +60,6 @@ All commit messages must follow the [Conventional Commits v1.0.0](https://www.co
 
 ### Examples
 ```bash
-# Good commit messages
 git commit -m "feat(api): implement server-side pagination for incidents query"
 git commit -m "fix(mobile): prevent race condition during 1-click SOS location acquisition"
 git commit -m "perf(db): add composite B-Tree indexes on incidents and teams"
@@ -69,10 +68,10 @@ git commit -m "docs(readme): add system architecture Mermaid flowchart"
 
 ---
 
-## 🏗️ Architectural Guidelines
+## 4. Architectural Guidelines
 
-### 1. Backend (.NET 8 Core)
-* Strictly observe **Clean Architecture** dependency rules:
+### 4.1 Backend (.NET 8 Core)
+* Strictly observe **Clean Architecture** dependency boundaries:
   * `Domain` has zero external dependencies.
   * `Application` depends only on `Domain` and defines interfaces (`IApplicationDbContext`, `IMediaStorageService`).
   * `Infrastructure` implements persistence (EF Core, Redis, MinIO) and external adapters.
@@ -80,7 +79,7 @@ git commit -m "docs(readme): add system architecture Mermaid flowchart"
 * Use the **CQRS pattern with MediatR** for all use cases.
 * Validate all incoming commands using **FluentValidation**.
 
-### 2. Mobile Client (Flutter)
+### 4.2 Mobile Client (Flutter)
 * Organize code using a **Feature-First** architecture:
   * `lib/features/<feature_name>/presentation/` (Views, Widgets, Controllers/Notifiers)
   * `lib/features/<feature_name>/domain/` (Models, Entities)
@@ -90,7 +89,7 @@ git commit -m "docs(readme): add system architecture Mermaid flowchart"
 
 ---
 
-## 🔄 Development & Pull Request Lifecycle
+## 5. Development and Pull Request Lifecycle
 
 1. **Synchronize:** Pull the latest changes from the default branch:
    ```bash
@@ -108,9 +107,9 @@ git commit -m "docs(readme): add system architecture Mermaid flowchart"
    ```
 4. **Commit:** Ensure commit messages follow Conventional Commits.
 5. **Open Pull Request:**
-   * Push your branch to GitHub and create a Pull Request targeting `main`.
-   * Fill out all sections of [`.github/pull_request_template.md`](file:///Users/demircucu/Documents/SOCAR/socar-dispatch/.github/pull_request_template.md).
-   * Link the associated Jira issue key (`SDDC-XX`).
+   * Push your branch to GitHub (`https://github.com/Decuayer/aegis-dispatch`) and create a Pull Request targeting `main`.
+   * Fill out all sections of `.github/pull_request_template.md`.
+   * Link the associated issue key (`SDDC-XX`).
 6. **Review & Merge:**
    * All GitHub Actions CI checks (`backend-ci`, `mobile-ci`) must pass green.
    * Require at least one peer code review approval before merging.

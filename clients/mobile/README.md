@@ -1,6 +1,6 @@
-# socar_dispatch_mobile
+# AegisDispatch Mobile Client
 
-A new Flutter project.
+Cross-platform field worker and Emergency Response Team (ERT) tactical mobile client.
 
 ## Getting Started
 
