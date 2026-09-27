@@ -15,17 +15,38 @@
   <img src="https://img.shields.io/badge/Flutter-02569B?style=flat-square&logo=flutter&logoColor=white" alt="Flutter" />
   <img src="https://img.shields.io/badge/PostGIS-336791?style=flat-square&logo=postgresql&logoColor=white" alt="PostGIS" />
   <img src="https://img.shields.io/badge/License-MIT-green.svg?style=flat-square" alt="License" />
+  <a href="docs/SOCAR-Dispatch-Design-Document.pdf">
+    <img src="https://img.shields.io/badge/Design%20Document-PDF-DC382D?style=flat-square&logo=adobeacrobatreader&logoColor=white" alt="Design Document" />
+  </a>
+  <a href="docs/SOCAR-Dispatch-Presentation.pdf">
+    <img src="https://img.shields.io/badge/Presentation-PDF-D83B01?style=flat-square&logo=microsoftpowerpoint&logoColor=white" alt="Project Presentation" />
+  </a>
+</p>
+
+<p align="center">
+  <a href="docs/SOCAR-Dispatch-Design-Document.pdf"><b>📄 System Design Document</b></a>
+  &nbsp;&nbsp;•&nbsp;&nbsp;
+  <a href="docs/SOCAR-Dispatch-Presentation.pdf"><b>📊 Final Project Presentation</b></a>
+  &nbsp;&nbsp;•&nbsp;&nbsp;
+  <a href="#3-operational-user-guide-and-command-manual"><b>📖 Operational Guide</b></a>
+  &nbsp;&nbsp;•&nbsp;&nbsp;
+  <a href="#5-deployment-and-getting-started"><b>🚀 Quick Start</b></a>
 </p>
 
 AegisDispatch is an enterprise-grade incident response, real-time spatial telemetry, and fleet coordination platform architected for high-consequence industrial facilities, including petrochemical processing plants, refineries, offshore installations, and chemical manufacturing complexes.
 
 The system bridges frontline personnel, Emergency Response Teams (ERT), and central command dispatchers into a synchronized, sub-second telemetry network. It guarantees rapid incident reporting, automated spatial proximity matching, dynamic team leadership governance, and resilient field operations under degraded network conditions.
 
+> [!NOTE]
+> ### Primary Project Deliverables & Executive Documentation
+> * **[System Engineering Design Document (PDF)](docs/SOCAR-Dispatch-Design-Document.pdf)** — Comprehensive architectural blueprint, domain models, PostGIS spatial indexing strategies, telemetry protocols, and security specifications.
+> * **[Final Project Presentation Deck (PDF)](docs/SOCAR-Dispatch-Presentation.pdf)** — Executive slide deck covering problem analysis, solution architecture, mobile/web UX walkthrough, and production deployment metrics.
+
 ---
 
 ## 1. System Architecture and Engineering Design
 
-AegisDispatch is engineered in accordance with Clean Architecture and Command Query Responsibility Segregation (CQRS) patterns on .NET 8. The persistence, caching, and streaming layers are designed for high availability, transactional consistency, and geospatial indexing.
+AegisDispatch is engineered in accordance with Clean Architecture and Command Query Responsibility Segregation (CQRS) patterns on .NET 8. The persistence, caching, and streaming layers are designed for high availability, transactional consistency, and geospatial indexing. *(For the complete architectural specification and engineering methodology, refer to the [System Design Document](docs/SOCAR-Dispatch-Design-Document.pdf).)*
 
 ### 1.1 Architecture Topology
 
@@ -479,7 +500,9 @@ aegis-dispatch/
 ├── docker/
 │   └── init-scripts/                      # PostgreSQL/PostGIS and MinIO initialization scripts
 ├── docs/                                  # Architectural specifications and capture guides
-│   └── images/                            # System UI screenshots and architecture diagrams
+│   ├── images/                            # System UI screenshots and architecture diagrams
+│   ├── SOCAR-Dispatch-Design-Document.pdf # System engineering design document (PDF)
+│   └── SOCAR-Dispatch-Presentation.pdf    # Final project presentation slide deck (PDF)
 ├── infrastructure/
 │   └── nginx/                             # Reverse proxy and ingress configuration
 ├── load-testing/
@@ -502,6 +525,10 @@ Continuous-process manufacturing plants, petrochemical refineries, and hazardous
 * High latency in delivering photographic or video evidence from hazardous zones to the central crisis command center.
 
 AegisDispatch was designed and developed as an end-to-end, sub-second telemetry and automated incident response ecosystem to solve these challenges. By bridging native mobile clients, high-performance PostGIS spatial indexing, distributed Redis WebSocket backplanes, and GIS-driven web command consoles, it demonstrates how modern distributed systems can materially reduce emergency response times and safeguard personnel across high-consequence industrial facilities.
+
+Detailed technical specifications and the concluding presentation delivered for the project are accessible directly in the repository:
+* **System Design Document:** [`docs/SOCAR-Dispatch-Design-Document.pdf`](docs/SOCAR-Dispatch-Design-Document.pdf)
+* **Final Presentation Slide Deck:** [`docs/SOCAR-Dispatch-Presentation.pdf`](docs/SOCAR-Dispatch-Presentation.pdf)
 
 ---
 
